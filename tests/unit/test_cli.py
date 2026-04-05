@@ -250,7 +250,14 @@ class CliTests(unittest.TestCase):
                 )
 
             self.assertEqual(exit_code, 0)
-            self.assertIn("claw-reference", buffer.getvalue())
+            output = buffer.getvalue()
+            self.assertIn("claw-reference", output)
+            self.assertIn("mapbox", output)
+            self.assertIn("gis-mcp", output)
+            self.assertIn("scientific-papers", output)
+            self.assertIn("unpaywall", output)
+            self.assertIn("dataverse", output)
+            self.assertIn("cataloged", output)
 
     def test_repl_supports_status_and_reset_commands(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

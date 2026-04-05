@@ -1,0 +1,42 @@
+{
+  "servers": [
+    {
+      "name": "semantic-scholar",
+      "transport": "stdio",
+      "description": "Semantic Scholar literature MCP server installed from the semantic-scholar-skills repository for paper triage, citations, recommendations, and snippets.",
+      "default_enabled": false,
+      "auth": "api-key-optional",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/zongmin-yu/semantic-scholar-skills",
+        "semantic-scholar-skills-mcp"
+      ],
+      "env": {
+        "SEMANTIC_SCHOLAR_API_KEY": "<optional-higher-rate-limit>"
+      },
+      "tools": [
+        {
+          "name": "paper_search",
+          "description": "Search papers by title or topic."
+        },
+        {
+          "name": "paper_lookup",
+          "description": "Resolve a paper and fetch core metadata."
+        },
+        {
+          "name": "paper_recommendations",
+          "description": "Expand from seed papers into related-work candidates."
+        },
+        {
+          "name": "paper_citations",
+          "description": "Trace citation and reference neighborhoods."
+        },
+        {
+          "name": "paper_snippets",
+          "description": "Pull snippet-level evidence around a concept or phrase."
+        }
+      ]
+    }
+  ]
+}

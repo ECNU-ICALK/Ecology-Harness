@@ -150,7 +150,14 @@ class McpServerRegistry:
         states = []
         for server in self.list_servers():
             enabled = bool(server.default_enabled)
-            status = "connected" if enabled and server.transport == "inprocess" else "disconnected"
+            if server.transport == "inprocess" and enabled:
+                status = "connected"
+            elif server.transport == "inprocess":
+                status = "installed"
+            elif enabled:
+                status = "configured"
+            else:
+                status = "cataloged"
             states.append(
                 McpServerState(
                     server_name=server.name,

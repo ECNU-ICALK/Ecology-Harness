@@ -17,6 +17,13 @@ class SkillTests(unittest.TestCase):
 
             skills = app.skill_loader.list_skills()
             self.assertTrue(any(item.slug == "plan" for item in skills))
+            self.assertTrue(any(item.slug == "expand-references" for item in skills))
+            self.assertTrue(any(item.slug == "mapbox-geospatial-operations" for item in skills))
+            self.assertTrue(any(item.slug == "ecology-dataset-hunt" for item in skills))
+            self.assertTrue(any(item.slug == "literature-multi-source-search" for item in skills))
+            self.assertTrue(any(item.slug == "open-access-paper-harvest" for item in skills))
+            self.assertFalse(any(item.slug == "reference" for item in skills))
+            self.assertFalse(any(item.slug == "performance-testing" for item in skills))
 
             result = app.registry.execute(
                 "SkillRead",
@@ -67,6 +74,22 @@ class SkillTests(unittest.TestCase):
             result = app.run_prompt("/explain README")
 
             self.assertTrue(result.final_text)
+
+    def test_bundle_skill_render_includes_bundle_root_hint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill = app.skill_loader.get("expand-references")
+            self.assertIsNotNone(skill)
+
+            rendered = app.skill_loader.render(skill, "Attention Is All You Need")
+
+            self.assertIn("Skill bundle root:", rendered)
+            self.assertIn("scripts/run.py", rendered)
 
 
 if __name__ == "__main__":

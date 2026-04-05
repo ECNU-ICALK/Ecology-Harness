@@ -25,7 +25,66 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 - 多智能体与子智能体协同机制
 - Markdown skill 系统
 - MCP 与 plugin 扩展骨架
+- 来自高质量上游仓库的生态技能包
+- 面向农业、环境、生态场景的 MCP 目录
 - 标准库 `unittest` 测试集
+
+## Ecology Pack
+
+当前仓库已经内置了一组经过筛选的生态能力包，包括在线 skill bundle 和可发现的 MCP server 配置。
+
+已集成的在线技能包：
+
+- `semantic-scholar-skills`：
+  `expand-references`、`trace-citations`、`paper-triage`
+- `mapbox-agent-skills`：
+  `mapbox-geospatial-operations`、`mapbox-cartography`、
+  `mapbox-data-visualization-patterns`
+- 项目内生态包装技能：
+  `ecology-dataset-hunt`、`ecology-evidence-synthesis`、
+  `environmental-site-screen`、`agri-climate-screen`
+
+已集成的生态 MCP 目录：
+
+- `mapbox`：全球地理检索、路线与地图生成
+- `baidu-maps`：中国场景下的地图、POI、路线、天气与交通
+- `weather-open-meteo`：天气与空气质量
+- `nasa`：POWER、EONET、FIRMS、GIBS、Earth science 数据发现
+- `eosc-data-commons`：开放科研数据集检索
+- `semantic-scholar`：论文、引用与相关工作检索
+- `gis-mcp`：气候、物种、土地覆盖、NDVI 与卫星影像工作流
+- `scientific-papers`：覆盖 arXiv、OpenAlex、PMC、Europe PMC、bioRxiv、CORE 的多源学术检索
+- `simple-pubmed`：PubMed 与 PubMed Central 检索
+- `crossref`：DOI 元数据清洗与补全
+- `unpaywall`：开放获取全文链接与 PDF 文本提取
+- `dataverse`：研究数据仓储检索与 Croissant 记录
+- `noaa-tides-currents`：潮位、洋流、海平面与沿海洪水情景
+- `swiss-environment`、`wsl-envidat`：瑞士环境与生态研究数据源
+
+新增的生态包装 skill 还覆盖了：
+
+- 多源文献检索
+- 开放获取全文抓取
+- 研究数据仓储检索
+- 生物多样性数据分流
+- 海岸与湿地场景预筛查
+- 空间生态栅格工作流设计
+- 瑞士环境专题简报
+
+可以直接查看：
+
+```bash
+eh skills
+eh mcp
+```
+
+当前版本里的 MCP 状态含义：
+
+- `connected`：当前就是可直接工作的 in-process server
+- `configured`：已经启用，但依赖远端 transport
+- `cataloged`：元数据已经装进仓库，后续 transport 接上即可启用
+
+上游来源说明见 [docs/ecology-pack.zh-CN.md](docs/ecology-pack.zh-CN.md)。
 
 ## 快速开始
 
@@ -100,6 +159,9 @@ eh mcp
 # 查看支持的模型来源
 eh providers
 
+# 查看生态技能
+eh skills
+
 # 直接进入 REPL
 eh repl
 
@@ -128,6 +190,12 @@ REPL 是有状态的，新的输入会继续沿用当前会话，直到你执行
 /session
 /plugins
 /mcp
+/ecology-dataset-hunt estuary methane flux datasets 2018-2024
+/ecology-evidence-synthesis blue carbon mangroves
+/literature-multi-source-search wetland methane ebullition
+/open-access-paper-harvest 10.1038/nclimate2616
+/research-data-repository-hunt peatland carbon flux tower data
+/biodiversity-data-triage alpine pollinator decline
 /tool Read {"path":"README.md"}
 /tool TaskCreate {"title":"Inspect project"}
 /trace off

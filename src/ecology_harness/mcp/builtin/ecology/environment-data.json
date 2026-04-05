@@ -1,0 +1,95 @@
+{
+  "servers": [
+    {
+      "name": "weather-open-meteo",
+      "transport": "stdio",
+      "description": "Open-Meteo-backed MCP server for current weather, forecasts, timezone utilities, and air-quality indicators.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_weather_server"
+      ],
+      "tools": [
+        {
+          "name": "get_current_weather",
+          "description": "Get current weather with temperature, humidity, precipitation, wind, pressure, cloud cover, UV, and visibility."
+        },
+        {
+          "name": "get_weather_range",
+          "description": "Fetch weather time series for a chosen date range."
+        },
+        {
+          "name": "get_air_quality",
+          "description": "Inspect PM2.5, PM10, ozone, NO2, CO, SO2, dust, and related air-quality indicators."
+        },
+        {
+          "name": "convert_timezone",
+          "description": "Convert timestamps across time zones for field or study coordination."
+        }
+      ]
+    },
+    {
+      "name": "nasa",
+      "transport": "stdio",
+      "description": "NASA MCP server for Earth observation, hazard, wildfire, imagery, and POWER climate/energy data.",
+      "default_enabled": false,
+      "auth": "api-key",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@programcomputer/nasa-mcp-server@latest"
+      ],
+      "env": {
+        "NASA_API_KEY": "<set-in-client-environment>"
+      },
+      "tools": [
+        {
+          "name": "nasa/power",
+          "description": "Query NASA POWER environmental and climate variables."
+        },
+        {
+          "name": "nasa/eonet",
+          "description": "Track natural events through NASA EONET."
+        },
+        {
+          "name": "nasa/firms",
+          "description": "Inspect wildfire and thermal anomaly signals from FIRMS."
+        },
+        {
+          "name": "nasa/gibs",
+          "description": "Retrieve Earth imagery layers from GIBS."
+        },
+        {
+          "name": "nasa/cmr",
+          "description": "Search Earth science collections and granules in CMR."
+        }
+      ]
+    },
+    {
+      "name": "eosc-data-commons",
+      "transport": "stdio",
+      "description": "EOSC Data Commons dataset-discovery MCP server for searching open-access research datasets and dataset file metadata.",
+      "default_enabled": false,
+      "auth": "service-config",
+      "command": "uvx",
+      "args": [
+        "data-commons-search"
+      ],
+      "env": {
+        "OPENSEARCH_URL": "<required-by-upstream-server>"
+      },
+      "tools": [
+        {
+          "name": "search_datasets",
+          "description": "Search open-access datasets relevant to a research question."
+        },
+        {
+          "name": "get_dataset_file_metadata",
+          "description": "Inspect file-level metadata for a selected dataset."
+        }
+      ]
+    }
+  ]
+}

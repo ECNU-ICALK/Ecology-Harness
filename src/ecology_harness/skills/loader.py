@@ -13,6 +13,7 @@ class Skill:
     description: str
     source: str
     content: str
+    path: Path
     triggers: list[str] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
     when_to_use: str = ""
@@ -30,6 +31,7 @@ class Skill:
             "source": self.source,
             "context": self.context,
             "triggers": ", ".join(self.triggers),
+            "path": str(self.path),
         }
 
 
@@ -61,6 +63,8 @@ class SkillLoader:
                 continue
             for path in sorted(root.rglob("*.md")):
                 skill = self._load_path(path, source)
+                if skill is None:
+                    continue
                 seen[skill.slug] = skill
         return sorted(seen.values(), key=lambda item: item.name.lower())
 
@@ -89,11 +93,21 @@ class SkillLoader:
                 "$%s" % name.upper(),
                 values[idx] if idx < len(values) else "",
             )
+        if skill.path.name == "SKILL.md":
+            rendered = (
+                "Skill bundle root: %s\n"
+                "Resolve any relative files from that directory. If the workflow mentions scripts or references, run shell commands with that directory as the working directory.\n\n%s"
+                % (skill.path.parent, rendered)
+            )
         return rendered
 
-    def _load_path(self, path: Path, source: str) -> Skill:
+    def _load_path(self, path: Path, source: str) -> Skill | None:
         raw = path.read_text(encoding="utf-8")
         metadata, body = parse_frontmatter(raw)
+        # Claude/Codex-style skill bundles often ship helper docs such as
+        # reference.md or examples.md next to a single SKILL.md entrypoint.
+        if not metadata and path.name != "SKILL.md":
+            return None
         name = metadata.get("name", path.stem)
         slug = metadata.get("slug", slugify(name))
         description = metadata.get("description", "")
@@ -114,6 +128,7 @@ class SkillLoader:
             description=description,
             source=source,
             content=body.strip(),
+            path=path,
             triggers=triggers,
             tools=tools,
             when_to_use=metadata.get("when_to_use", ""),

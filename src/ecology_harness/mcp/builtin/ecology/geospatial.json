@@ -1,0 +1,82 @@
+{
+  "servers": [
+    {
+      "name": "mapbox",
+      "transport": "http",
+      "description": "Official Mapbox MCP server for global geocoding, search, routing, isochrones, static maps, and offline geospatial analysis.",
+      "default_enabled": false,
+      "auth": "mapbox-token",
+      "url": "https://mcp.mapbox.com/mcp",
+      "env": {
+        "MAPBOX_ACCESS_TOKEN": "<set-in-client-environment>"
+      },
+      "tools": [
+        {
+          "name": "search_and_geocode_tool",
+          "description": "Search places globally and resolve them to coordinates."
+        },
+        {
+          "name": "directions_tool",
+          "description": "Get multimodal routes with optional traffic-aware driving."
+        },
+        {
+          "name": "matrix_tool",
+          "description": "Compute travel-time or distance matrices across many origins and destinations."
+        },
+        {
+          "name": "isochrone_tool",
+          "description": "Build time- or distance-based reachability polygons."
+        },
+        {
+          "name": "static_map_image_tool",
+          "description": "Render static map images for reports or reviews."
+        },
+        {
+          "name": "distance_tool",
+          "description": "Run offline geometric distance calculations."
+        }
+      ]
+    },
+    {
+      "name": "baidu-maps",
+      "transport": "stdio",
+      "description": "Official Baidu Maps MCP server for Chinese geocoding, POI search, routing, weather, IP location, and traffic.",
+      "default_enabled": false,
+      "auth": "api-key",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server_baidu_maps"
+      ],
+      "env": {
+        "BAIDU_MAPS_API_KEY": "<set-in-client-environment>"
+      },
+      "tools": [
+        {
+          "name": "map_geocode",
+          "description": "Convert addresses to coordinates."
+        },
+        {
+          "name": "map_reverse_geocode",
+          "description": "Resolve coordinates into addresses and nearby context."
+        },
+        {
+          "name": "map_search_places",
+          "description": "Search POIs by keyword, type, region, or radius."
+        },
+        {
+          "name": "map_directions",
+          "description": "Plan driving, walking, cycling, or transit routes."
+        },
+        {
+          "name": "map_weather",
+          "description": "Query local weather by region or coordinates."
+        },
+        {
+          "name": "map_road_traffic",
+          "description": "Inspect real-time traffic conditions."
+        }
+      ]
+    }
+  ]
+}

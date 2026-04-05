@@ -29,8 +29,68 @@ and skills can be added on top of a stable runtime.
 - specialized agent types, background subagents, dependency-aware coordination, and internal agent task tracking
 - task tracking with status, owner, metadata, and dependency edges
 - built-in markdown skills
+- curated ecology skill bundles from high-quality upstream repositories
+- curated agriculture/environment/ecology MCP server catalog
 - permission policy for read-only and workspace-write modes
 - unit test suite built on the standard library
+
+## Ecology Pack
+
+This repository now ships with a curated ecology pack that combines installed
+skill bundles and discoverable MCP server configs.
+
+Bundled online skill packs:
+
+- `semantic-scholar-skills`:
+  `expand-references`, `trace-citations`, `paper-triage`
+- `mapbox-agent-skills`:
+  `mapbox-geospatial-operations`, `mapbox-cartography`,
+  `mapbox-data-visualization-patterns`
+- first-party wrapper skills:
+  `ecology-dataset-hunt`, `ecology-evidence-synthesis`,
+  `environmental-site-screen`, `agri-climate-screen`
+
+Bundled ecology MCP catalog:
+
+- `mapbox` for global geospatial search, routing, and map generation
+- `baidu-maps` for China-focused mapping, POI, routing, weather, and traffic
+- `weather-open-meteo` for weather and air-quality signals
+- `nasa` for POWER, EONET, FIRMS, GIBS, and Earth-science discovery
+- `eosc-data-commons` for open-access dataset discovery
+- `semantic-scholar` for literature retrieval and citation workflows
+- `gis-mcp` for climate, biodiversity, land-cover, NDVI, and satellite workflows
+- `scientific-papers` for multi-source academic search across arXiv, OpenAlex, PMC, Europe PMC, bioRxiv, and CORE
+- `simple-pubmed` for PubMed and PubMed Central search
+- `crossref` for DOI metadata cleanup
+- `unpaywall` for open-access fulltext lookup and PDF text extraction
+- `dataverse` for repository-style dataset search and Croissant records
+- `noaa-tides-currents` for coastal, marine, and flooding context
+- `swiss-environment` and `wsl-envidat` for strong Switzerland-focused environmental and ecology sources
+
+Additional first-party ecology skills now cover:
+
+- multi-source literature search
+- open-access paper harvesting
+- research-data repository search
+- biodiversity data triage
+- coastal ecology screening
+- spatial ecology raster planning
+- Switzerland-focused environmental briefs
+
+You can inspect them directly:
+
+```bash
+eh skills
+eh mcp
+```
+
+MCP status meanings in this build:
+
+- `connected`: in-process server is active now
+- `configured`: server is enabled and intended to run through a remote transport
+- `cataloged`: server metadata is installed in the repository and ready for later activation
+
+Upstream source notes are tracked in [docs/ecology-pack.md](docs/ecology-pack.md).
 
 ## Quick Start
 
@@ -114,6 +174,8 @@ eh mcp
 
 # list supported providers
 eh providers
+eh skills
+eh mcp
 
 # one-shot prompt using the natural shorthand
 eh "summarize this repository in 5 bullets"
@@ -192,6 +254,12 @@ Inside the REPL you can try:
 /session
 /plugins
 /mcp
+/ecology-dataset-hunt estuary methane flux datasets 2018-2024
+/ecology-evidence-synthesis blue carbon mangroves
+/literature-multi-source-search wetland methane ebullition
+/open-access-paper-harvest 10.1038/nclimate2616
+/research-data-repository-hunt peatland carbon flux tower data
+/biodiversity-data-triage alpine pollinator decline
 /tool Read {"path":"README.md"}
 /tool TaskCreate {"title":"Inspect project"}
 /trace off

@@ -1,0 +1,241 @@
+{
+  "servers": [
+    {
+      "name": "scientific-papers",
+      "transport": "stdio",
+      "description": "Broad literature MCP server spanning arXiv, OpenAlex, PMC, Europe PMC, bioRxiv/medRxiv, and CORE.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@futurelab-studio/latest-science-mcp@latest"
+      ],
+      "tools": [
+        {
+          "name": "list_categories",
+          "description": "List source-specific research categories and concepts."
+        },
+        {
+          "name": "fetch_latest",
+          "description": "Fetch the latest papers in a chosen source and category."
+        },
+        {
+          "name": "fetch_top_cited",
+          "description": "Find influential papers for a concept and time period."
+        },
+        {
+          "name": "search_papers",
+          "description": "Search papers across supported academic sources."
+        },
+        {
+          "name": "fetch_content",
+          "description": "Retrieve content and metadata for a target paper."
+        },
+        {
+          "name": "fetch_pdf_content",
+          "description": "Extract PDF content when supported."
+        }
+      ]
+    },
+    {
+      "name": "simple-pubmed",
+      "transport": "stdio",
+      "description": "PubMed MCP server for Entrez-based search, article metadata, and PubMed Central full-text retrieval.",
+      "default_enabled": false,
+      "auth": "email-required",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_simple_pubmed"
+      ],
+      "env": {
+        "PUBMED_EMAIL": "<required-by-ncbi>",
+        "PUBMED_API_KEY": "<optional-higher-rate-limit>"
+      },
+      "tools": [
+        {
+          "name": "search_pubmed",
+          "description": "Search PubMed with keyword, field, MeSH, and date filters."
+        },
+        {
+          "name": "get_paper_fulltext",
+          "description": "Attempt to retrieve PubMed Central full text for a PMID."
+        }
+      ],
+      "resources": [
+        {
+          "uri": "pubmed://{pmid}/abstract",
+          "name": "pubmed-abstract",
+          "description": "Article metadata and abstract by PMID.",
+          "mime_type": "application/json"
+        },
+        {
+          "uri": "pubmed://{pmid}/full_text",
+          "name": "pubmed-full-text",
+          "description": "Full text when available in PubMed Central.",
+          "mime_type": "text/plain"
+        }
+      ]
+    },
+    {
+      "name": "crossref",
+      "transport": "stdio",
+      "description": "Lightweight Crossref MCP server for DOI metadata lookup and title or author search.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@botanicastudios/crossref-mcp"
+      ],
+      "tools": [
+        {
+          "name": "searchByTitle",
+          "description": "Search Crossref records by title."
+        },
+        {
+          "name": "searchByAuthor",
+          "description": "Search Crossref records by author."
+        },
+        {
+          "name": "getWorkByDOI",
+          "description": "Retrieve a work by DOI."
+        }
+      ]
+    },
+    {
+      "name": "unpaywall",
+      "transport": "stdio",
+      "description": "Open-access paper retrieval MCP server for DOI metadata, OA links, and PDF text extraction.",
+      "default_enabled": false,
+      "auth": "email-required",
+      "command": "npx",
+      "args": [
+        "-y",
+        "unpaywall-mcp"
+      ],
+      "env": {
+        "UNPAYWALL_EMAIL": "<required-by-unpaywall>"
+      },
+      "tools": [
+        {
+          "name": "unpaywall_get_by_doi",
+          "description": "Fetch Unpaywall metadata for a DOI."
+        },
+        {
+          "name": "unpaywall_search_titles",
+          "description": "Search titles and optionally filter for open-access results."
+        },
+        {
+          "name": "unpaywall_get_fulltext_links",
+          "description": "Return the best OA PDF and landing-page links for a DOI."
+        },
+        {
+          "name": "unpaywall_fetch_pdf_text",
+          "description": "Download and extract text from an open-access PDF."
+        }
+      ]
+    },
+    {
+      "name": "dataverse",
+      "transport": "sse",
+      "description": "Dataverse MCP server for Croissant export, dataset search, and hosted research-data repository exploration.",
+      "default_enabled": false,
+      "auth": "none",
+      "url": "https://mcp.dataverse.org/sse",
+      "tools": [
+        {
+          "name": "get_croissant_record",
+          "description": "Convert a dataset DOI into a Croissant ML record."
+        },
+        {
+          "name": "datatool",
+          "description": "Process a file inside a Dataverse dataset."
+        },
+        {
+          "name": "overview",
+          "description": "Get an overview of Dataverse installations."
+        },
+        {
+          "name": "overview_datasets",
+          "description": "Inspect dataset statistics by Dataverse host."
+        },
+        {
+          "name": "overview_files",
+          "description": "Inspect file statistics by Dataverse host."
+        },
+        {
+          "name": "search_datasets",
+          "description": "Search datasets in a Dataverse installation."
+        }
+      ]
+    },
+    {
+      "name": "swiss-environment",
+      "transport": "stdio",
+      "description": "Swiss federal environmental MCP server for air quality, hydrology, flood warnings, wildfire danger, and BAFU datasets.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "uvx",
+      "args": [
+        "swiss-environment-mcp"
+      ],
+      "tools": [
+        {
+          "name": "env_nabel_current",
+          "description": "Retrieve current air-quality readings from the NABEL network."
+        },
+        {
+          "name": "env_hydro_current",
+          "description": "Fetch current hydrology observations."
+        },
+        {
+          "name": "env_flood_warnings",
+          "description": "Check active flood warnings."
+        },
+        {
+          "name": "env_wildfire_danger",
+          "description": "Inspect canton- and region-level wildfire danger."
+        },
+        {
+          "name": "env_bafu_datasets",
+          "description": "Search BAFU environmental datasets."
+        }
+      ]
+    },
+    {
+      "name": "wsl-envidat",
+      "transport": "stdio",
+      "description": "WSL EnviDat MCP server for Swiss forest, avalanche, biodiversity, landscape, and natural-hazard research datasets.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "uvx",
+      "args": [
+        "wsl-envidat-mcp"
+      ],
+      "tools": [
+        {
+          "name": "wsl_search_datasets",
+          "description": "Search WSL environmental research datasets."
+        },
+        {
+          "name": "wsl_get_dataset",
+          "description": "Inspect full dataset metadata and downloads."
+        },
+        {
+          "name": "wsl_search_by_domain",
+          "description": "Filter WSL datasets by domain such as biodiversity or natural hazards."
+        },
+        {
+          "name": "wsl_get_avalanche_data",
+          "description": "Access avalanche and snow research data."
+        },
+        {
+          "name": "wsl_get_forest_data",
+          "description": "Access forest and inventory datasets."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "servers": [
+    {
+      "name": "gis-mcp",
+      "transport": "stdio",
+      "description": "GIS MCP Server with ecology, climate, land-cover, satellite-imagery, raster, vector, and spatial-analysis tools for environmental workflows.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "gis-mcp",
+      "tools": [
+        {
+          "name": "get_species_info",
+          "description": "Look up species information relevant to ecological analysis."
+        },
+        {
+          "name": "download_species_occurrences",
+          "description": "Retrieve species occurrence records for a target taxon and area."
+        },
+        {
+          "name": "download_climate_data",
+          "description": "Fetch climate layers for a study area."
+        },
+        {
+          "name": "download_worldcover",
+          "description": "Download ESA WorldCover land-cover data."
+        },
+        {
+          "name": "compute_s2_ndvi",
+          "description": "Compute Sentinel-2 NDVI for vegetation-condition workflows."
+        },
+        {
+          "name": "download_satellite_imagery",
+          "description": "Fetch satellite imagery for environmental screening and mapping."
+        }
+      ]
+    },
+    {
+      "name": "noaa-tides-currents",
+      "transport": "stdio",
+      "description": "NOAA Tides & Currents MCP server for coastal water levels, currents, meteorology, sea-level trends, flood projections, and astronomical context.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@ryancardin/noaa-tides-currents-mcp-server"
+      ],
+      "tools": [
+        {
+          "name": "get_water_levels",
+          "description": "Query observed water levels."
+        },
+        {
+          "name": "get_tide_predictions",
+          "description": "Retrieve tide predictions for stations and dates."
+        },
+        {
+          "name": "get_currents",
+          "description": "Inspect measured currents."
+        },
+        {
+          "name": "get_meteorological_data",
+          "description": "Fetch NOAA station meteorological observations."
+        },
+        {
+          "name": "get_sea_level_trends",
+          "description": "Analyze long-term sea-level trends."
+        },
+        {
+          "name": "get_high_tide_flooding_projections",
+          "description": "Inspect projected flooding scenarios."
+        }
+      ]
+    }
+  ]
+}
