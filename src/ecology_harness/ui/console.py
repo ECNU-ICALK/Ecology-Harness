@@ -40,27 +40,51 @@ class ConsoleRenderer:
         self.print(self._style(line_char * self.width, "muted"))
 
     def banner(self, app, mode: str, turn_count: int = 0) -> None:
+        del turn_count
         self._print_topology(app, mode)
-        status = self._join_segments(
-            [
-                "mode: %s" % mode,
-                "turns: %s" % turn_count,
-            ]
+        version = _read_project_version()
+        self.print(
+            self._indent_line(
+                self._style("Ecology Harness", "highlight")
+                + self._style("  v%s" % version, "muted")
+            )
         )
-        hint = self._join_segments(
-            [
-                self._style("/help", "accent") + " commands",
-                self._style("/model", "accent") + " switch",
-                self._style("/config", "accent") + " details",
-                self._style("Ctrl+C", "accent") + " exit",
-            ]
+        self.print(self._indent_line(self._style("An AI-powered ecology analysis assistant", "brand2")))
+        self.print()
+        self.print(
+            self._indent_line(
+                self._join_segments(
+                    [
+                        self._style("/help", "accent") + self._style(" commands", "muted"),
+                        self._style("/model", "accent") + self._style(" switch", "muted"),
+                        self._style("Ctrl+C", "accent") + self._style(" exit", "muted"),
+                    ]
+                )
+            )
         )
-        self.print(self._style(status, "muted"))
-        self.print(hint)
+        self.print(self._indent_line(self._style("─" * min(50, self.width - 4), "muted")))
+        model = _clip_text(getattr(app.settings, "model", "") or "unknown", limit=24)
+        mode_name = _clip_text(getattr(app, "runtime_mode", mode).title(), limit=18)
+        status = (
+            self._style("model:", "accent")
+            + self._style(" %s" % model, "accent")
+            + self._style("  |  ", "muted")
+            + self._style("mode:", "muted")
+            + self._style(" %s" % mode_name, "muted")
+        )
+        self.print(self._indent_line(status))
         self.print()
 
     def print_repl_welcome(self) -> None:
-        self.print(self._style("Start typing naturally, or use / to browse commands.", "muted"))
+        helper = self._join_segments(
+            [
+                self._style("enter", "accent") + self._style(" send", "muted"),
+                self._style("/", "accent") + self._style(" commands", "muted"),
+                self._style("↑↓", "accent") + self._style(" history", "muted"),
+                self._style("ctrl+c", "accent") + self._style(" exit", "muted"),
+            ]
+        )
+        self.print(self._indent_line(helper))
         self.print()
 
     def section(self, title: str, lines: Iterable[str]) -> None:
@@ -319,19 +343,24 @@ class ConsoleRenderer:
         if not self.color_enabled:
             return text
         codes = {
-            "accent": "96",
-            "muted": "90",
-            "role": "32",
-            "tool": "96",
-            "user": "97",
-            "info": "94",
-            "warn": "33",
-            "error": "91",
-            "brand": "1;97",
-            "brand2": "90",
-            "key": "96",
-            "leaf": "92",
-            "core": "1;97",
+            "accent": "38;2;0;217;255",
+            "muted": "38;2;126;129;149",
+            "role": "38;2;0;217;255",
+            "tool": "38;2;0;217;255",
+            "user": "38;2;240;242;255",
+            "info": "38;2;0;217;255",
+            "warn": "38;2;255;202;64",
+            "error": "38;2;255;107;107",
+            "brand": "1;38;2;14;210;245",
+            "brand2": "38;2;126;129;149",
+            "highlight": "1;38;2;255;205;56",
+            "key": "38;2;0;217;255",
+            "leaf": "38;2;0;202;255",
+            "core": "1;38;2;240;242;255",
+            "bar": "48;2;40;40;58;38;2;150;150;166",
+            "bar_red": "48;2;40;40;58;38;2;255;95;86",
+            "bar_yellow": "48;2;40;40;58;38;2;255;189;46",
+            "bar_green": "48;2;40;40;58;38;2;39;201;63",
         }
         code = codes.get(role)
         if not code:
@@ -339,25 +368,34 @@ class ConsoleRenderer:
         return "\033[%sm%s\033[0m" % (code, text)
 
     def _print_topology(self, app, mode: str) -> None:
-        del app
-        art = [
-            "   ______          __                 ",
-            "  / ____/________  / /___  ____ ___  __",
-            " / __/ / ___/ __ \\/ / __ \\/ __ `__ \\/ /",
-            "/ /___/ /__/ /_/ / / /_/ / / / / / / / ",
-            "\\____/\\___/\\____/_/\\____/_/ /_/ /_/_/  ",
-            "    __  __                               ",
-            "   / / / /___ __________  ___  _____ ___",
-            "  / /_/ / __ `/ ___/ __ \\/ _ \\/ ___/ __ \\",
-            " / __  / /_/ / /  / / / /  __(__  ) /_/ /",
-            "/_/ /_/\\__,_/_/  /_/ /_/\\___/____/\\____/ ",
-        ]
-        meta = "Ecology Harness  |  self-evolving analysis shell  |  %s mode" % mode
-        self.print(self._style("=" * self.width, "accent"))
-        for line in art:
-            self.print(self._style(_center_plain(line, self.width), "brand"))
-        self.print(self._style(_center_plain(meta, self.width), "brand2"))
-        self.print(self._style("=" * self.width, "accent"))
+        del app, mode
+        for line in self._render_big_title("ECOLOGY HARNESS"):
+            self.print(self._indent_line(self._style(line, "brand")))
+
+    def _render_big_title(self, text: str) -> list[str]:
+        font = {
+            "A": [" ███  ", "█   █ ", "█████ ", "█   █ ", "█   █ "],
+            "C": [" ████ ", "█     ", "█     ", "█     ", " ████ "],
+            "E": ["█████ ", "█     ", "████  ", "█     ", "█████ "],
+            "G": [" ████ ", "█     ", "█  ██ ", "█   █ ", " ███  "],
+            "H": ["█   █ ", "█   █ ", "█████ ", "█   █ ", "█   █ "],
+            "L": ["█     ", "█     ", "█     ", "█     ", "█████ "],
+            "N": ["█   █ ", "██  █ ", "█ █ █ ", "█  ██ ", "█   █ "],
+            "O": [" ███  ", "█   █ ", "█   █ ", "█   █ ", " ███  "],
+            "R": ["████  ", "█   █ ", "████  ", "█  █  ", "█   █ "],
+            "S": [" ████ ", "█     ", " ███  ", "    █ ", "████  "],
+            "Y": ["█   █ ", " █ █  ", "  █   ", "  █   ", "  █   "],
+            " ": ["   ", "   ", "   ", "   ", "   "],
+        }
+        rows = [""] * 5
+        for char in text:
+            glyph = font.get(char.upper(), font[" "])
+            for index in range(5):
+                rows[index] += glyph[index]
+        return [line.rstrip() for line in rows]
+
+    def _indent_line(self, text: str, spaces: int = 2) -> str:
+        return (" " * spaces) + text
 
     def _topology_counts(self, app) -> dict[str, int]:
         counts = {
@@ -481,6 +519,7 @@ def _clip_text(text: str, limit: int = 160) -> str:
 
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+_VERSION_RE = re.compile(r'^\s*version\s*=\s*"([^"]+)"', re.MULTILINE)
 
 
 def _strip_ansi(text: str) -> str:
@@ -502,6 +541,19 @@ def _center_plain(text: str, width: int) -> str:
     left = padding // 2
     right = padding - left
     return (" " * left) + text + (" " * right)
+
+
+def _read_project_version() -> str:
+    root = Path(__file__).resolve().parents[3]
+    pyproject = root / "pyproject.toml"
+    try:
+        content = pyproject.read_text(encoding="utf-8")
+    except OSError:
+        return "dev"
+    match = _VERSION_RE.search(content)
+    if match:
+        return match.group(1)
+    return "dev"
 
 
 def _shorten_path(path: Path, limit: int) -> str:

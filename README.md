@@ -1,10 +1,16 @@
 # Ecology Harness
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Ecology Harness is a Python-first agent harness foundation for ecological data analysis
 and reasoning workflows.
 
 This version focuses on a complete generic harness core first, so ecology-specific tools
 and skills can be added on top of a stable runtime.
+
+## Startup Preview
+
+![Ecology Harness startup screen](imgs/start_img.png)
 
 ## What Is Included
 
