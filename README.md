@@ -39,43 +39,25 @@ and skills can be added on top of a stable runtime.
 This repository now ships with a curated ecology pack that combines installed
 skill bundles and discoverable MCP server configs.
 
-Bundled online skill packs:
+The current ecology capability map is easiest to read by subdomain:
 
-- `semantic-scholar-skills`:
-  `expand-references`, `trace-citations`, `paper-triage`
-- `mapbox-agent-skills`:
-  `mapbox-geospatial-operations`, `mapbox-cartography`,
-  `mapbox-data-visualization-patterns`
-- first-party wrapper skills:
-  `ecology-dataset-hunt`, `ecology-evidence-synthesis`,
-  `environmental-site-screen`, `agri-climate-screen`
-
-Bundled ecology MCP catalog:
-
-- `mapbox` for global geospatial search, routing, and map generation
-- `baidu-maps` for China-focused mapping, POI, routing, weather, and traffic
-- `weather-open-meteo` for weather and air-quality signals
-- `nasa` for POWER, EONET, FIRMS, GIBS, and Earth-science discovery
-- `eosc-data-commons` for open-access dataset discovery
-- `semantic-scholar` for literature retrieval and citation workflows
-- `gis-mcp` for climate, biodiversity, land-cover, NDVI, and satellite workflows
-- `scientific-papers` for multi-source academic search across arXiv, OpenAlex, PMC, Europe PMC, bioRxiv, and CORE
-- `simple-pubmed` for PubMed and PubMed Central search
-- `crossref` for DOI metadata cleanup
-- `unpaywall` for open-access fulltext lookup and PDF text extraction
-- `dataverse` for repository-style dataset search and Croissant records
-- `noaa-tides-currents` for coastal, marine, and flooding context
-- `swiss-environment` and `wsl-envidat` for strong Switzerland-focused environmental and ecology sources
-
-Additional first-party ecology skills now cover:
-
-- multi-source literature search
-- open-access paper harvesting
-- research-data repository search
-- biodiversity data triage
-- coastal ecology screening
-- spatial ecology raster planning
-- Switzerland-focused environmental briefs
+| Subdomain | Typical Research Tasks | Available Skills | Available MCP / Tools |
+|---|---|---|---|
+| Literature and evidence synthesis | reviews, citation expansion, evidence briefs, review discovery, landscape mapping | `ecology-evidence-synthesis`<br>`literature-multi-source-search`<br>`open-access-paper-harvest`<br>`expand-references`<br>`trace-citations`<br>`paper-triage` | `semantic-scholar`<br>`openalex-research`<br>`scientific-papers`<br>`simple-pubmed`<br>`crossref`<br>`unpaywall` |
+| Organismal, population, and community ecology | stress response, demographic screening, invasion spread, coexistence, disturbance response | `organismal-stress-screen`<br>`population-invasion-screen`<br>`community-assembly-review` | `openalex-research`<br>`gbif`<br>`simple-pubmed`<br>`scientific-papers` |
+| Biodiversity and species distribution | species background, occurrences, sampling bias, habitat screening | `biodiversity-data-triage`<br>`species-occurrence-workbench` | `gbif`<br>`gis-mcp`<br>`stac` |
+| Spatial ecology and remote sensing | NDVI, land cover, imagery screening, raster planning, catalog selection, connectivity | `spatial-ecology-raster-lab`<br>`remote-sensing-catalog-hunt`<br>`landscape-connectivity-screen`<br>`mapbox-geospatial-operations` | `stac`<br>`gis-mcp`<br>`nasa`<br>`mapbox` |
+| Climate, weather, and air quality | drought, heat, precipitation, air quality, climate signals, seasonal outlooks | `agri-climate-screen`<br>`global-change-ecology-brief`<br>`open-meteo`<br>`open-meteo-advanced` | `weather-open-meteo`<br>`nasa`<br>`gis-mcp` |
+| Hydrology and freshwater environment | flow, water level, flood context, watershed screening | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
+| Coastal, estuary, wetland, and blue-carbon work | tides, sea level, coastal flooding, wetland site screening | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
+| Agroecology and agricultural environment | crop-system screening, climate stress, landscape context | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| Ecosystem biogeochemistry and soil systems | carbon, methane, nutrient cycling, soil health, remediation context | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | `weather-open-meteo`<br>`nasa`<br>`eosc-data-commons`<br>`dataverse`<br>`wsl-envidat` |
+| Environmental chemistry and exposure | pollutants, PFAS, microplastics, pesticide fate, toxicology-adjacent literature | `environmental-chemistry-risk-scan`<br>`literature-multi-source-search` | `pubchem`<br>`simple-pubmed`<br>`scientific-papers`<br>`weather-open-meteo`<br>`swiss-environment` |
+| Microbial ecology and conservation genetics | taxonomy, markers, assemblies, orthologs, BLAST workflows | `microbial-ecology-sequence-workflow` | `ncbi-datasets`<br>`bio-blast`<br>`simple-pubmed` |
+| Conservation and restoration | restoration screening, ecological stressors, site context | `environmental-site-screen`<br>`ecology-evidence-synthesis` | `mapbox`<br>`gis-mcp`<br>`nasa` |
+| Open data and research repositories | dataset discovery, DOI-level dataset records, reproducibility assets | `research-data-repository-hunt`<br>`ecology-dataset-hunt` | `dataverse`<br>`eosc-data-commons`<br>`wsl-envidat` |
+| Regional public-environment sources | region-specific public environmental data and monitoring | `swiss-environment-brief` | `swiss-environment`<br>`wsl-envidat` |
+| Cartography and map presentation | map design, visual hierarchy, report-ready maps | `mapbox-cartography`<br>`mapbox-data-visualization-patterns` | `mapbox` |
 
 You can inspect them directly:
 
@@ -91,6 +73,17 @@ MCP status meanings in this build:
 - `cataloged`: server metadata is installed in the repository and ready for later activation
 
 Upstream source notes are tracked in [docs/ecology-pack.md](docs/ecology-pack.md).
+
+This pass also expanded coverage for finer-grained research directions that are common in ecology, agriculture, and environment projects:
+
+- organismal stress and physiological ecology
+- population, invasion, and metapopulation screening
+- community assembly and disturbance response
+- ecosystem biogeochemistry, carbon, methane, and nutrient cycling
+- landscape connectivity and remote-sensing catalog selection
+- global-change ecology and climate-risk framing
+- microbial ecology, eDNA-adjacent taxonomy, and conservation genetics
+- environmental chemistry, pollutant fate, and toxicity screening
 
 ## Quick Start
 
@@ -260,6 +253,11 @@ Inside the REPL you can try:
 /open-access-paper-harvest 10.1038/nclimate2616
 /research-data-repository-hunt peatland carbon flux tower data
 /biodiversity-data-triage alpine pollinator decline
+/species-occurrence-workbench Panthera leo occurrences in Kenya
+/remote-sensing-catalog-hunt mangrove canopy disturbance in South China
+/global-change-ecology-brief climate-driven range shift for alpine pollinators
+/microbial-ecology-sequence-workflow soil microbiome drought marker genes
+/environmental-chemistry-risk-scan PFAS wetland food web exposure
 /tool Read {"path":"README.md"}
 /tool TaskCreate {"title":"Inspect project"}
 /trace off

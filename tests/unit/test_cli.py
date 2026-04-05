@@ -254,9 +254,13 @@ class CliTests(unittest.TestCase):
             self.assertIn("claw-reference", output)
             self.assertIn("mapbox", output)
             self.assertIn("gis-mcp", output)
+            self.assertIn("gbif", output)
+            self.assertIn("stac", output)
             self.assertIn("scientific-papers", output)
+            self.assertIn("openalex-research", output)
             self.assertIn("unpaywall", output)
             self.assertIn("dataverse", output)
+            self.assertIn("pubchem", output)
             self.assertIn("cataloged", output)
 
     def test_repl_supports_status_and_reset_commands(self) -> None:

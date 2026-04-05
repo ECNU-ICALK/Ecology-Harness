@@ -22,6 +22,9 @@ class SkillTests(unittest.TestCase):
             self.assertTrue(any(item.slug == "ecology-dataset-hunt" for item in skills))
             self.assertTrue(any(item.slug == "literature-multi-source-search" for item in skills))
             self.assertTrue(any(item.slug == "open-access-paper-harvest" for item in skills))
+            self.assertTrue(any(item.slug == "open-meteo" for item in skills))
+            self.assertTrue(any(item.slug == "species-occurrence-workbench" for item in skills))
+            self.assertTrue(any(item.slug == "microbial-ecology-sequence-workflow" for item in skills))
             self.assertFalse(any(item.slug == "reference" for item in skills))
             self.assertFalse(any(item.slug == "performance-testing" for item in skills))
 

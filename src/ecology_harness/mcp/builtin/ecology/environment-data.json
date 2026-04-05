@@ -3,30 +3,84 @@
     {
       "name": "weather-open-meteo",
       "transport": "stdio",
-      "description": "Open-Meteo-backed MCP server for current weather, forecasts, timezone utilities, and air-quality indicators.",
+      "description": "Comprehensive Open-Meteo MCP server for forecasting, archives, air quality, marine conditions, flood outlooks, ensembles, seasonal outlooks, and climate projections.",
       "default_enabled": false,
       "auth": "none",
-      "command": "python",
+      "command": "npx",
       "args": [
-        "-m",
-        "mcp_weather_server"
+        "-y",
+        "-p",
+        "open-meteo-mcp-server",
+        "open-meteo-mcp-server"
       ],
       "tools": [
         {
-          "name": "get_current_weather",
-          "description": "Get current weather with temperature, humidity, precipitation, wind, pressure, cloud cover, UV, and visibility."
+          "name": "geocoding",
+          "description": "Resolve place names into latitude, longitude, timezone, and country metadata."
         },
         {
-          "name": "get_weather_range",
-          "description": "Fetch weather time series for a chosen date range."
+          "name": "weather_forecast",
+          "description": "Get forecast and recent-history weather time series with hourly, daily, and current variables."
         },
         {
-          "name": "get_air_quality",
-          "description": "Inspect PM2.5, PM10, ozone, NO2, CO, SO2, dust, and related air-quality indicators."
+          "name": "weather_archive",
+          "description": "Query archived historical weather back to 1940 using ERA5-backed data."
         },
         {
-          "name": "convert_timezone",
-          "description": "Convert timestamps across time zones for field or study coordination."
+          "name": "air_quality",
+          "description": "Inspect PM2.5, PM10, ozone, nitrogen dioxide, pollen, AQI indices, UV, and related air-quality indicators."
+        },
+        {
+          "name": "marine_weather",
+          "description": "Retrieve marine weather, wave, swell, sea-surface temperature, and ocean-current variables."
+        },
+        {
+          "name": "flood_forecast",
+          "description": "Inspect GloFAS river discharge and flood forecast signals for up to 210 days."
+        },
+        {
+          "name": "elevation",
+          "description": "Get elevation for a coordinate pair."
+        },
+        {
+          "name": "ecmwf_forecast",
+          "description": "Run ECMWF model forecasts for high-quality global outlooks."
+        },
+        {
+          "name": "gfs_forecast",
+          "description": "Run NOAA GFS forecasts for global and North America-focused weather analysis."
+        },
+        {
+          "name": "dwd_icon_forecast",
+          "description": "Run DWD ICON forecasts for Europe-focused high-resolution weather analysis."
+        },
+        {
+          "name": "meteofrance_forecast",
+          "description": "Run Météo-France forecasts for France and nearby regional coverage."
+        },
+        {
+          "name": "jma_forecast",
+          "description": "Run JMA forecasts for Asia-Pacific weather analysis."
+        },
+        {
+          "name": "metno_forecast",
+          "description": "Run MET Norway forecasts for Nordic and blended regional analyses."
+        },
+        {
+          "name": "gem_forecast",
+          "description": "Run Environment Canada GEM forecasts for Canada and North America."
+        },
+        {
+          "name": "ensemble_forecast",
+          "description": "Inspect forecast uncertainty using ensemble-member weather outputs."
+        },
+        {
+          "name": "seasonal_forecast",
+          "description": "Retrieve 1-9 month seasonal outlooks."
+        },
+        {
+          "name": "climate_projection",
+          "description": "Query CMIP6-style climate projections for scenario-based long-term analysis."
         }
       ]
     },

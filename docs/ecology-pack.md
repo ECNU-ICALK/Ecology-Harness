@@ -27,6 +27,16 @@ agriculture, environment, and ecology pack for Ecology Harness.
     - practical geospatial reasoning patterns for screening and mapping workflows
     - lightweight markdown-first bundles with reference files
 
+- `open-meteo-mcp`
+  - repo: https://github.com/cmer81/open-meteo-mcp
+  - installed bundles:
+    - `open-meteo`
+    - `open-meteo-advanced`
+  - why selected:
+    - actively maintained and comprehensive Open-Meteo server
+    - includes ready-made skills for everyday weather and advanced climate/model workflows
+    - strong fit for ecology, agriculture, air-quality, flood, and climate-risk questions
+
 ## Installed MCP Catalog Entries
 
 - `mapbox`
@@ -38,8 +48,8 @@ agriculture, environment, and ecology pack for Ecology Harness.
   - rationale: official China-focused mapping MCP server with strong local relevance
 
 - `weather-open-meteo`
-  - repo: https://github.com/isdaniel/mcp_weather_server
-  - rationale: weather and air-quality coverage, multiple transports, clear packaging
+  - repo: https://github.com/cmer81/open-meteo-mcp
+  - rationale: broader Open-Meteo coverage including archive, air quality, marine, flood, ensemble, seasonal, and climate-projection endpoints
 
 - `nasa`
   - repo: https://github.com/ProgramComputer/NASA-MCP-server
@@ -89,6 +99,30 @@ agriculture, environment, and ecology pack for Ecology Harness.
   - repo: https://github.com/malkreide/wsl-envidat-mcp
   - rationale: strong Swiss research-data source for forest, biodiversity, avalanche, and natural-hazard datasets
 
+- `gbif`
+  - repo: https://github.com/tyson-swetnam/gbif-mcp
+  - rationale: excellent fit for biodiversity occurrences, taxonomy, dataset discovery, and literature citing GBIF-mediated datasets
+
+- `stac`
+  - repo: https://github.com/BnJam/stac-mcp
+  - rationale: high-value Earth-observation catalog discovery layer for remote sensing, land cover, and item or asset selection
+
+- `openalex-research`
+  - repo: https://github.com/oksure/openalex-research-mcp
+  - rationale: strong literature-review and scholarly-landscape server with citation, expert, venue, and trend tools
+
+- `ncbi-datasets`
+  - repo: https://github.com/Augmented-Nature/NCBI-Datasets-MCP-Server
+  - rationale: useful for microbial ecology, taxonomy, conservation genetics, and genome-aware ecology workflows
+
+- `bio-blast`
+  - repo: https://github.com/bio-mcp/bio-mcp-blast
+  - rationale: practical bridge for sequence-similarity workflows in microbial ecology, marker validation, and genetics-adjacent tasks
+
+- `pubchem`
+  - repo: https://github.com/Augmented-Nature/PubChem-MCP-Server
+  - rationale: useful for pollutant identity, chemical fate, toxicity, and environmental-chemistry workflows
+
 ## Candidate Backlog
 
 These looked promising during the expanded search but were not installed as
@@ -98,19 +132,12 @@ default catalog entries yet:
   - repo: https://github.com/matsjfunke/paperclip
   - why not default yet:
     - strong ecology-adjacent literature coverage through EarthArXiv, EcoEvoRxiv, MarXiv, and AgriXiv
-    - current recommended path is self-hosting a remote endpoint, so install friction is higher
+    - the repository shows as archived on December 16, 2025, and the recommended path is still self-hosting a remote endpoint, so it is no longer a strong default install target
 
-- `gbif-mcp`
-  - repo: https://github.com/tyson-swetnam/gbif-mcp
+- agriculture-specific public-data MCPs such as FAOSTAT or USDA/NASS wrappers
   - why not default yet:
-    - domain fit is excellent for biodiversity occurrences and GBIF literature
-    - packaging and distribution are less turnkey than the currently installed catalog items
-
-- `alex-mcp`
-  - repo: https://github.com/drAbreu/alex-mcp
-  - why not default yet:
-    - useful for author disambiguation and OpenAlex-specific author workflows
-    - narrower than the broader multi-source literature servers already installed
+    - I did not find equally clear, maintained, install-ready MCP servers in this pass
+    - these may be better added later as first-party native tools or adapters rather than copied from weaker third-party wrappers
 
 ## Notes
 
@@ -119,3 +146,6 @@ default catalog entries yet:
 - The catalog is still worth installing now because it lets the harness expose a
   stable ecology source inventory and keeps later transport support
   configuration-compatible.
+- This pass intentionally prioritized sources that are either actively maintained
+  or clearly useful to research workflows. I avoided turning weak or stale
+  wrappers into default installs just to increase counts.

@@ -1,0 +1,112 @@
+{
+  "servers": [
+    {
+      "name": "gbif",
+      "transport": "stdio",
+      "description": "GBIF MCP server for taxonomic lookup, global occurrence records, dataset discovery, maps, and literature citing GBIF data.",
+      "default_enabled": false,
+      "auth": "optional-account",
+      "command": "node",
+      "args": [
+        "/path/to/gbif-mcp/build/index.js"
+      ],
+      "env": {
+        "GBIF_USERNAME": "<optional-for-downloads>",
+        "GBIF_PASSWORD": "<optional-for-downloads>"
+      },
+      "tools": [
+        {
+          "name": "gbif_species_search",
+          "description": "Search for taxa and taxonomic concepts with advanced filters."
+        },
+        {
+          "name": "gbif_species_match",
+          "description": "Match scientific names against GBIF taxonomy."
+        },
+        {
+          "name": "gbif_species_synonyms",
+          "description": "Inspect synonyms and alternative names for a taxon."
+        },
+        {
+          "name": "gbif_species_vernacular_names",
+          "description": "Retrieve common names across languages."
+        },
+        {
+          "name": "gbif_occurrence_search",
+          "description": "Search occurrence records with extensive geographic, temporal, and dataset filters."
+        },
+        {
+          "name": "gbif_occurrence_count",
+          "description": "Count matching occurrence records without downloading full results."
+        },
+        {
+          "name": "gbif_occurrence_get",
+          "description": "Fetch complete metadata for a single occurrence."
+        },
+        {
+          "name": "gbif_dataset_search",
+          "description": "Search published biodiversity datasets and their sources."
+        },
+        {
+          "name": "gbif_organization_search",
+          "description": "Find data-publishing organizations and institutions."
+        },
+        {
+          "name": "gbif_literature_search",
+          "description": "Search literature citing GBIF-mediated datasets."
+        }
+      ]
+    },
+    {
+      "name": "stac",
+      "transport": "stdio",
+      "description": "STAC MCP server for discovering Earth-observation collections, assets, and spatiotemporal items across STAC catalogs.",
+      "default_enabled": false,
+      "auth": "catalog-dependent",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/wayfinder-foundry/stac-mcp",
+        "stac-mcp"
+      ],
+      "tools": [
+        {
+          "name": "get_root",
+          "description": "Fetch root metadata for a target STAC catalog."
+        },
+        {
+          "name": "get_conformance",
+          "description": "Inspect STAC conformance classes or verify specific URIs."
+        },
+        {
+          "name": "search_collections",
+          "description": "List or search STAC collections."
+        },
+        {
+          "name": "get_collection",
+          "description": "Retrieve detailed metadata for a STAC collection."
+        },
+        {
+          "name": "search_items",
+          "description": "Search STAC items with bbox, datetime, and attribute filters."
+        },
+        {
+          "name": "get_item",
+          "description": "Retrieve a specific STAC item and its assets."
+        },
+        {
+          "name": "get_queryables",
+          "description": "Inspect supported queryable fields when the catalog exposes them."
+        },
+        {
+          "name": "get_aggregations",
+          "description": "Request collection-level aggregations when supported by the catalog."
+        },
+        {
+          "name": "estimate_data_size",
+          "description": "Estimate dataset size for matching STAC items before download."
+        }
+      ]
+    }
+  ]
+}

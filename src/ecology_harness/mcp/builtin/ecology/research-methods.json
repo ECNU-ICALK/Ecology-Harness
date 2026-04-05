@@ -1,0 +1,229 @@
+{
+  "servers": [
+    {
+      "name": "openalex-research",
+      "transport": "stdio",
+      "description": "OpenAlex MCP server for broad scholarly search, citation analysis, expert mapping, research trends, and geographic literature analysis.",
+      "default_enabled": false,
+      "auth": "email-optional-api-key",
+      "command": "npx",
+      "args": [
+        "-y",
+        "openalex-research-mcp"
+      ],
+      "env": {
+        "OPENALEX_EMAIL": "<recommended-for-polite-pool>",
+        "OPENALEX_API_KEY": "<optional-premium-key>"
+      },
+      "tools": [
+        {
+          "name": "search_works",
+          "description": "Search scholarly works with venue, institution, year, and citation filters."
+        },
+        {
+          "name": "get_work",
+          "description": "Retrieve full metadata for a specific work."
+        },
+        {
+          "name": "get_related_works",
+          "description": "Find similar papers based on citation and topic signals."
+        },
+        {
+          "name": "get_work_citations",
+          "description": "Analyze forward citations for a work."
+        },
+        {
+          "name": "get_work_references",
+          "description": "Inspect backward references for a work."
+        },
+        {
+          "name": "search_authors_by_expertise",
+          "description": "Find leading researchers in a topic."
+        },
+        {
+          "name": "find_review_articles",
+          "description": "Identify review papers and meta-analyses."
+        },
+        {
+          "name": "find_seminal_papers",
+          "description": "Find foundational, high-impact papers in a field."
+        },
+        {
+          "name": "analyze_topic_trends",
+          "description": "Track publication trends over time."
+        },
+        {
+          "name": "analyze_geographic_distribution",
+          "description": "Map research activity by geography."
+        },
+        {
+          "name": "find_open_access_version",
+          "description": "Find open-access versions or PDF links for a paper."
+        }
+      ]
+    },
+    {
+      "name": "ncbi-datasets",
+      "transport": "stdio",
+      "description": "Unofficial NCBI Datasets MCP server for taxonomy, genomes, genes, assemblies, comparative genomics, and phylogenetic metadata.",
+      "default_enabled": false,
+      "auth": "api-key-optional",
+      "command": "node",
+      "args": [
+        "/path/to/ncbi-datasets-server/build/index.js"
+      ],
+      "env": {
+        "NCBI_API_KEY": "<optional-higher-rate-limit>"
+      },
+      "tools": [
+        {
+          "name": "search_taxonomy",
+          "description": "Search taxonomic information by organism name."
+        },
+        {
+          "name": "get_taxonomy_info",
+          "description": "Retrieve detailed taxonomy and lineage information."
+        },
+        {
+          "name": "get_taxonomic_lineage",
+          "description": "Return complete lineage for a taxon."
+        },
+        {
+          "name": "get_organism_info",
+          "description": "Inspect organism-level data and associated datasets."
+        },
+        {
+          "name": "search_genomes",
+          "description": "Search genomes by organism or criteria."
+        },
+        {
+          "name": "search_assemblies",
+          "description": "Search assembly records with detailed filtering."
+        },
+        {
+          "name": "search_genes",
+          "description": "Search genes by symbol, organism, or location."
+        },
+        {
+          "name": "get_genome_annotation",
+          "description": "Retrieve annotation information for an assembly."
+        },
+        {
+          "name": "find_orthologs",
+          "description": "Find orthologous genes across organisms."
+        },
+        {
+          "name": "compare_genomes",
+          "description": "Compare multiple genome assemblies."
+        },
+        {
+          "name": "blast_search",
+          "description": "Run BLAST-style sequence similarity search against NCBI-backed resources."
+        },
+        {
+          "name": "get_phylogenetic_tree",
+          "description": "Retrieve phylogenetic tree data for organisms."
+        }
+      ]
+    },
+    {
+      "name": "bio-blast",
+      "transport": "stdio",
+      "description": "Bio-MCP BLAST server for nucleotide and protein similarity search, custom BLAST databases, and async queue workflows.",
+      "default_enabled": false,
+      "auth": "local-blast-install",
+      "command": "python",
+      "args": [
+        "-m",
+        "src.server"
+      ],
+      "env": {
+        "BLASTDB": "<path-to-local-blast-databases>",
+        "BIO_MCP_TIMEOUT": "300"
+      },
+      "tools": [
+        {
+          "name": "blastn",
+          "description": "Run nucleotide-nucleotide BLAST searches."
+        },
+        {
+          "name": "blastp",
+          "description": "Run protein-protein BLAST searches."
+        },
+        {
+          "name": "makeblastdb",
+          "description": "Build a custom BLAST database from FASTA input."
+        },
+        {
+          "name": "blastn_async",
+          "description": "Submit long-running nucleotide searches to a queue."
+        },
+        {
+          "name": "blastp_async",
+          "description": "Submit long-running protein searches to a queue."
+        },
+        {
+          "name": "get_job_status",
+          "description": "Check the status of an async BLAST job."
+        },
+        {
+          "name": "get_job_result",
+          "description": "Retrieve the result of a completed async BLAST job."
+        }
+      ]
+    },
+    {
+      "name": "pubchem",
+      "transport": "stdio",
+      "description": "Unofficial PubChem MCP server for chemical search, molecular properties, safety, toxicity, regulatory context, and environmental fate analysis.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "node",
+      "args": [
+        "/path/to/pubchem-server/build/index.js"
+      ],
+      "tools": [
+        {
+          "name": "search_compounds",
+          "description": "Search compounds by name, formula, identifier, or CAS number."
+        },
+        {
+          "name": "get_compound_info",
+          "description": "Retrieve detailed compound metadata by CID."
+        },
+        {
+          "name": "get_compound_properties",
+          "description": "Inspect molecular weight, logP, TPSA, and related descriptors."
+        },
+        {
+          "name": "search_similar_compounds",
+          "description": "Find structurally similar compounds."
+        },
+        {
+          "name": "search_bioassays",
+          "description": "Search biological assays relevant to a compound or target."
+        },
+        {
+          "name": "get_safety_data",
+          "description": "Retrieve hazard classifications and safety data."
+        },
+        {
+          "name": "get_toxicity_info",
+          "description": "Inspect toxicity and risk information."
+        },
+        {
+          "name": "assess_environmental_fate",
+          "description": "Review environmental fate and biodegradation signals."
+        },
+        {
+          "name": "get_regulatory_info",
+          "description": "Inspect regulatory information linked to the compound."
+        },
+        {
+          "name": "get_literature_references",
+          "description": "Retrieve literature references connected to a compound."
+        }
+      ]
+    }
+  ]
+}

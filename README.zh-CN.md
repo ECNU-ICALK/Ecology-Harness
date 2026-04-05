@@ -33,43 +33,25 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 
 当前仓库已经内置了一组经过筛选的生态能力包，包括在线 skill bundle 和可发现的 MCP server 配置。
 
-已集成的在线技能包：
+目前最适合用“子方向地图”的方式来看这批能力：
 
-- `semantic-scholar-skills`：
-  `expand-references`、`trace-citations`、`paper-triage`
-- `mapbox-agent-skills`：
-  `mapbox-geospatial-operations`、`mapbox-cartography`、
-  `mapbox-data-visualization-patterns`
-- 项目内生态包装技能：
-  `ecology-dataset-hunt`、`ecology-evidence-synthesis`、
-  `environmental-site-screen`、`agri-climate-screen`
-
-已集成的生态 MCP 目录：
-
-- `mapbox`：全球地理检索、路线与地图生成
-- `baidu-maps`：中国场景下的地图、POI、路线、天气与交通
-- `weather-open-meteo`：天气与空气质量
-- `nasa`：POWER、EONET、FIRMS、GIBS、Earth science 数据发现
-- `eosc-data-commons`：开放科研数据集检索
-- `semantic-scholar`：论文、引用与相关工作检索
-- `gis-mcp`：气候、物种、土地覆盖、NDVI 与卫星影像工作流
-- `scientific-papers`：覆盖 arXiv、OpenAlex、PMC、Europe PMC、bioRxiv、CORE 的多源学术检索
-- `simple-pubmed`：PubMed 与 PubMed Central 检索
-- `crossref`：DOI 元数据清洗与补全
-- `unpaywall`：开放获取全文链接与 PDF 文本提取
-- `dataverse`：研究数据仓储检索与 Croissant 记录
-- `noaa-tides-currents`：潮位、洋流、海平面与沿海洪水情景
-- `swiss-environment`、`wsl-envidat`：瑞士环境与生态研究数据源
-
-新增的生态包装 skill 还覆盖了：
-
-- 多源文献检索
-- 开放获取全文抓取
-- 研究数据仓储检索
-- 生物多样性数据分流
-- 海岸与湿地场景预筛查
-- 空间生态栅格工作流设计
-- 瑞士环境专题简报
+| 子方向 | 典型研究任务 | 已有 Skill | 已有 MCP / Tool |
+|---|---|---|---|
+| 文献检索与证据综合 | 综述、引文扩展、证据简报、综述识别、研究版图扫描 | `ecology-evidence-synthesis`<br>`literature-multi-source-search`<br>`open-access-paper-harvest`<br>`expand-references`<br>`trace-citations`<br>`paper-triage` | `semantic-scholar`<br>`openalex-research`<br>`scientific-papers`<br>`simple-pubmed`<br>`crossref`<br>`unpaywall` |
+| 个体、种群与群落生态 | 胁迫响应、种群扩张、入侵扩散、共存机制、扰动响应 | `organismal-stress-screen`<br>`population-invasion-screen`<br>`community-assembly-review` | `openalex-research`<br>`gbif`<br>`simple-pubmed`<br>`scientific-papers` |
+| 生物多样性与物种分布 | 物种信息、occurrence、采样偏差、栖息地预筛查 | `biodiversity-data-triage`<br>`species-occurrence-workbench` | `gbif`<br>`gis-mcp`<br>`stac` |
+| 空间生态与遥感 | NDVI、土地覆盖、影像筛查、栅格规划、目录选择、连通性 | `spatial-ecology-raster-lab`<br>`remote-sensing-catalog-hunt`<br>`landscape-connectivity-screen`<br>`mapbox-geospatial-operations` | `stac`<br>`gis-mcp`<br>`nasa`<br>`mapbox` |
+| 气候、天气与空气质量 | 干旱、热浪、降水、空气质量、气候信号、季节预测 | `agri-climate-screen`<br>`global-change-ecology-brief`<br>`open-meteo`<br>`open-meteo-advanced` | `weather-open-meteo`<br>`nasa`<br>`gis-mcp` |
+| 水文与淡水环境 | 水位、流量、洪水背景、流域预筛查 | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
+| 海岸、河口、湿地与蓝碳 | 潮位、海平面、沿海洪水、湿地选址预筛查 | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
+| 农业生态与农业环境 | 作物系统筛查、气候胁迫、景观背景 | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | `weather-open-meteo`<br>`nasa`<br>`eosc-data-commons`<br>`dataverse`<br>`wsl-envidat` |
+| 环境化学与暴露 | 污染物、PFAS、微塑料、农药归趋、毒理交叉文献 | `environmental-chemistry-risk-scan`<br>`literature-multi-source-search` | `pubchem`<br>`simple-pubmed`<br>`scientific-papers`<br>`weather-open-meteo`<br>`swiss-environment` |
+| 微生物生态与保育遗传 | 分类、marker、组装、直系同源、BLAST 工作流 | `microbial-ecology-sequence-workflow` | `ncbi-datasets`<br>`bio-blast`<br>`simple-pubmed` |
+| 保护与恢复 | 恢复预筛查、生态压力、场地背景 | `environmental-site-screen`<br>`ecology-evidence-synthesis` | `mapbox`<br>`gis-mcp`<br>`nasa` |
+| 开放数据与科研仓储 | 数据集发现、DOI 级数据记录、复现材料 | `research-data-repository-hunt`<br>`ecology-dataset-hunt` | `dataverse`<br>`eosc-data-commons`<br>`wsl-envidat` |
+| 区域公共环境数据 | 区域环境监测和公开研究数据 | `swiss-environment-brief` | `swiss-environment`<br>`wsl-envidat` |
+| 制图与地图表达 | 地图设计、视觉层级、报告制图 | `mapbox-cartography`<br>`mapbox-data-visualization-patterns` | `mapbox` |
 
 可以直接查看：
 
@@ -85,6 +67,17 @@ eh mcp
 - `cataloged`：元数据已经装进仓库，后续 transport 接上即可启用
 
 上游来源说明见 [docs/ecology-pack.zh-CN.md](docs/ecology-pack.zh-CN.md)。
+
+这一轮还进一步补齐了更细粒度的研究方向：
+
+- 个体胁迫与生理生态
+- 种群、入侵与元种群筛查
+- 群落组装与扰动响应
+- 生态系统碳、甲烷与养分循环
+- 景观连通性与遥感目录选择
+- 全球变化生态与气候风险
+- 微生物生态、eDNA 邻近工作流与保育遗传
+- 环境化学、污染物归趋与毒性筛查
 
 ## 快速开始
 
@@ -196,6 +189,11 @@ REPL 是有状态的，新的输入会继续沿用当前会话，直到你执行
 /open-access-paper-harvest 10.1038/nclimate2616
 /research-data-repository-hunt peatland carbon flux tower data
 /biodiversity-data-triage alpine pollinator decline
+/species-occurrence-workbench Panthera leo occurrences in Kenya
+/remote-sensing-catalog-hunt 华南红树林冠层扰动
+/global-change-ecology-brief alpine pollinator climate-driven range shift
+/microbial-ecology-sequence-workflow drought-responsive soil microbiome markers
+/environmental-chemistry-risk-scan PFAS wetland food web exposure
 /tool Read {"path":"README.md"}
 /tool TaskCreate {"title":"Inspect project"}
 /trace off

@@ -26,6 +26,16 @@
     - 对空间分析、制图和可视化有直接帮助
     - Markdown + references 结构很适合当前 Harness
 
+- `open-meteo-mcp`
+  - 仓库：https://github.com/cmer81/open-meteo-mcp
+  - 已安装：
+    - `open-meteo`
+    - `open-meteo-advanced`
+  - 选择原因：
+    - 维护活跃、覆盖完整
+    - 自带可直接复用的 weather/climate skill
+    - 对生态、农业、空气质量、洪水和气候风险问题都很有帮助
+
 ## 已安装的 MCP 目录项
 
 - `mapbox`
@@ -35,7 +45,7 @@
   - 仓库：https://github.com/baidu-maps/mcp
 
 - `weather-open-meteo`
-  - 仓库：https://github.com/isdaniel/mcp_weather_server
+  - 仓库：https://github.com/cmer81/open-meteo-mcp
 
 - `nasa`
   - 仓库：https://github.com/ProgramComputer/NASA-MCP-server
@@ -73,6 +83,24 @@
 - `wsl-envidat`
   - 仓库：https://github.com/malkreide/wsl-envidat-mcp
 
+- `gbif`
+  - 仓库：https://github.com/tyson-swetnam/gbif-mcp
+
+- `stac`
+  - 仓库：https://github.com/BnJam/stac-mcp
+
+- `openalex-research`
+  - 仓库：https://github.com/oksure/openalex-research-mcp
+
+- `ncbi-datasets`
+  - 仓库：https://github.com/Augmented-Nature/NCBI-Datasets-MCP-Server
+
+- `bio-blast`
+  - 仓库：https://github.com/bio-mcp/bio-mcp-blast
+
+- `pubchem`
+  - 仓库：https://github.com/Augmented-Nature/PubChem-MCP-Server
+
 ## 候选扩展
 
 下面这些来源也很值得后续继续接入，但这次没有默认装成目录项：
@@ -81,21 +109,15 @@
   - 仓库：https://github.com/matsjfunke/paperclip
   - 原因：
     - 覆盖 EarthArXiv、EcoEvoRxiv、MarXiv、AgriXiv 等生态相关预印本源
-    - 当前更推荐自建 remote endpoint，默认接入摩擦更高
+    - 该仓库在 2025 年 12 月 16 日显示为 archived，同时当前仍更偏向自建 remote endpoint，所以不再适合作为默认高质量安装项
 
-- `gbif-mcp`
-  - 仓库：https://github.com/tyson-swetnam/gbif-mcp
+- FAOSTAT、USDA/NASS 这类农业公共数据 MCP
   - 原因：
-    - 生物多样性观测和 GBIF literature 场景非常契合
-    - 目前分发和安装链路不如本次已装入的目录项顺手
-
-- `alex-mcp`
-  - 仓库：https://github.com/drAbreu/alex-mcp
-  - 原因：
-    - 很适合做 OpenAlex 作者消歧和作者侧检索
-    - 相比当前已装的多源文献服务，更偏窄一点
+    - 这一轮没有找到同等清晰、活跃、安装链路稳定的高质量 MCP 实现
+    - 后续更适合优先做成我们自己的 first-party tool 或适配层
 
 ## 说明
 
 - 当前 Ecology Harness 版本已经能把这些远端 MCP server 作为生态目录项发现出来，但真正的远端 transport 执行能力还没有完全接通。
 - 先把目录和配置装进仓库是有意义的，因为后续 transport 层补上之后，可以直接沿用这批生态配置，不需要再重做一遍。
+- 这一轮优先接入的是“维护状态较好、科研工作流价值明确”的来源，没有为了数量去默认收录明显偏弱或偏陈旧的实现。

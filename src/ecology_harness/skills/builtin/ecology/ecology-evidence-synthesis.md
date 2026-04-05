@@ -10,9 +10,10 @@ Produce an evidence brief grounded in the installed Semantic Scholar workflows.
 
 Preferred sequence:
 1. If the user starts with a vague topic or half-remembered title, run `paper-triage`.
-2. Once you have one to three anchor papers, run `expand-references` to widen the reading set.
-3. If one paper becomes central, run `trace-citations` to map supporting, bridge, and downstream work.
-4. Synthesize the results into a short evidence map.
+2. Use `openalex-research` when you need a wider landscape view, expert map, trend readout, or higher-confidence review-paper discovery.
+3. Once you have one to three anchor papers, run `expand-references` to widen the reading set.
+4. If one paper becomes central, run `trace-citations` to map supporting, bridge, and downstream work.
+5. Synthesize the results into a short evidence map.
 
 Required synthesis fields:
 - research question

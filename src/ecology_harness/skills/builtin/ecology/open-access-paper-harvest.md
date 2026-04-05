@@ -11,11 +11,12 @@ Use this when the research bottleneck is not "finding papers" but "getting usabl
 Preferred sequence:
 1. Identify the paper by DOI, exact title, or a short candidate set from `literature-multi-source-search`.
 2. Use `crossref` to normalize DOI metadata when the title or DOI is messy.
-3. Use `unpaywall` to:
+3. Use `openalex-research` to check whether an open-access version or PDF link is already available.
+4. Use `unpaywall` to:
    - resolve OA status
    - fetch the best OA landing page
    - fetch and extract OA PDF text when available
-4. If Unpaywall has no OA copy, report that clearly and fall back to abstract-only synthesis instead of pretending the full text was found.
+5. If neither source yields OA full text, report that clearly and fall back to abstract-only synthesis instead of pretending the full text was found.
 
 Required output:
 - paper identifier
