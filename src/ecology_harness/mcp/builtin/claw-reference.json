@@ -1,0 +1,79 @@
+{
+  "servers": [
+    {
+      "name": "claw-reference",
+      "transport": "inprocess",
+      "description": "In-process catalog server exposing claw-code compatibility tools, skills, and plugin metadata.",
+      "default_enabled": true,
+      "auth": "none",
+      "tools": [
+        {
+          "name": "list_tools",
+          "description": "List the curated claw-code compatibility tools installed in this harness.",
+          "input_schema": {
+            "type": "object",
+            "properties": {}
+          },
+          "handler": "list_claw_tools"
+        },
+        {
+          "name": "find_tool",
+          "description": "Search the claw-code compatibility tool catalog by name or archived path.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "handler": "find_claw_tools"
+        },
+        {
+          "name": "list_skills",
+          "description": "List the claw-inspired bundled skills currently installed.",
+          "input_schema": {
+            "type": "object",
+            "properties": {}
+          },
+          "handler": "list_claw_skills"
+        },
+        {
+          "name": "list_plugins",
+          "description": "List installed plugin manifests visible to the harness.",
+          "input_schema": {
+            "type": "object",
+            "properties": {}
+          },
+          "handler": "list_claw_plugins"
+        }
+      ],
+      "resources": [
+        {
+          "uri": "claw://tools",
+          "name": "claw-tools",
+          "description": "JSON catalog of the installed claw-code compatibility tool surface.",
+          "mime_type": "application/json",
+          "handler": "resource_claw_tools"
+        },
+        {
+          "uri": "claw://skills",
+          "name": "claw-skills",
+          "description": "JSON summary of claw-inspired built-in skills.",
+          "mime_type": "application/json",
+          "handler": "resource_claw_skills"
+        },
+        {
+          "uri": "claw://plugins",
+          "name": "claw-plugins",
+          "description": "JSON summary of plugin manifests visible to the harness.",
+          "mime_type": "application/json",
+          "handler": "resource_claw_plugins"
+        }
+      ]
+    }
+  ]
+}

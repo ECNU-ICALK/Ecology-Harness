@@ -1,0 +1,39 @@
+{
+  "name": "claw-compat",
+  "version": "0.1.0",
+  "description": "Bundled compatibility layer inspired by ultraworkers/claw-code. It exposes common tool aliases, a claw-style skill pack, and an in-process MCP catalog server.",
+  "defaultEnabled": true,
+  "tools": [
+    "AgentTool",
+    "AskUserQuestionTool",
+    "BashTool",
+    "BriefTool",
+    "ConfigTool",
+    "EnterPlanModeTool",
+    "ExitPlanModeV2Tool",
+    "FileEditTool",
+    "FileReadTool",
+    "GlobTool",
+    "GrepTool",
+    "ListDirectoryTool",
+    "ListMcpResourcesTool",
+    "MCPTool",
+    "McpAuthTool",
+    "ReadMcpResourceTool",
+    "SkillTool",
+    "TodoWriteTool",
+    "WebFetchTool",
+    "WebSearchTool"
+  ],
+  "skills": [
+    "remember",
+    "verify",
+    "stuck",
+    "batch",
+    "loop",
+    "update-config"
+  ],
+  "mcpServers": [
+    "claw-reference"
+  ]
+}

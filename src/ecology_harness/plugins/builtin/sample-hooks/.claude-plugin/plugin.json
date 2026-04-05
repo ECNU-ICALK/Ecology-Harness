@@ -1,0 +1,10 @@
+{
+  "name": "sample-hooks",
+  "version": "0.1.0",
+  "description": "Bundled sample hook plugin adapted from claw-code for local integration testing.",
+  "defaultEnabled": false,
+  "hooks": {
+    "PreToolUse": ["./hooks/pre.sh"],
+    "PostToolUse": ["./hooks/post.sh"]
+  }
+}

@@ -1,0 +1,3 @@
+[console_scripts]
+ecology-harness = ecology_harness.cli:main
+eh = ecology_harness.cli:main

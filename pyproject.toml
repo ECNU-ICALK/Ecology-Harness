@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecology-harness"
+version = "0.1.0"
+description = "A self-evolving harness foundation for ecological analysis and reasoning."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  { name = "EcologyHarness Contributors" }
+]
+dependencies = [
+  "prompt_toolkit>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+ecology-harness = "ecology_harness.cli:main"
+eh = "ecology_harness.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ecology_harness = [
+  "skills/builtin/*.md",
+  "plugins/builtin/*/.claude-plugin/plugin.json",
+  "plugins/builtin/*/hooks/*.sh",
+  "mcp/builtin/*.json",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

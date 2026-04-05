@@ -1,0 +1,10 @@
+{
+  "name": "example-bundled",
+  "version": "0.1.0",
+  "description": "Example bundled plugin scaffold for the Ecology Harness plugin system, adapted from claw-code's sample manifest.",
+  "defaultEnabled": false,
+  "hooks": {
+    "PreToolUse": ["./hooks/pre.sh"],
+    "PostToolUse": ["./hooks/post.sh"]
+  }
+}

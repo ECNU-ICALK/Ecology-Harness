@@ -1,0 +1,1 @@
+"""Ecology skill namespace."""
