@@ -46,14 +46,18 @@ The current ecology capability map is easiest to read by subdomain:
 | Literature and evidence synthesis | reviews, citation expansion, evidence briefs, review discovery, landscape mapping | `ecology-evidence-synthesis`<br>`literature-multi-source-search`<br>`open-access-paper-harvest`<br>`expand-references`<br>`trace-citations`<br>`paper-triage` | `semantic-scholar`<br>`openalex-research`<br>`scientific-papers`<br>`simple-pubmed`<br>`crossref`<br>`unpaywall` |
 | Organismal, population, and community ecology | stress response, demographic screening, invasion spread, coexistence, disturbance response | `organismal-stress-screen`<br>`population-invasion-screen`<br>`community-assembly-review` | `openalex-research`<br>`gbif`<br>`simple-pubmed`<br>`scientific-papers` |
 | Biodiversity and species distribution | species background, occurrences, sampling bias, habitat screening | `biodiversity-data-triage`<br>`species-occurrence-workbench` | `gbif`<br>`gis-mcp`<br>`stac` |
+| Species identification and field observations | identify plants from photos, normalize taxa, inspect observation context | `species-photo-identification` | `PlantNetIdentify`<br>`INaturalistSearchTaxa`<br>`INaturalistSearchObservations`<br>`pyinaturalist`<br>`Pl@ntNet API`<br>`pybioclip` |
 | Spatial ecology and remote sensing | NDVI, land cover, imagery screening, raster planning, catalog selection, connectivity | `spatial-ecology-raster-lab`<br>`remote-sensing-catalog-hunt`<br>`landscape-connectivity-screen`<br>`mapbox-geospatial-operations` | `stac`<br>`gis-mcp`<br>`nasa`<br>`mapbox` |
 | Climate, weather, and air quality | drought, heat, precipitation, air quality, climate signals, seasonal outlooks | `agri-climate-screen`<br>`global-change-ecology-brief`<br>`open-meteo`<br>`open-meteo-advanced` | `weather-open-meteo`<br>`nasa`<br>`gis-mcp` |
 | Hydrology and freshwater environment | flow, water level, flood context, watershed screening | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
 | Coastal, estuary, wetland, and blue-carbon work | tides, sea level, coastal flooding, wetland site screening | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
 | Agroecology and agricultural environment | crop-system screening, climate stress, landscape context | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| Plant phenotyping and trait extraction | leaf traits, morphology, herbarium measurements, organ detection | `plant-phenotyping-and-traits` | `PlantCV`<br>`LeafMachine2` |
+| Ecological counting and segmentation | plant counting, tree counting, animal detection, crown delineation | `ecology-counting-and-segmentation` | `DeepForest`<br>`detectree2`<br>`TreeCountSegHeight`<br>`PyTorch-Wildlife` |
 | Ecosystem biogeochemistry and soil systems | carbon, methane, nutrient cycling, soil health, remediation context | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | `weather-open-meteo`<br>`nasa`<br>`eosc-data-commons`<br>`dataverse`<br>`wsl-envidat` |
 | Environmental chemistry and exposure | pollutants, PFAS, microplastics, pesticide fate, toxicology-adjacent literature | `environmental-chemistry-risk-scan`<br>`literature-multi-source-search` | `pubchem`<br>`simple-pubmed`<br>`scientific-papers`<br>`weather-open-meteo`<br>`swiss-environment` |
 | Microbial ecology and conservation genetics | taxonomy, markers, assemblies, orthologs, BLAST workflows | `microbial-ecology-sequence-workflow` | `ncbi-datasets`<br>`bio-blast`<br>`simple-pubmed` |
+| Ecoacoustics | bird sound recognition, passive acoustic screening, batch audio review | `ecoacoustics-screen` | `BirdNET-Analyzer` |
 | Conservation and restoration | restoration screening, ecological stressors, site context | `environmental-site-screen`<br>`ecology-evidence-synthesis` | `mapbox`<br>`gis-mcp`<br>`nasa` |
 | Open data and research repositories | dataset discovery, DOI-level dataset records, reproducibility assets | `research-data-repository-hunt`<br>`ecology-dataset-hunt` | `dataverse`<br>`eosc-data-commons`<br>`wsl-envidat` |
 | Regional public-environment sources | region-specific public environmental data and monitoring | `swiss-environment-brief` | `swiss-environment`<br>`wsl-envidat` |
@@ -84,6 +88,33 @@ This pass also expanded coverage for finer-grained research directions that are 
 - global-change ecology and climate-risk framing
 - microbial ecology, eDNA-adjacent taxonomy, and conservation genetics
 - environmental chemistry, pollutant fate, and toxicity screening
+
+## Ecology Basic Tools
+
+This repository now also includes a basic ecology observation-tool layer:
+
+- native lightweight tools for taxa and observation lookup
+- native plant identification via Pl@ntNet
+- a catalog of heavier local toolkits for phenotyping, counting, segmentation, camera traps, and ecoacoustics
+
+See [docs/ecology-basic-tools.md](docs/ecology-basic-tools.md) for the full function map.
+
+You can inspect the new layer directly:
+
+```bash
+eh tool ListEcologyFunctions '{}'
+eh tool ListEcologyToolkits '{}'
+eh tool DescribeEcologyToolkit '{"name":"plantcv"}'
+eh tool INaturalistSearchTaxa '{"query":"Quercus alba"}'
+eh tool INaturalistSearchObservations '{"taxon_name":"Quercus alba","per_page":3}'
+```
+
+If you have a Pl@ntNet API key:
+
+```bash
+export PLANTNET_API_KEY=your_key_here
+eh tool PlantNetIdentify '{"image_paths":["leaf.jpg"],"organs":["leaf"]}'
+```
 
 ## Quick Start
 
@@ -254,6 +285,10 @@ Inside the REPL you can try:
 /research-data-repository-hunt peatland carbon flux tower data
 /biodiversity-data-triage alpine pollinator decline
 /species-occurrence-workbench Panthera leo occurrences in Kenya
+/species-photo-identification oak leaf with lobed margins
+/plant-phenotyping-and-traits herbarium leaf length width area extraction
+/ecology-counting-and-segmentation count trees in UAV imagery
+/ecoacoustics-screen batch bird-call screening workflow
 /remote-sensing-catalog-hunt mangrove canopy disturbance in South China
 /global-change-ecology-brief climate-driven range shift for alpine pollinators
 /microbial-ecology-sequence-workflow soil microbiome drought marker genes

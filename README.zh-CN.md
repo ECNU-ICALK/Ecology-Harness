@@ -40,14 +40,18 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 | 文献检索与证据综合 | 综述、引文扩展、证据简报、综述识别、研究版图扫描 | `ecology-evidence-synthesis`<br>`literature-multi-source-search`<br>`open-access-paper-harvest`<br>`expand-references`<br>`trace-citations`<br>`paper-triage` | `semantic-scholar`<br>`openalex-research`<br>`scientific-papers`<br>`simple-pubmed`<br>`crossref`<br>`unpaywall` |
 | 个体、种群与群落生态 | 胁迫响应、种群扩张、入侵扩散、共存机制、扰动响应 | `organismal-stress-screen`<br>`population-invasion-screen`<br>`community-assembly-review` | `openalex-research`<br>`gbif`<br>`simple-pubmed`<br>`scientific-papers` |
 | 生物多样性与物种分布 | 物种信息、occurrence、采样偏差、栖息地预筛查 | `biodiversity-data-triage`<br>`species-occurrence-workbench` | `gbif`<br>`gis-mcp`<br>`stac` |
+| 物种识别与野外观测 | 从照片识别植物、规范 taxon、查看观测背景 | `species-photo-identification` | `PlantNetIdentify`<br>`INaturalistSearchTaxa`<br>`INaturalistSearchObservations`<br>`pyinaturalist`<br>`Pl@ntNet API`<br>`pybioclip` |
 | 空间生态与遥感 | NDVI、土地覆盖、影像筛查、栅格规划、目录选择、连通性 | `spatial-ecology-raster-lab`<br>`remote-sensing-catalog-hunt`<br>`landscape-connectivity-screen`<br>`mapbox-geospatial-operations` | `stac`<br>`gis-mcp`<br>`nasa`<br>`mapbox` |
 | 气候、天气与空气质量 | 干旱、热浪、降水、空气质量、气候信号、季节预测 | `agri-climate-screen`<br>`global-change-ecology-brief`<br>`open-meteo`<br>`open-meteo-advanced` | `weather-open-meteo`<br>`nasa`<br>`gis-mcp` |
 | 水文与淡水环境 | 水位、流量、洪水背景、流域预筛查 | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
 | 海岸、河口、湿地与蓝碳 | 潮位、海平面、沿海洪水、湿地选址预筛查 | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
 | 农业生态与农业环境 | 作物系统筛查、气候胁迫、景观背景 | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits` | `PlantCV`<br>`LeafMachine2` |
+| 生态计数与分割 | 植株计数、树木计数、动物检测、树冠分割 | `ecology-counting-and-segmentation` | `DeepForest`<br>`detectree2`<br>`TreeCountSegHeight`<br>`PyTorch-Wildlife` |
 | 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | `weather-open-meteo`<br>`nasa`<br>`eosc-data-commons`<br>`dataverse`<br>`wsl-envidat` |
 | 环境化学与暴露 | 污染物、PFAS、微塑料、农药归趋、毒理交叉文献 | `environmental-chemistry-risk-scan`<br>`literature-multi-source-search` | `pubchem`<br>`simple-pubmed`<br>`scientific-papers`<br>`weather-open-meteo`<br>`swiss-environment` |
 | 微生物生态与保育遗传 | 分类、marker、组装、直系同源、BLAST 工作流 | `microbial-ecology-sequence-workflow` | `ncbi-datasets`<br>`bio-blast`<br>`simple-pubmed` |
+| 生态声学 | 鸟声识别、被动声学筛查、批量音频回顾 | `ecoacoustics-screen` | `BirdNET-Analyzer` |
 | 保护与恢复 | 恢复预筛查、生态压力、场地背景 | `environmental-site-screen`<br>`ecology-evidence-synthesis` | `mapbox`<br>`gis-mcp`<br>`nasa` |
 | 开放数据与科研仓储 | 数据集发现、DOI 级数据记录、复现材料 | `research-data-repository-hunt`<br>`ecology-dataset-hunt` | `dataverse`<br>`eosc-data-commons`<br>`wsl-envidat` |
 | 区域公共环境数据 | 区域环境监测和公开研究数据 | `swiss-environment-brief` | `swiss-environment`<br>`wsl-envidat` |
@@ -78,6 +82,33 @@ eh mcp
 - 全球变化生态与气候风险
 - 微生物生态、eDNA 邻近工作流与保育遗传
 - 环境化学、污染物归趋与毒性筛查
+
+## Ecology 基础工具层
+
+当前仓库还新增了一层“生态观测与视觉基础工具”：
+
+- 轻量原生工具：taxon / observation 查询
+- 原生植物识别：通过 Pl@ntNet API
+- 外部重型工具目录：表型、计数、分割、相机陷阱、生态声学
+
+完整功能树见 [docs/ecology-basic-tools.zh-CN.md](docs/ecology-basic-tools.zh-CN.md)。
+
+可以直接查看：
+
+```bash
+eh tool ListEcologyFunctions '{}'
+eh tool ListEcologyToolkits '{}'
+eh tool DescribeEcologyToolkit '{"name":"plantcv"}'
+eh tool INaturalistSearchTaxa '{"query":"Quercus alba"}'
+eh tool INaturalistSearchObservations '{"taxon_name":"Quercus alba","per_page":3}'
+```
+
+如果你有 Pl@ntNet API key：
+
+```bash
+export PLANTNET_API_KEY=your_key_here
+eh tool PlantNetIdentify '{"image_paths":["leaf.jpg"],"organs":["leaf"]}'
+```
 
 ## 快速开始
 
@@ -190,6 +221,10 @@ REPL 是有状态的，新的输入会继续沿用当前会话，直到你执行
 /research-data-repository-hunt peatland carbon flux tower data
 /biodiversity-data-triage alpine pollinator decline
 /species-occurrence-workbench Panthera leo occurrences in Kenya
+/species-photo-identification oak leaf with lobed margins
+/plant-phenotyping-and-traits herbarium leaf length width area extraction
+/ecology-counting-and-segmentation count trees in UAV imagery
+/ecoacoustics-screen batch bird-call screening workflow
 /remote-sensing-catalog-hunt 华南红树林冠层扰动
 /global-change-ecology-brief alpine pollinator climate-driven range shift
 /microbial-ecology-sequence-workflow drought-responsive soil microbiome markers

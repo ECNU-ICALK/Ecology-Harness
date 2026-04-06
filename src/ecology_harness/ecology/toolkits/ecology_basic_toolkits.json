@@ -1,0 +1,363 @@
+{
+  "functions": [
+    {
+      "category": "Field observation and species identification",
+      "capabilities": [
+        "single-image plant identification",
+        "bird and insect photo identification",
+        "higher-taxon fallback when species is uncertain",
+        "candidate ranking and confidence review",
+        "scientific/common-name normalization",
+        "observation-history lookup and context"
+      ],
+      "examples": [
+        "identify a plant from a field photo",
+        "confirm whether an image matches a target taxon",
+        "look up recent observations for a species"
+      ]
+    },
+    {
+      "category": "Plant phenotyping and trait extraction",
+      "capabilities": [
+        "leaf segmentation and landmark detection",
+        "leaf length, width, area, perimeter, and shape measurement",
+        "whole-plant architecture and morphological traits",
+        "reproductive organ detection",
+        "herbarium sheet parsing",
+        "phenology and growth-stage scoring"
+      ],
+      "examples": [
+        "measure leaf traits from herbarium sheets",
+        "extract plant morphology from greenhouse images",
+        "screen reproductive structures in digitized specimens"
+      ]
+    },
+    {
+      "category": "Counting, density, and coverage",
+      "capabilities": [
+        "seedling or plant counting in plots and trays",
+        "tree crown counting in aerial imagery",
+        "camera-trap animal counting",
+        "colony, nest, or object counting from drone imagery",
+        "percent cover and canopy-cover estimation",
+        "density-estimation pipelines for crowded scenes"
+      ],
+      "examples": [
+        "count individual plants in a phenotyping image",
+        "count tree crowns over a landscape tile",
+        "estimate canopy occupancy or percent cover"
+      ]
+    },
+    {
+      "category": "Detection, segmentation, and delineation",
+      "capabilities": [
+        "object detection for organisms or plant organs",
+        "instance segmentation",
+        "individual tree crown delineation",
+        "background removal for downstream measurement",
+        "patch tiling and large-image inference",
+        "bounding-box review workflows"
+      ],
+      "examples": [
+        "segment tree crowns in UAV imagery",
+        "crop detected animals before classification",
+        "separate leaves from specimen backgrounds"
+      ]
+    },
+    {
+      "category": "Wildlife camera-trap workflows",
+      "capabilities": [
+        "animal detection",
+        "species classification from detections",
+        "empty-image filtering",
+        "batch review of image folders",
+        "model-zoo access for conservation use cases",
+        "single-image and video-friendly inference"
+      ],
+      "examples": [
+        "filter empty camera-trap frames",
+        "classify detections into species groups",
+        "run a detection-plus-classification pipeline"
+      ]
+    },
+    {
+      "category": "Ecoacoustics and bioacoustics",
+      "capabilities": [
+        "bird sound recognition",
+        "batch acoustic screening",
+        "species-richness proxy extraction from audio",
+        "long-recording processing",
+        "scientific audio review workflows"
+      ],
+      "examples": [
+        "identify birds from passive acoustic recordings",
+        "screen long audio clips for target species",
+        "summarize detections for monitoring"
+      ]
+    },
+    {
+      "category": "Remote sensing of individual organisms",
+      "capabilities": [
+        "airborne tree detection",
+        "crown delineation",
+        "bird detection in high-resolution imagery",
+        "tree-height prediction",
+        "national-scale inference workflows",
+        "tile-wise deployment on GPU machines"
+      ],
+      "examples": [
+        "detect crowns in orthomosaics",
+        "estimate tree height from aerial imagery",
+        "find birds in colony imagery"
+      ]
+    },
+    {
+      "category": "Taxonomy, quality control, and review support",
+      "capabilities": [
+        "taxonomic lookup and resolution",
+        "observation species counts",
+        "quality-grade filtering",
+        "cross-checking image predictions against community observations",
+        "toolkit selection by modality and task",
+        "workflow planning before heavy model inference"
+      ],
+      "examples": [
+        "resolve a scientific name before querying occurrences",
+        "compare a predicted species against community observations",
+        "choose the right toolkit for plant traits or counting"
+      ]
+    }
+  ],
+  "toolkits": [
+    {
+      "slug": "pyinaturalist",
+      "name": "pyinaturalist",
+      "status": "installed-native-plus-cataloged",
+      "modality": "observation-api",
+      "repo": "https://github.com/pyinat/pyinaturalist",
+      "install": "pip install pyinaturalist",
+      "summary": "Python client for iNaturalist observations, taxa, species counts, and related biodiversity records.",
+      "good_for": [
+        "taxon lookup",
+        "observation search",
+        "species counts",
+        "community-science context"
+      ],
+      "capabilities": [
+        "taxon search",
+        "observation search",
+        "species counts",
+        "quality-grade filtering"
+      ],
+      "notes": "The harness ships direct native iNaturalist API tools for basic taxon and observation search."
+    },
+    {
+      "slug": "plantnet-api",
+      "name": "Pl@ntNet API",
+      "status": "installed-native-plus-cataloged",
+      "modality": "image-identification",
+      "repo": "https://github.com/plantnet/my.plantnet",
+      "install": "Set PLANTNET_API_KEY and use the built-in PlantNetIdentify tool; upstream also provides example client code.",
+      "summary": "Plant identification API with support for local-image POST requests and organ hints such as leaf or flower.",
+      "good_for": [
+        "plant identification from photos",
+        "multi-image identification",
+        "organ-aware scoring"
+      ],
+      "capabilities": [
+        "single-image plant ID",
+        "multi-image plant ID",
+        "organ hints",
+        "candidate ranking"
+      ],
+      "notes": "Requires a Pl@ntNet API key."
+    },
+    {
+      "slug": "pybioclip",
+      "name": "pybioclip",
+      "status": "cataloged-external",
+      "modality": "image-classification",
+      "repo": "https://github.com/Imageomics/pybioclip",
+      "install": "pip install pybioclip",
+      "summary": "Python package and CLI for BioCLIP-family models that can predict taxonomic labels and generate image embeddings.",
+      "good_for": [
+        "broad species classification from images",
+        "batch labeling",
+        "embedding generation"
+      ],
+      "capabilities": [
+        "taxonomic image classification",
+        "semantic embeddings",
+        "batch inference"
+      ],
+      "notes": "Good general-purpose biodiversity image classifier when a dedicated plant-only API is not ideal."
+    },
+    {
+      "slug": "nature-id",
+      "name": "nature-id",
+      "status": "cataloged-external",
+      "modality": "image-classification",
+      "repo": "https://github.com/joergmlpts/nature-id",
+      "install": "Clone the repository and run the command-line tool with the desired model bundle.",
+      "summary": "Command-line image identifier for plants, birds, and insects using models trained on iNaturalist-derived data.",
+      "good_for": [
+        "offline species ID experiments",
+        "higher-taxon fallback",
+        "quick photo classification"
+      ],
+      "capabilities": [
+        "plant ID",
+        "bird ID",
+        "insect ID",
+        "hierarchical confidence reporting"
+      ],
+      "notes": "Lighter-weight than some foundation-model workflows, but less general than BioCLIP."
+    },
+    {
+      "slug": "plantcv",
+      "name": "PlantCV",
+      "status": "cataloged-external",
+      "modality": "plant-phenotyping",
+      "repo": "https://github.com/danforthcenter/plantcv",
+      "install": "pip install plantcv or install from conda-forge.",
+      "summary": "Open-source computer vision toolkit for plant phenotyping with modular workflows and extensive tutorials.",
+      "good_for": [
+        "leaf and whole-plant traits",
+        "segmentation",
+        "counting and morphology",
+        "greenhouse and growth-chamber workflows"
+      ],
+      "capabilities": [
+        "trait extraction",
+        "segmentation",
+        "morphology measurement",
+        "counting"
+      ],
+      "notes": "One of the strongest options for plant phenotyping pipelines."
+    },
+    {
+      "slug": "leafmachine2",
+      "name": "LeafMachine2",
+      "status": "cataloged-external",
+      "modality": "trait-extraction",
+      "repo": "https://github.com/Gene-Weaver/LeafMachine2",
+      "install": "Clone the repository and follow the upstream virtual-environment setup instructions.",
+      "summary": "Computer-vision suite for identifying, locating, and measuring vegetative, reproductive, and archival components from digital plant datasets.",
+      "good_for": [
+        "herbarium trait extraction",
+        "leaf measurement",
+        "archival component detection"
+      ],
+      "capabilities": [
+        "leaf detection",
+        "landmark detection",
+        "trait measurement",
+        "herbarium workflows"
+      ],
+      "notes": "More specialized than PlantCV and particularly useful for specimen-digitization pipelines."
+    },
+    {
+      "slug": "deepforest",
+      "name": "DeepForest",
+      "status": "cataloged-external",
+      "modality": "remote-sensing-detection",
+      "repo": "https://github.com/weecology/DeepForest",
+      "install": "pip install DeepForest",
+      "summary": "Python package for ecological object detection in airborne imagery, including tree crown and bird detection models.",
+      "good_for": [
+        "tree crown detection",
+        "bird detection in airborne imagery",
+        "retraining custom detectors"
+      ],
+      "capabilities": [
+        "tree detection",
+        "bird detection",
+        "bounding-box inference",
+        "model fine-tuning"
+      ],
+      "notes": "Best when you need a practical, ready-made aerial-detection workflow."
+    },
+    {
+      "slug": "detectree2",
+      "name": "detectree2",
+      "status": "cataloged-external",
+      "modality": "remote-sensing-segmentation",
+      "repo": "https://github.com/PatBall1/detectree2",
+      "install": "Install PyTorch, Detectron2, then pip install detectree2.",
+      "summary": "Automatic tree crown delineation package based on Mask R-CNN for aerial RGB and multispectral imagery.",
+      "good_for": [
+        "tree crown delineation",
+        "instance segmentation of crowns",
+        "urban-tree counting"
+      ],
+      "capabilities": [
+        "crown delineation",
+        "instance segmentation",
+        "training custom models"
+      ],
+      "notes": "Stronger choice than pure detection when crown shapes matter."
+    },
+    {
+      "slug": "treecountsegheight",
+      "name": "TreeCountSegHeight",
+      "status": "cataloged-external",
+      "modality": "remote-sensing-counting",
+      "repo": "https://github.com/sizhuoli/TreeCountSegHeight",
+      "install": "Use the upstream Docker image or local GPU workflow.",
+      "summary": "Deep-learning system for tree counting, crown segmentation, and height prediction at large scale.",
+      "good_for": [
+        "large-scale tree counting",
+        "crown segmentation",
+        "height prediction"
+      ],
+      "capabilities": [
+        "density estimation",
+        "segmentation",
+        "height prediction",
+        "deployment on large image sets"
+      ],
+      "notes": "More deployment-oriented than DeepForest or detectree2 and better suited to large-scale forestry pipelines."
+    },
+    {
+      "slug": "pytorch-wildlife",
+      "name": "PyTorch-Wildlife",
+      "status": "cataloged-external",
+      "modality": "camera-trap-vision",
+      "repo": "https://github.com/microsoft/CameraTraps",
+      "install": "pip install PytorchWildlife",
+      "summary": "Microsoft's collaborative AI-for-conservation framework with MegaDetector and classification models.",
+      "good_for": [
+        "camera-trap detection",
+        "species classification after detection",
+        "empty-frame filtering"
+      ],
+      "capabilities": [
+        "animal detection",
+        "classification",
+        "model-zoo access",
+        "single-image workflows"
+      ],
+      "notes": "Best current general option for wildlife image pipelines in this stack."
+    },
+    {
+      "slug": "birdnet-analyzer",
+      "name": "BirdNET-Analyzer",
+      "status": "cataloged-external",
+      "modality": "audio-identification",
+      "repo": "https://github.com/birdnet-team/BirdNET-Analyzer",
+      "install": "pip install birdnet-analyzer or use the upstream installers.",
+      "summary": "Scientific audio processing toolkit for bird sound recognition and large-scale acoustic analyses.",
+      "good_for": [
+        "bird acoustic identification",
+        "batch audio screening",
+        "passive acoustic monitoring"
+      ],
+      "capabilities": [
+        "bird sound recognition",
+        "large-batch processing",
+        "monitoring workflows"
+      ],
+      "notes": "Strongest acoustic option in this first pass."
+    }
+  ]
+}

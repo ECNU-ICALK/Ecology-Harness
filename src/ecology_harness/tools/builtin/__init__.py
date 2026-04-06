@@ -1,5 +1,6 @@
 from ecology_harness.tools.builtin.agent_tools import register_agent_tools
 from ecology_harness.tools.builtin.claw_tools import register_claw_compat_tools
+from ecology_harness.tools.builtin.ecology_tools import register_ecology_tools
 from ecology_harness.tools.builtin.file_tools import register_file_tools
 from ecology_harness.tools.builtin.memory_tools import register_memory_tools
 from ecology_harness.tools.builtin.mcp_tools import register_mcp_tools
@@ -16,6 +17,7 @@ def register_builtin_tools(registry: ToolRegistry) -> None:
     register_file_tools(registry)
     register_search_tools(registry)
     register_web_tools(registry)
+    register_ecology_tools(registry)
     register_memory_tools(registry)
     register_skill_tools(registry)
     register_task_tools(registry)
