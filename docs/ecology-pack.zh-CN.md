@@ -66,6 +66,62 @@
     - 能把水质时序、显微分类、荧光信号和采样分析串在一起
     - 给当前 Harness 补上一层更贴近水生态监测的问题处理能力
 
+- 植物、作物与微生物成长模拟 skills
+  - 本地 skill 集：
+    - `plant-growth-model-selection`
+    - `crop-growth-simulation-workflow`
+    - `crop-water-and-irrigation-simulation`
+    - `functional-structural-plant-modeling`
+    - `root-and-rhizosphere-architecture-modeling`
+    - `woody-plant-and-forest-simulation`
+    - `microbial-growth-and-community-simulation`
+    - `microbial-community-metabolism-simulation`
+    - `microbial-biofilm-and-reactor-simulation`
+    - `microbiome-timeseries-and-benchmark-simulation`
+    - `plant-soil-microbe-coupled-simulation`
+    - `growth-model-calibration-and-validation`
+  - 选择原因：
+    - 补上了从生态观测到机理模拟之间最常见的一段空白
+    - 能把一年生作物、灌溉、水分平衡、木本植被、植物结构模型、微生物动力学和参数拟合放进统一入口
+    - 与现有 `jupyter-mcp`、`labarchives`、`unit-converter` 组合很自然
+
+## 植物类型与微生物模拟补充工具层
+
+- 按植物类型补充的工具
+  - `BioCro`
+  - `pyfao56`
+  - `r3PG`
+  - `medfate`
+  - 选择原因：
+    - 补上了一年生作物冠层生理、灌溉核算、森林和木本植被这些常见空缺
+    - 和 `APSIM`、`WOFOST`、`AquaCrop`、`CPlantBox`、`pyrealm` 形成互补
+
+- 微生物生态补充工具
+  - `COMETS`
+  - `BacArena`
+  - `Community Simulator`
+  - `NUFEB`
+  - `Vivarium Core`
+  - `miaSim`
+  - 选择原因：
+    - 覆盖群落代谢、资源竞争、生物膜、空间扩散和纵向微生物组 benchmark
+    - 把原先的 `COBRApy`、`MICOM`、`Tellurium`、`MDSINE2` 进一步扩成更像“微生物生态模拟栈”
+
+- 传统生态过程模型与主体模型 skills
+  - 本地 skill 集：
+    - `process-model-selection`
+    - `agent-based-ecology-modeling`
+    - `watershed-and-ecohydrology-modeling`
+    - `food-web-and-trophic-simulation`
+    - `forest-landscape-disturbance-modeling`
+    - `terrestrial-biosphere-and-vegetation-modeling`
+    - `model-calibration-and-sensitivity`
+    - `cross-model-scenario-comparison`
+  - 选择原因：
+    - 让当前 Harness 不只做文献和数据梳理，也能进入传统生态模拟系统选型
+    - 为后续 `RunNetLogoModel`、`RunSWATPlusProject` 这类 runner tools 留出清晰入口
+    - 把重型编译模型放在 toolkit 层，先做到可发现、可组织、可比较
+
 ## 已安装的 MCP 目录项
 
 - `mapbox`
@@ -157,6 +213,16 @@
   - 原因：
     - 这一轮没有找到同等清晰、活跃、安装链路稳定的高质量 MCP 实现
     - 后续更适合优先做成我们自己的 first-party tool 或适配层
+
+- 植物成长模拟专用 MCP
+  - 原因：
+    - 这一轮没有找到同等成熟、又明显适合作为默认安装项的 crop / plant-growth MCP server
+    - 当前更稳的路径是把模拟框架本身编进 catalog，再通过 `jupyter-mcp` 和实验记录工具去执行
+
+- 传统生态模拟系统专用 MCP
+  - 原因：
+    - 这一轮没有找到足够成熟、可直接作为默认安装项的 NetLogo、DSSAT、SWAT+、EwE、LANDIS-II、LPJ-GUESS 等 MCP server
+    - 当前更稳的路径是先把官方模拟系统编进 toolkit catalog，再逐步补 runner 或 container adapter
 
 ## 说明
 

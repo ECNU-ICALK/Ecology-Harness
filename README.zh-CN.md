@@ -6,9 +6,51 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 项目希望在保持通用 Harness 内核稳定的同时，把生态领域的扩展面做得越来越丰富，让新的 skills、MCP servers 和 tools 能持续叠加而不把核心运行时搞乱。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
+当前发布版本是 `0.2.0 beta`（包版本为 `0.2.0b0`）。
+变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## News
+
+- `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
+- 已把生态 skills、MCP 目录、plugin 资源和 toolkit catalogs 一起打进可安装的 wheel 和 sdist。
+- 生态能力包已经扩展到文献综述、空间分析、水体微宇宙、光生物反应器、多模态分析、植物与微生物成长模拟、传统生态过程模型等方向。
+- 同步补齐了面向发布的项目元数据、CI、变更日志、贡献指南，以及 GitHub 发布前的分发检查。
+- 项目还在快速演进中，也非常欢迎大家一起补充生态领域的 skills、MCP 集成和科研工具适配层。
+
 ## 启动界面
 
 ![Ecology Harness 启动截图](imgs/start_img.png)
+
+## 目录结构
+
+```text
+EcologyHarness/
+├── .github/workflows/        # CI 测试与打包 smoke check
+├── docs/                     # 专题说明、架构文档与领域参考
+├── imgs/                     # README 和启动截图
+├── scripts/                  # 本地安装辅助脚本
+├── src/ecology_harness/
+│   ├── agents/               # 多智能体协同与任务状态
+│   ├── config/               # 设置与运行时配置
+│   ├── ecology/              # 生态领域 catalog 与扩展入口
+│   ├── mcp/                  # MCP 注册、目录和桥接逻辑
+│   ├── memory/               # 持久记忆管理
+│   ├── permissions/          # 权限策略与安全检查
+│   ├── plugins/              # 内置 plugin manifest 与加载器
+│   ├── runtime/              # Agent loop、provider、session、压缩
+│   ├── sandbox/              # 文件、shell、网络 sandbox 辅助层
+│   ├── skills/               # 内置 skills，包括 ecology packs
+│   ├── tasks/                # 用户任务与 agent 任务追踪
+│   ├── tools/                # 内置 CLI / runtime 工具
+│   ├── ui/                   # 终端界面与 REPL 展示层
+│   ├── app.py                # 应用组装入口
+│   └── cli.py                # `eh` 命令入口
+├── tests/unit/               # 标准库单元测试
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+└── pyproject.toml
+```
 
 ## 项目包含的能力
 
@@ -49,6 +91,8 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 | 水文与淡水环境 | 水位、流量、洪水背景、流域预筛查 | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
 | 海岸、河口、湿地与蓝碳 | 潮位、海平面、沿海洪水、湿地选址预筛查 | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
 | 农业生态与农业环境 | 作物系统筛查、气候胁迫、景观背景 | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| 植物、作物与微生物成长模拟 | 作物生长、灌溉、木本植被、根-茎结构、植物-土壤耦合、微生物增长、生物膜、参数拟合 | `plant-growth-model-selection`<br>`crop-growth-simulation-workflow`<br>`crop-water-and-irrigation-simulation`<br>`functional-structural-plant-modeling`<br>`root-and-rhizosphere-architecture-modeling`<br>`woody-plant-and-forest-simulation`<br>`microbial-growth-and-community-simulation`<br>`microbial-community-metabolism-simulation`<br>`microbial-biofilm-and-reactor-simulation`<br>`microbiome-timeseries-and-benchmark-simulation`<br>`plant-soil-microbe-coupled-simulation`<br>`growth-model-calibration-and-validation` | `jupyter-mcp`<br>`labarchives`<br>`unit-converter`<br>`weather-open-meteo`<br>`nasa`<br>`APSIM Next Generation`<br>`PCSE / WOFOST`<br>`AquaCrop-OSPy`<br>`BioCro`<br>`pyfao56`<br>`CPlantBox`<br>`OpenAlea L-Py`<br>`r3PG`<br>`medfate`<br>`pyrealm`<br>`COBRApy`<br>`MICOM`<br>`COMETS`<br>`BacArena`<br>`Community Simulator`<br>`NUFEB`<br>`miaSim` |
+| 传统生态过程模型与主体模型 | 主体生态、流域模拟、食物网情景、森林干扰、陆地生态过程、多模型比较 | `process-model-selection`<br>`agent-based-ecology-modeling`<br>`watershed-and-ecohydrology-modeling`<br>`food-web-and-trophic-simulation`<br>`forest-landscape-disturbance-modeling`<br>`terrestrial-biosphere-and-vegetation-modeling`<br>`model-calibration-and-sensitivity`<br>`cross-model-scenario-comparison` | `NetLogo`<br>`Mesa`<br>`GAMA Platform`<br>`DSSAT Cropping System Model`<br>`SWAT+`<br>`Ecopath with Ecosim`<br>`LPJ-GUESS`<br>`ED2`<br>`Biome-BGC`<br>`CENTURY / DayCent`<br>`RHESSys`<br>`LANDIS-II`<br>`Madingley Model`<br>`RangeShifter 2.0` |
 | 淡水微宇宙、浮游群落与生物膜 | 摄食微宇宙、浮游变化、底栖生物膜、水质、荧光、显微分类 | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`simple-pubmed`<br>`pubchem` |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、光径、pH / CO2 控制、污染排查、生长曲线、物质平衡 | `closed-algae-system-design`<br>`photobioreactor-environment-control`<br>`microalgae-strain-and-inoculation`<br>`algal-monitoring-plan`<br>`photobioreactor-troubleshooting`<br>`algal-timeseries-and-mass-balance` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`pubchem` |
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits` | `PlantCV`<br>`LeafMachine2` |
@@ -81,6 +125,13 @@ eh mcp
 
 淡水微宇宙、浮游群落和生物膜相关能力说明见 [docs/aquatic-microcosm-pack.zh-CN.md](docs/aquatic-microcosm-pack.zh-CN.md)。
 
+植物、作物与微生物成长模拟相关说明见 [docs/plant-growth-simulation-pack.zh-CN.md](docs/plant-growth-simulation-pack.zh-CN.md)。
+
+这一包现在也覆盖了按植物类型拆分的建模入口，比如一年生作物、
+灌溉/水分平衡、木本和森林、根际结构，以及微生物群落和生物膜模拟。
+
+传统生态过程模型与主体模型相关说明见 [docs/ecology-process-modeling-pack.zh-CN.md](docs/ecology-process-modeling-pack.zh-CN.md)。
+
 可以直接这样试：
 
 ```bash
@@ -89,6 +140,14 @@ eh prompt '/photobioreactor-environment-control CO2 and pH control for sealed Sp
 eh prompt '/algal-timeseries-and-mass-balance interpret pH, dissolved oxygen, and nitrate drawdown in a batch reactor'
 eh prompt '/aquatic-microcosm-foodweb-design Daphnia Chlorella Microcystis Navicula freshwater microcosm'
 eh prompt '/plankton-microscopy-and-auto-classification microscope camera workflow for Daphnia rotifers and algal colonies'
+eh prompt '/plant-growth-model-selection 玉米干旱加灌溉处理的成长模拟'
+eh prompt '/crop-growth-simulation-workflow 水稻在高温和晚播情景下的产量变化'
+eh prompt '/woody-plant-and-forest-simulation 松树林分生长和干旱胁迫'
+eh prompt '/microbial-community-metabolism-simulation 根际合成菌群中的交叉喂养'
+eh prompt '/microbial-growth-and-community-simulation 根际菌群在碳脉冲条件下的互作模拟'
+eh prompt '/process-model-selection 流域水文、火干扰和恢复耦合问题'
+eh prompt '/agent-based-ecology-modeling 破碎化农田中的传粉者移动'
+eh prompt '/watershed-and-ecohydrology-modeling 施肥变化下的流域氮输出'
 ```
 
 这一轮还进一步补齐了更细粒度的研究方向：
@@ -115,6 +174,16 @@ eh prompt '/plankton-microscopy-and-auto-classification microscope camera workfl
 当前这个工具目录也已经纳入实验室和生物过程分析相关项，例如
 `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`LabArchives MCP Server`、
 `unit-converter-mcp`、`PyLabRobot` 和 `Opentrons`。
+
+现在也纳入了植物和微生物成长模拟框架，例如
+`APSIM Next Generation`、`PCSE / WOFOST`、`AquaCrop-OSPy`、`CPlantBox`、
+`OpenAlea L-Py`、`pyrealm`、`COBRApy`、`MICOM`、`Tellurium`、`COPASI`、
+`PySCeS`、`MDSINE2` 和 `pyPESTO`。
+
+现在也纳入了传统生态模拟器和主体模型系统，例如
+`NetLogo`、`Mesa`、`GAMA Platform`、`DSSAT Cropping System Model`、`SWAT+`、
+`Ecopath with Ecosim`、`LPJ-GUESS`、`ED2`、`Biome-BGC`、`CENTURY / DayCent`、
+`RHESSys`、`LANDIS-II`、`Madingley Model` 和 `RangeShifter 2.0`。
 
 现在也纳入了显微图像、浮游生物和分子分析相关工具，例如
 `Fiji / ImageJ`、`PyImageJ`、`CellProfiler`、`napari`、`ilastik`、

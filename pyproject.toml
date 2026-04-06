@@ -4,21 +4,52 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecology-harness"
-version = "0.1.0"
-description = "A self-evolving harness foundation for ecological analysis and reasoning."
+version = "0.2.0b0"
+description = "An ecology-first agent harness for ecological analysis, simulation, tools, and MCP-driven research workflows."
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
   { name = "EcologyHarness Contributors" }
+]
+license = "MIT"
+keywords = [
+  "ecology",
+  "environment",
+  "agriculture",
+  "agent",
+  "mcp",
+  "simulation",
+  "research",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: GIS",
+  "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
   "prompt_toolkit>=3.0",
   "pypdf>=5.4.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ECNU-ICALK/Ecology-Harness"
+Repository = "https://github.com/ECNU-ICALK/Ecology-Harness"
+Issues = "https://github.com/ECNU-ICALK/Ecology-Harness/issues"
+Documentation = "https://github.com/ECNU-ICALK/Ecology-Harness#readme"
+
 [project.optional-dependencies]
 dev = [
+  "build>=1.2",
   "pytest>=8.0",
+  "twine>=6.0",
 ]
 
 [project.scripts]
@@ -35,9 +66,15 @@ where = ["src"]
 [tool.setuptools.package-data]
 ecology_harness = [
   "skills/builtin/*.md",
+  "skills/builtin/**/*.md",
+  "skills/builtin/**/*.json",
   "plugins/builtin/*/.claude-plugin/plugin.json",
+  "plugins/builtin/**/*.json",
   "plugins/builtin/*/hooks/*.sh",
+  "plugins/builtin/**/*.sh",
   "mcp/builtin/*.json",
+  "mcp/builtin/**/*.json",
+  "ecology/toolkits/*.json",
 ]
 
 [tool.pytest.ini_options]

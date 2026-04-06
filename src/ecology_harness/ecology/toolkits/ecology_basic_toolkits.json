@@ -33,6 +33,198 @@
       ]
     },
     {
+      "category": "Crop, plant, and growth simulation",
+      "capabilities": [
+        "crop phenology, biomass, and yield simulation",
+        "water-limited growth and irrigation scenario analysis",
+        "weather, soil, and management forcing integration",
+        "agro-ecosystem scenario comparison",
+        "plant productivity and ecophysiology calculations",
+        "batch and seasonal simulation workflows"
+      ],
+      "examples": [
+        "simulate maize growth under drought and irrigation treatments",
+        "compare wheat yield scenarios under different sowing dates",
+        "estimate crop response to future climate forcing"
+      ]
+    },
+    {
+      "category": "Functional-structural plant modeling",
+      "capabilities": [
+        "3D root and shoot architecture modeling",
+        "branching and organ-development simulation",
+        "root-soil geometry and rhizosphere representation",
+        "functional-structural plant model workflows",
+        "architecture-aware visualization",
+        "trait-informed structural parameterization"
+      ],
+      "examples": [
+        "simulate root architecture in a soil column",
+        "prototype an L-system canopy model",
+        "connect image-derived traits to a structural plant model"
+      ]
+    },
+    {
+      "category": "Plant-soil-microbe and biogeochemical coupling",
+      "capabilities": [
+        "coupled plant and soil process representation",
+        "nutrient and water coupling across compartments",
+        "root-microbe interaction framing",
+        "carbon, water, and nutrient budget workflows",
+        "hybrid structural and process-based modeling",
+        "multi-compartment scenario design"
+      ],
+      "examples": [
+        "link root architecture with soil water uptake and microbial turnover",
+        "screen a plant-soil-carbon coupling workflow for pot experiments",
+        "design a simplified coupled plant-soil-microbe simulation"
+      ]
+    },
+    {
+      "category": "Plant-type-specific growth and woody-vegetation simulation",
+      "capabilities": [
+        "annual crop ecophysiology and canopy simulation",
+        "water-balance and irrigation scheduling for crops",
+        "forest and woody-plant growth modeling",
+        "tree and shrub hydraulic-stress workflows",
+        "plantation and stand productivity screening",
+        "matching model families to annuals, perennials, forests, and shrublands"
+      ],
+      "examples": [
+        "compare maize and wheat growth models for canopy and yield responses",
+        "screen a woody-plant model for drought and hydraulic failure in Mediterranean forests",
+        "choose a forest-growth model for plantation productivity and stand development"
+      ]
+    },
+    {
+      "category": "Agent-based and individual-based ecosystem modeling",
+      "capabilities": [
+        "rule-based agent systems",
+        "individual-based population and community dynamics",
+        "spatially explicit agent movement",
+        "teaching and prototype ecosystem simulations",
+        "headless batch runs and scenario sweeps",
+        "GIS-aware or Python-native ABM workflows"
+      ],
+      "examples": [
+        "simulate predator-prey movement on a fragmented landscape",
+        "prototype pollinator foraging in an agricultural mosaic",
+        "compare alternative rule sets for a spatial ecology ABM"
+      ]
+    },
+    {
+      "category": "Watershed and ecohydrology modeling",
+      "capabilities": [
+        "watershed hydrology and routing",
+        "land-use and management scenario analysis",
+        "streamflow and nutrient export screening",
+        "ecohydrological coupling across hillslopes and channels",
+        "forcing-data assembly from weather and land-surface inputs",
+        "basin-scale scenario comparison"
+      ],
+      "examples": [
+        "simulate runoff and nutrient export under alternative land use",
+        "screen a catchment for ecohydrology and water-quality responses",
+        "compare watershed scenarios under climate and management change"
+      ]
+    },
+    {
+      "category": "Food-web and trophic ecosystem simulation",
+      "capabilities": [
+        "trophic-balance analysis",
+        "food-web scenario comparison",
+        "ecosystem and fisheries simulation",
+        "energy-transfer and biomass-flow workflows",
+        "ecosystem network interpretation",
+        "management and harvesting scenarios"
+      ],
+      "examples": [
+        "compare fishing-pressure scenarios in a coastal food web",
+        "screen trophic impacts of species removal or restoration",
+        "interpret biomass-flow changes across trophic levels"
+      ]
+    },
+    {
+      "category": "Forest landscape and disturbance modeling",
+      "capabilities": [
+        "forest succession and management scenarios",
+        "fire, harvest, and disturbance regime simulation",
+        "landscape-scale forest composition dynamics",
+        "disturbance interaction analysis",
+        "management-treatment comparison",
+        "multi-decade landscape forecasting"
+      ],
+      "examples": [
+        "compare wildfire and harvest scenarios in a forest landscape",
+        "simulate disturbance-driven succession under warming",
+        "screen management alternatives for long-term forest structure"
+      ]
+    },
+    {
+      "category": "Terrestrial biosphere and vegetation dynamics",
+      "capabilities": [
+        "dynamic global vegetation modeling",
+        "ecosystem demography and stand dynamics",
+        "daily carbon, water, and nitrogen cycle simulation",
+        "LAI, NPP, and soil-carbon scenario analysis",
+        "long-term terrestrial ecosystem response under climate change",
+        "regional to global vegetation-process workflows"
+      ],
+      "examples": [
+        "compare NPP and soil-carbon responses under climate scenarios",
+        "simulate vegetation dynamics and LAI over decades",
+        "screen terrestrial carbon-water-nitrogen responses to warming"
+      ]
+    },
+    {
+      "category": "Microbial and metabolic growth simulation",
+      "capabilities": [
+        "single-strain growth and substrate-uptake simulation",
+        "community metabolism and cross-feeding workflows",
+        "constraint-based metabolic modeling",
+        "kinetic and ODE-based growth modeling",
+        "reactor-style microbial growth simulation",
+        "time-series microbial-dynamics inference"
+      ],
+      "examples": [
+        "simulate microbial growth under changing carbon sources",
+        "analyze cross-feeding in a synthetic microbial community",
+        "build a mechanistic ODE model for batch culture dynamics"
+      ]
+    },
+    {
+      "category": "Microbial community, biofilm, and reactor simulation",
+      "capabilities": [
+        "microbial community assembly and consumer-resource simulation",
+        "spatial biofilm and individual-based microbe modeling",
+        "community metabolism under diffusion or spatial constraints",
+        "reactor and batch-culture simulation",
+        "benchmarking longitudinal microbiome or perturbation studies",
+        "linking metabolism, dynamics, and spatial structure"
+      ],
+      "examples": [
+        "simulate cross-feeding and diffusion in a spatial microbial consortium",
+        "screen biofilm development under changing nutrient inflow",
+        "compare a consumer-resource model against a metabolic community model"
+      ]
+    },
+    {
+      "category": "Model calibration, sensitivity, and scenario analysis",
+      "capabilities": [
+        "parameter estimation and fitting",
+        "profile likelihoods and uncertainty quantification",
+        "sensitivity analysis",
+        "simulation-to-observation comparison",
+        "scenario ensembles and parameter sweeps",
+        "notebook-based calibration and validation workflows"
+      ],
+      "examples": [
+        "fit a crop model to observed biomass and yield data",
+        "estimate microbial growth parameters from time-series observations",
+        "compare multiple climate or nutrient scenarios with uncertainty bounds"
+      ]
+    },
+    {
       "category": "Counting, density, and coverage",
       "capabilities": [
         "seedling or plant counting in plots and trays",
@@ -789,6 +981,820 @@
         "taxonomy-ready output"
       ],
       "notes": "Best added when the microcosm workflow moves from microscopy and sensors into marker-gene sequencing."
+    },
+    {
+      "slug": "apsim-next-generation",
+      "name": "APSIM Next Generation",
+      "status": "cataloged-external",
+      "modality": "agroecosystem-simulation",
+      "repo": "https://github.com/APSIMInitiative/ApsimX",
+      "install": "Follow the official APSIM Next Generation release and installation guidance from the upstream project; it is typically installed as a desktop or managed runtime application.",
+      "summary": "Widely used agricultural systems modeling framework for crop, soil, rotation, and management scenario analysis.",
+      "good_for": [
+        "agro-ecosystem simulation",
+        "management scenarios",
+        "crop rotations",
+        "soil and production interactions"
+      ],
+      "capabilities": [
+        "crop growth",
+        "management scenarios",
+        "rotation modeling",
+        "agro-ecosystem workflows"
+      ],
+      "notes": "Strong choice when the question goes beyond a single crop season into system-level management and agro-ecosystem comparisons."
+    },
+    {
+      "slug": "pcse-wofost",
+      "name": "PCSE / WOFOST",
+      "status": "cataloged-external",
+      "modality": "crop-simulation",
+      "repo": "https://github.com/ajwdewit/pcse",
+      "install": "Install from pip or from source following the upstream PCSE documentation.",
+      "summary": "Python Crop Simulation Environment with WOFOST-style crop modeling for phenology, biomass, and yield workflows.",
+      "good_for": [
+        "crop growth simulation",
+        "phenology and yield",
+        "weather-soil-management forcing",
+        "Python-native crop modeling"
+      ],
+      "capabilities": [
+        "crop phenology",
+        "biomass simulation",
+        "yield estimation",
+        "forcing-data integration"
+      ],
+      "notes": "Very practical when you want a Python-first crop simulator that fits notebook-based workflows."
+    },
+    {
+      "slug": "aquacrop-ospy",
+      "name": "AquaCrop-OSPy",
+      "status": "cataloged-external",
+      "modality": "crop-water-simulation",
+      "repo": "https://github.com/aquacropos/aquacrop",
+      "install": "pip install aquacrop",
+      "summary": "Python implementation of AquaCrop-OS with a strong focus on water-limited crop growth, irrigation, and water productivity.",
+      "good_for": [
+        "irrigation scenarios",
+        "drought and water stress",
+        "water productivity",
+        "crop response to water limitation"
+      ],
+      "capabilities": [
+        "soil-crop-water simulation",
+        "irrigation analysis",
+        "water-limited growth",
+        "seasonal scenario comparison"
+      ],
+      "notes": "Best fit when water balance, irrigation scheduling, or drought stress is central."
+    },
+    {
+      "slug": "biocro",
+      "name": "BioCro",
+      "status": "cataloged-external",
+      "modality": "crop-ecophysiology-simulation",
+      "repo": "https://github.com/biocro/biocro",
+      "install": "Follow the upstream installation guidance for the BioCro R package and companion C++ codebase.",
+      "summary": "Mechanistic crop-ecophysiology framework for canopy photosynthesis, growth, and biomass simulation in field-crop systems.",
+      "good_for": [
+        "crop canopy processes",
+        "photosynthesis and radiation-use studies",
+        "field-crop growth",
+        "mechanistic crop physiology"
+      ],
+      "capabilities": [
+        "canopy photosynthesis",
+        "crop growth",
+        "source-sink simulation",
+        "process-based crop physiology"
+      ],
+      "notes": "Best added when the question is more mechanistic than standard yield-focused crop models and needs explicit physiology."
+    },
+    {
+      "slug": "pyfao56",
+      "name": "pyfao56",
+      "status": "cataloged-external",
+      "modality": "crop-water-simulation",
+      "repo": "https://github.com/kthorp/pyfao56",
+      "install": "pip install pyfao56",
+      "summary": "Python implementation of FAO-56 soil-water balance methods for crop evapotranspiration, irrigation scheduling, and deficit analysis.",
+      "good_for": [
+        "irrigation scheduling",
+        "crop evapotranspiration",
+        "water-balance screening",
+        "deficit-irrigation analysis"
+      ],
+      "capabilities": [
+        "soil-water accounting",
+        "ET-based irrigation planning",
+        "FAO-56 workflows",
+        "seasonal water-balance analysis"
+      ],
+      "notes": "A strong lightweight option when irrigation and water accounting matter more than full crop-system detail."
+    },
+    {
+      "slug": "cplantbox",
+      "name": "CPlantBox",
+      "status": "cataloged-external",
+      "modality": "functional-structural-plant-modeling",
+      "repo": "https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox",
+      "install": "Use the upstream installation scripts such as installCPlantBox.py or follow the official setup guidance for Ubuntu and Python environments.",
+      "summary": "Functional-structural plant modeling framework for 3D root-shoot architecture and plant-soil interaction studies.",
+      "good_for": [
+        "root architecture",
+        "plant-soil interactions",
+        "3D plant structure",
+        "rhizosphere-aware simulation"
+      ],
+      "capabilities": [
+        "root modeling",
+        "shoot architecture",
+        "plant-soil geometry",
+        "3D simulation"
+      ],
+      "notes": "One of the strongest open frameworks for explicit root and plant-soil interaction modeling."
+    },
+    {
+      "slug": "openalea-lpy",
+      "name": "OpenAlea L-Py",
+      "status": "cataloged-external",
+      "modality": "functional-structural-plant-modeling",
+      "repo": "https://github.com/openalea/lpy",
+      "install": "Install through the upstream OpenAlea or conda-based distribution guidance for L-Py.",
+      "summary": "L-system-based plant modeling environment for branching, organogenesis, architectural development, and visualization.",
+      "good_for": [
+        "L-system modeling",
+        "canopy and branching structure",
+        "organ-level development",
+        "functional-structural plant models"
+      ],
+      "capabilities": [
+        "L-systems",
+        "architecture simulation",
+        "visualization",
+        "developmental rules"
+      ],
+      "notes": "Useful when structural or generative plant form is the core modeling target."
+    },
+    {
+      "slug": "pyrealm",
+      "name": "pyrealm",
+      "status": "cataloged-external",
+      "modality": "ecosystem-ecophysiology-modeling",
+      "repo": "https://github.com/ImperialCollegeLondon/pyrealm",
+      "install": "pip install pyrealm",
+      "summary": "Ecophysiology and ecosystem-modeling package with productivity and environmental-response modules that fit plant growth and carbon-water studies.",
+      "good_for": [
+        "productivity modeling",
+        "ecophysiology",
+        "carbon and water calculations",
+        "environmental response"
+      ],
+      "capabilities": [
+        "photosynthesis and productivity",
+        "environmental-response modeling",
+        "carbon-water coupling",
+        "ecosystem-process calculations"
+      ],
+      "notes": "A strong bridge between plant growth, carbon cycling, and environmental forcing."
+    },
+    {
+      "slug": "r3pg",
+      "name": "r3PG",
+      "status": "cataloged-external",
+      "modality": "forest-and-woody-plant-simulation",
+      "repo": "https://github.com/trotsiuk/r3PG",
+      "install": "Install from CRAN or GitHub following the upstream R package guidance for 3-PG workflows.",
+      "summary": "R implementation of the 3-PG forest growth model for plantation productivity, stand development, and management scenario analysis.",
+      "good_for": [
+        "forest plantations",
+        "tree growth and productivity",
+        "stand development",
+        "forest management scenarios"
+      ],
+      "capabilities": [
+        "stand growth simulation",
+        "productivity modeling",
+        "management scenarios",
+        "forest resource screening"
+      ],
+      "notes": "A practical first choice for woody-plant and plantation questions when a lighter forest-growth model is enough."
+    },
+    {
+      "slug": "medfate",
+      "name": "medfate",
+      "status": "cataloged-external",
+      "modality": "forest-and-woody-plant-simulation",
+      "repo": "https://github.com/emf-creaf/medfate",
+      "install": "Install from the upstream R package source and data workflow described by the medfate project.",
+      "summary": "Forest and shrubland simulation package with explicit water balance, plant hydraulics, and drought-response workflows.",
+      "good_for": [
+        "woody plants and forests",
+        "plant hydraulics",
+        "drought stress",
+        "Mediterranean or water-limited systems"
+      ],
+      "capabilities": [
+        "water balance",
+        "plant hydraulics",
+        "forest stand dynamics",
+        "drought-response simulation"
+      ],
+      "notes": "Especially useful for woody vegetation where hydraulic stress, transpiration, and stand water balance are central."
+    },
+    {
+      "slug": "cobrapy",
+      "name": "COBRApy",
+      "status": "cataloged-external",
+      "modality": "constraint-based-metabolic-modeling",
+      "repo": "https://github.com/opencobra/cobrapy",
+      "install": "pip install cobra",
+      "summary": "Core Python framework for constraint-based metabolic modeling, metabolic-growth simulation, flux balance analysis, and dynamic metabolic workflows.",
+      "good_for": [
+        "single-strain metabolic growth",
+        "flux balance analysis",
+        "constraint-based models",
+        "dynamic FBA workflows"
+      ],
+      "capabilities": [
+        "FBA",
+        "metabolic modeling",
+        "gene-reaction associations",
+        "dynamic constraints"
+      ],
+      "notes": "Best foundational choice for microbial or metabolism-aware growth models."
+    },
+    {
+      "slug": "micom",
+      "name": "MICOM",
+      "status": "cataloged-external",
+      "modality": "microbial-community-metabolic-modeling",
+      "repo": "https://github.com/micom-dev/micom",
+      "install": "pip install micom",
+      "summary": "Python framework for metabolic modeling of microbial communities with abundance-aware growth and cross-feeding analysis.",
+      "good_for": [
+        "community metabolism",
+        "cross-feeding",
+        "microbiome growth simulation",
+        "multi-taxon metabolic workflows"
+      ],
+      "capabilities": [
+        "community metabolic models",
+        "growth coupling",
+        "abundance-aware constraints",
+        "cross-feeding analysis"
+      ],
+      "notes": "A strong fit when the question is about microbial consortia rather than single isolates."
+    },
+    {
+      "slug": "comets",
+      "name": "COMETS",
+      "status": "cataloged-external",
+      "modality": "microbial-community-metabolic-modeling",
+      "repo": "https://github.com/segrelab/comets",
+      "install": "Use the upstream COMETS release or source distribution together with compatible metabolic-model workflows.",
+      "summary": "Community metabolism simulator for microbial consortia with spatial diffusion, metabolite exchange, and dynamic environmental coupling.",
+      "good_for": [
+        "microbial consortia",
+        "cross-feeding under diffusion",
+        "spatial metabolic modeling",
+        "community dynamics with metabolites"
+      ],
+      "capabilities": [
+        "dynamic FBA",
+        "spatial diffusion",
+        "metabolite exchange",
+        "community metabolic simulation"
+      ],
+      "notes": "A strong next step when MICOM is not spatial enough and community metabolism must interact with space or diffusion."
+    },
+    {
+      "slug": "bacarena",
+      "name": "BacArena",
+      "status": "cataloged-external",
+      "modality": "microbial-community-metabolic-modeling",
+      "repo": "https://github.com/euba/BacArena",
+      "install": "Install the upstream R package and required metabolic-model dependencies inside a suitable R environment.",
+      "summary": "Agent-based microbial metabolism framework that combines individual microbes, environment grids, and metabolic exchange.",
+      "good_for": [
+        "agent-based microbial metabolism",
+        "cross-feeding",
+        "spatial community assembly",
+        "microbial interaction experiments"
+      ],
+      "capabilities": [
+        "individual microbes",
+        "grid-based environment",
+        "metabolic exchange",
+        "community interaction simulation"
+      ],
+      "notes": "Useful when microbial individuals and metabolic exchange both need to stay explicit."
+    },
+    {
+      "slug": "community-simulator",
+      "name": "Community Simulator",
+      "status": "cataloged-external",
+      "modality": "microbial-community-ecology-simulation",
+      "repo": "https://github.com/Emergent-Behaviors-in-Biology/community-simulator",
+      "install": "Install from the upstream Python package or source repository.",
+      "summary": "Python framework for consumer-resource and community-assembly simulations in microbial ecology.",
+      "good_for": [
+        "consumer-resource microbial ecology",
+        "community assembly",
+        "resource competition",
+        "synthetic community experiments"
+      ],
+      "capabilities": [
+        "consumer-resource dynamics",
+        "resource competition",
+        "assembly experiments",
+        "community-statistics workflows"
+      ],
+      "notes": "A good fit when the question is ecological community assembly rather than genome-scale metabolism."
+    },
+    {
+      "slug": "tellurium",
+      "name": "Tellurium",
+      "status": "cataloged-external",
+      "modality": "dynamical-systems-biology-modeling",
+      "repo": "https://github.com/sys-bio/tellurium",
+      "install": "pip install tellurium",
+      "summary": "Python environment for SBML-based and kinetic simulation workflows with a strong fit for mechanistic growth and reactor models.",
+      "good_for": [
+        "ODE growth models",
+        "kinetic simulation",
+        "SBML workflows",
+        "mechanistic batch or reactor models"
+      ],
+      "capabilities": [
+        "ODE simulation",
+        "SBML support",
+        "kinetic modeling",
+        "notebook-friendly analysis"
+      ],
+      "notes": "Very useful when the model is expressed as reaction kinetics or differential equations."
+    },
+    {
+      "slug": "copasi",
+      "name": "COPASI",
+      "status": "cataloged-external",
+      "modality": "dynamical-systems-biology-modeling",
+      "repo": "https://github.com/copasi/COPASI",
+      "install": "Use the official COPASI desktop or command-line distribution from the upstream project.",
+      "summary": "Established simulation platform for biochemical networks, kinetics, parameter estimation, and dynamic systems analysis.",
+      "good_for": [
+        "kinetic growth models",
+        "parameter scans",
+        "reaction-network simulation",
+        "dynamic systems biology"
+      ],
+      "capabilities": [
+        "deterministic simulation",
+        "parameter scanning",
+        "optimization",
+        "model fitting"
+      ],
+      "notes": "A good choice when users need a mature GUI or CLI platform for mechanistic dynamic models."
+    },
+    {
+      "slug": "pysces",
+      "name": "PySCeS",
+      "status": "cataloged-external",
+      "modality": "dynamical-systems-biology-modeling",
+      "repo": "https://github.com/PySCeS/pysces",
+      "install": "pip install pysces",
+      "summary": "Python simulator for cellular systems and kinetic models that fits mechanistic growth, pathway, and reactor-style analyses.",
+      "good_for": [
+        "kinetic pathway models",
+        "mechanistic growth dynamics",
+        "Python-native systems biology",
+        "reaction-network analysis"
+      ],
+      "capabilities": [
+        "kinetic simulation",
+        "steady-state analysis",
+        "reaction networks",
+        "model scripting"
+      ],
+      "notes": "Helpful when you want a lighter Python-native alternative to larger systems-biology platforms."
+    },
+    {
+      "slug": "nufeb",
+      "name": "NUFEB",
+      "status": "cataloged-external",
+      "modality": "microbial-biofilm-and-reactor-simulation",
+      "repo": "https://github.com/nufeb/NUFEB",
+      "install": "Build from the upstream source and LAMMPS-compatible stack following the official NUFEB guidance.",
+      "summary": "Individual-based simulator for microbial communities, biofilms, and particulate systems in three-dimensional spatial domains.",
+      "good_for": [
+        "biofilm simulation",
+        "individual-based microbes",
+        "spatial nutrient diffusion",
+        "reactor-style microbial ecosystems"
+      ],
+      "capabilities": [
+        "individual-based modeling",
+        "3D biofilms",
+        "diffusion and transport",
+        "reactor-scale microbe dynamics"
+      ],
+      "notes": "A high-value option when biofilm structure, particle interactions, and spatial gradients matter."
+    },
+    {
+      "slug": "vivarium-core",
+      "name": "Vivarium Core",
+      "status": "cataloged-external",
+      "modality": "microbial-biofilm-and-reactor-simulation",
+      "repo": "https://github.com/vivarium-collective/vivarium-core",
+      "install": "pip install vivarium-core",
+      "summary": "Composable simulation engine for multi-process biological models that fits custom microbial physiology and community workflows.",
+      "good_for": [
+        "composable microbial models",
+        "multi-process simulations",
+        "custom physiology workflows",
+        "synthetic biology and ecology hybrids"
+      ],
+      "capabilities": [
+        "process composition",
+        "hierarchical simulation",
+        "custom microbial workflows",
+        "hybrid ecological modeling"
+      ],
+      "notes": "Best when the team wants to build a custom simulation by wiring multiple process modules together."
+    },
+    {
+      "slug": "mdsine2",
+      "name": "MDSINE2",
+      "status": "cataloged-external",
+      "modality": "microbial-time-series-dynamics",
+      "repo": "https://github.com/gerberlab/MDSINE2",
+      "install": "Clone the upstream repository and install it with pip following the project instructions.",
+      "summary": "Framework for modeling and inferring microbial dynamics from longitudinal time-series data with interaction structure.",
+      "good_for": [
+        "microbial time-series",
+        "longitudinal community dynamics",
+        "interaction inference",
+        "microbiome perturbation studies"
+      ],
+      "capabilities": [
+        "time-series inference",
+        "interaction networks",
+        "perturbation analysis",
+        "community dynamics"
+      ],
+      "notes": "Most relevant when repeated measurements drive the microbial-growth question."
+    },
+    {
+      "slug": "miasim",
+      "name": "miaSim",
+      "status": "cataloged-external",
+      "modality": "microbial-time-series-dynamics",
+      "repo": "https://github.com/microbiome/miaSim",
+      "install": "Install the upstream R package and companion microbiome-analysis dependencies in an R environment.",
+      "summary": "Simulation toolkit for microbiome count data and longitudinal perturbation designs, useful for benchmarking microbial ecology analyses.",
+      "good_for": [
+        "microbiome simulation",
+        "benchmark datasets",
+        "longitudinal perturbations",
+        "analysis-method testing"
+      ],
+      "capabilities": [
+        "count-data simulation",
+        "time-series perturbations",
+        "benchmark generation",
+        "microbiome workflow testing"
+      ],
+      "notes": "Helpful when the goal is benchmarking methods or generating controlled microbial-community scenarios rather than mechanistic prediction alone."
+    },
+    {
+      "slug": "pypesto",
+      "name": "pyPESTO",
+      "status": "cataloged-external",
+      "modality": "parameter-estimation-and-calibration",
+      "repo": "https://github.com/ICB-DCM/pyPESTO",
+      "install": "Install from pip or follow the upstream environment guidance for full optimization backends.",
+      "summary": "Parameter-estimation toolbox for Python with optimization, profile likelihoods, sensitivity, and uncertainty workflows.",
+      "good_for": [
+        "model calibration",
+        "parameter estimation",
+        "uncertainty analysis",
+        "sensitivity workflows"
+      ],
+      "capabilities": [
+        "parameter fitting",
+        "profile likelihoods",
+        "sensitivity analysis",
+        "uncertainty quantification"
+      ],
+      "notes": "Best added when a growth model needs careful calibration rather than one-off scenario runs."
+    },
+    {
+      "slug": "netlogo",
+      "name": "NetLogo",
+      "status": "cataloged-external",
+      "modality": "agent-based-ecosystem-modeling",
+      "repo": "https://github.com/NetLogo/NetLogo",
+      "install": "Download the official NetLogo desktop or headless distribution from the upstream project and use BehaviorSpace or headless runs for scenario sweeps.",
+      "summary": "Widely used agent-based modeling environment for individual- and rule-based ecological simulations, education, and rapid prototyping.",
+      "good_for": [
+        "individual-based ecology",
+        "rule-based spatial simulations",
+        "teaching and prototyping",
+        "headless batch experiments"
+      ],
+      "capabilities": [
+        "agent-based modeling",
+        "spatial rules",
+        "BehaviorSpace experiments",
+        "headless runs"
+      ],
+      "notes": "A strong first choice when the ecological process is easiest to express as explicit agents and local rules."
+    },
+    {
+      "slug": "mesa",
+      "name": "Mesa",
+      "status": "cataloged-external",
+      "modality": "agent-based-ecosystem-modeling",
+      "repo": "https://github.com/mesa/mesa",
+      "install": "pip install mesa",
+      "summary": "Python-native agent-based modeling framework that fits ecological prototypes, custom rules, and notebook-friendly experiments.",
+      "good_for": [
+        "Python-native ABM",
+        "custom ecological rules",
+        "notebook workflows",
+        "rapid prototype simulation"
+      ],
+      "capabilities": [
+        "agent scheduling",
+        "grid and network spaces",
+        "batch runs",
+        "Python integration"
+      ],
+      "notes": "Best fit when the modeling workflow should stay close to Python data pipelines and scientific notebooks."
+    },
+    {
+      "slug": "gama-platform",
+      "name": "GAMA Platform",
+      "status": "cataloged-external",
+      "modality": "agent-based-ecosystem-modeling",
+      "repo": "https://github.com/gama-platform/gama",
+      "install": "Use the official desktop or headless GAMA release from the upstream project.",
+      "summary": "Spatially explicit multi-agent simulation platform with strong GIS integration for complex ecology, land-use, and social-ecological system models.",
+      "good_for": [
+        "GIS-aware ABM",
+        "social-ecological systems",
+        "spatial ecology",
+        "large agent simulations"
+      ],
+      "capabilities": [
+        "GIS integration",
+        "multi-agent simulation",
+        "headless experiments",
+        "scenario exploration"
+      ],
+      "notes": "Most useful when spatial GIS layers and multiple interacting agent types are central."
+    },
+    {
+      "slug": "dssat-csm",
+      "name": "DSSAT Cropping System Model",
+      "status": "cataloged-external",
+      "modality": "crop-and-agroecosystem-simulation",
+      "repo": "https://github.com/DSSAT/dssat-csm-os",
+      "install": "Build from the open-source repository or use the official DSSAT distribution and example data from dssat.net.",
+      "summary": "Long-running crop-system modeling framework for crop growth, management, soil, weather, and scenario analysis across agricultural systems.",
+      "good_for": [
+        "crop simulation",
+        "management scenarios",
+        "yield and phenology",
+        "weather and soil forcing"
+      ],
+      "capabilities": [
+        "crop growth",
+        "management files",
+        "soil-weather coupling",
+        "scenario comparison"
+      ],
+      "notes": "One of the core traditional agricultural process-model systems and a strong complement to APSIM and WOFOST-style workflows."
+    },
+    {
+      "slug": "swat-plus",
+      "name": "SWAT+",
+      "status": "cataloged-external",
+      "modality": "watershed-and-ecohydrology-modeling",
+      "repo": "https://swatplus.gitbook.io/docs/",
+      "install": "Use the official SWAT+ executables, editor, and setup workflow from the upstream project documentation.",
+      "summary": "Watershed-scale model for hydrology, nutrients, land management, and water-quality scenario analysis.",
+      "good_for": [
+        "watershed hydrology",
+        "nutrient export",
+        "land-use scenarios",
+        "agricultural environmental impacts"
+      ],
+      "capabilities": [
+        "hydrology",
+        "water quality",
+        "routing",
+        "management scenarios"
+      ],
+      "notes": "Best fit when basin-scale hydrology and agricultural or watershed management are both important."
+    },
+    {
+      "slug": "ecopath-with-ecosim",
+      "name": "Ecopath with Ecosim",
+      "status": "cataloged-external",
+      "modality": "food-web-and-trophic-simulation",
+      "repo": "https://ecopath.org/",
+      "install": "Download the official EwE desktop software and example models from the Ecopath project site.",
+      "summary": "Established ecosystem and fisheries modeling suite for trophic-balance analysis, biomass flow, and food-web scenario simulation.",
+      "good_for": [
+        "food-web analysis",
+        "fisheries scenarios",
+        "trophic balance",
+        "ecosystem network interpretation"
+      ],
+      "capabilities": [
+        "Ecopath balance",
+        "Ecosim scenarios",
+        "biomass-flow analysis",
+        "trophic structure"
+      ],
+      "notes": "A very strong default when the research question is explicitly trophic or fisheries-focused."
+    },
+    {
+      "slug": "lpj-guess",
+      "name": "LPJ-GUESS",
+      "status": "cataloged-external",
+      "modality": "terrestrial-biosphere-process-modeling",
+      "repo": "https://web.nateko.lu.se/lpj-guess/index.html",
+      "install": "Build from the official source distribution and follow the project guidance for climate-forcing and run configuration.",
+      "summary": "Dynamic global vegetation model for terrestrial carbon, water, nitrogen, vegetation, and climate-response studies.",
+      "good_for": [
+        "dynamic vegetation",
+        "carbon-water-nitrogen cycles",
+        "long-term climate scenarios",
+        "regional to global vegetation studies"
+      ],
+      "capabilities": [
+        "DGVM workflows",
+        "vegetation dynamics",
+        "biogeochemistry",
+        "climate scenarios"
+      ],
+      "notes": "A strong traditional process model for large-scale terrestrial ecosystem and vegetation-change questions."
+    },
+    {
+      "slug": "ed2",
+      "name": "ED2",
+      "status": "cataloged-external",
+      "modality": "terrestrial-biosphere-process-modeling",
+      "repo": "https://github.com/EDmodel/ED2",
+      "install": "Compile the model from source and configure run directories and forcing inputs according to the upstream ED2 instructions.",
+      "summary": "Ecosystem Demography model for vegetation structure, demography, carbon, water, and long-term ecosystem dynamics.",
+      "good_for": [
+        "ecosystem demography",
+        "vegetation structure",
+        "carbon and water cycles",
+        "long-term forest or vegetation dynamics"
+      ],
+      "capabilities": [
+        "demography",
+        "vegetation cohorts",
+        "carbon-water coupling",
+        "climate forcing"
+      ],
+      "notes": "Useful when demographic structure and stand composition are central rather than only bulk ecosystem fluxes."
+    },
+    {
+      "slug": "biome-bgc",
+      "name": "Biome-BGC",
+      "status": "cataloged-external",
+      "modality": "terrestrial-biosphere-process-modeling",
+      "repo": "https://carbonmodel.org/biome_bgc/",
+      "install": "Use the official Biome-BGC distribution and setup guidance from the project site.",
+      "summary": "Biogeochemical and ecophysiological model for carbon, water, nitrogen, LAI, GPP, and NPP in terrestrial ecosystems.",
+      "good_for": [
+        "LAI and productivity",
+        "carbon-water-nitrogen coupling",
+        "stand-level ecosystem studies",
+        "regional carbon scenarios"
+      ],
+      "capabilities": [
+        "biogeochemistry",
+        "ecophysiology",
+        "LAI-driven processes",
+        "daily meteorological forcing"
+      ],
+      "notes": "A classic process model when carbon-water-nitrogen cycles and LAI-sensitive ecosystem behavior are the focus."
+    },
+    {
+      "slug": "century-daycent",
+      "name": "CENTURY / DayCent",
+      "status": "cataloged-external",
+      "modality": "terrestrial-biosphere-process-modeling",
+      "repo": "https://www.nrel.colostate.edu/projects/century/",
+      "install": "Use the official Colorado State University distribution and model documentation for Century or DayCent workflows.",
+      "summary": "General plant-soil nutrient cycling model family for carbon and nutrient dynamics across grasslands, croplands, forests, and savannas.",
+      "good_for": [
+        "soil carbon",
+        "nutrient cycling",
+        "ecosystem carbon dynamics",
+        "daily or monthly terrestrial scenarios"
+      ],
+      "capabilities": [
+        "plant-soil nutrient cycling",
+        "carbon dynamics",
+        "daily or monthly simulation",
+        "ecosystem comparisons"
+      ],
+      "notes": "A classic choice for terrestrial carbon and nutrient-cycle questions, especially when soil processes are central."
+    },
+    {
+      "slug": "rhessys",
+      "name": "RHESSys",
+      "status": "cataloged-external",
+      "modality": "watershed-and-ecohydrology-modeling",
+      "repo": "https://github.com/RHESSys/RHESSys",
+      "install": "Build from source and follow the RHESSys setup workflow for basin, hillslope, and forcing inputs.",
+      "summary": "Regional Hydro-Ecologic Simulation System for ecohydrology, watershed process coupling, and land-use or climate-change analysis.",
+      "good_for": [
+        "ecohydrology",
+        "catchment-scale process coupling",
+        "water-carbon interactions",
+        "land-use change scenarios"
+      ],
+      "capabilities": [
+        "watershed processes",
+        "hydrology-ecology coupling",
+        "basin simulation",
+        "scenario comparison"
+      ],
+      "notes": "Most useful when hydrology and ecosystem response need to stay coupled across landscape units."
+    },
+    {
+      "slug": "landis-ii",
+      "name": "LANDIS-II",
+      "status": "cataloged-external",
+      "modality": "forest-landscape-disturbance-modeling",
+      "repo": "https://www.landis-ii.org/home",
+      "install": "Use the official LANDIS-II core model and extension setup guidance from the project site.",
+      "summary": "Forest landscape model for succession, disturbance, management, and extension-based scenario analysis over long time horizons.",
+      "good_for": [
+        "forest landscapes",
+        "disturbance and succession",
+        "management scenarios",
+        "long-term forest forecasting"
+      ],
+      "capabilities": [
+        "succession",
+        "disturbance modeling",
+        "landscape grids",
+        "extension workflows"
+      ],
+      "notes": "A strong fit when the question is about forest disturbance, management, and long-term landscape structure."
+    },
+    {
+      "slug": "madingley-model",
+      "name": "Madingley Model",
+      "status": "cataloged-external",
+      "modality": "general-ecosystem-modeling",
+      "repo": "https://madingley.github.io/",
+      "install": "Use the official Madingley distribution and examples from the project site or associated source repositories.",
+      "summary": "General ecosystem model for multi-trophic ecosystem structure, biodiversity patterns, and human-impact scenario analysis.",
+      "good_for": [
+        "general ecosystem simulation",
+        "multi-trophic dynamics",
+        "biodiversity pattern analysis",
+        "human-impact scenarios"
+      ],
+      "capabilities": [
+        "ecosystem simulation",
+        "multi-trophic structure",
+        "scenario analysis",
+        "biodiversity patterns"
+      ],
+      "notes": "Best used when the goal is a general ecosystem picture rather than a single taxon or single process."
+    },
+    {
+      "slug": "rangeshifter-2",
+      "name": "RangeShifter 2.0",
+      "status": "cataloged-external",
+      "modality": "spatial-ecoevolutionary-modeling",
+      "repo": "https://rangeshifter.github.io/software/rangeshifter2.0/",
+      "install": "Follow the official RangeShifter 2.0 installation and tutorial guidance from the project site.",
+      "summary": "Spatial eco-evolutionary simulation platform for dispersal, range dynamics, connectivity, and species response to landscape change.",
+      "good_for": [
+        "species dispersal",
+        "range shifts",
+        "landscape connectivity",
+        "spatial eco-evolutionary scenarios"
+      ],
+      "capabilities": [
+        "range dynamics",
+        "dispersal simulation",
+        "connectivity analysis",
+        "spatial scenarios"
+      ],
+      "notes": "A strong option when the research focus is dispersal, range change, or landscape connectivity through time."
     }
   ]
 }

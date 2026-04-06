@@ -8,6 +8,8 @@
 |---|---|---|---|
 | 野外观测与物种识别 | 从照片识别植物、规范学名、查看附近观测 | `INaturalistSearchTaxa`、`INaturalistSearchObservations`、`PlantNetIdentify`、`ListEcologyFunctions`、`ListEcologyToolkits` | `pyinaturalist`、`Pl@ntNet API`、`pybioclip`、`nature-id` |
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PlantCV`、`LeafMachine2` |
+| 植物、作物与成长模拟 | 作物物候、灌溉、木本植被、根-茎结构、微生物增长、生物膜、参数估计、情景比较 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `APSIM Next Generation`、`PCSE / WOFOST`、`AquaCrop-OSPy`、`BioCro`、`pyfao56`、`CPlantBox`、`OpenAlea L-Py`、`r3PG`、`medfate`、`pyrealm`、`COBRApy`、`MICOM`、`COMETS`、`BacArena`、`Community Simulator`、`Tellurium`、`COPASI`、`PySCeS`、`NUFEB`、`Vivarium Core`、`MDSINE2`、`miaSim`、`pyPESTO` |
+| 传统生态过程模型与主体模型 | 主体生态、流域路由、食物网模拟、森林干扰、DGVM 风格工作流 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `NetLogo`、`Mesa`、`GAMA Platform`、`DSSAT Cropping System Model`、`SWAT+`、`Ecopath with Ecosim`、`LPJ-GUESS`、`ED2`、`Biome-BGC`、`CENTURY / DayCent`、`RHESSys`、`LANDIS-II`、`Madingley Model`、`RangeShifter 2.0` |
 | 计数与密度估计 | 植株计数、树木计数、动物计数、密度估计 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PlantCV`、`DeepForest`、`detectree2`、`TreeCountSegHeight`、`PyTorch-Wildlife` |
 | 检测与分割 | 目标检测、实例分割、树冠分割、影像切片 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `DeepForest`、`detectree2`、`TreeCountSegHeight`、`PyTorch-Wildlife` |
 | 相机陷阱工作流 | 空图过滤、动物检测、检测后分类 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PyTorch-Wildlife` |
@@ -55,6 +57,117 @@
 - `LeafMachine2`
   - 来源：[Gene-Weaver/LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)
   - 作用：腊叶标本、叶片测量和档案组件识别。
+- `APSIM Next Generation`
+  - 来源：[APSIMInitiative/ApsimX](https://github.com/APSIMInitiative/ApsimX)
+  - 作用：很强的农业系统框架，适合管理、作物和轮作情景。
+- `PCSE / WOFOST`
+  - 来源：[ajwdewit/pcse](https://github.com/ajwdewit/pcse)
+  - 作用：Python 优先、很适合作物物候、生物量和产量研究。
+- `AquaCrop-OSPy`
+  - 来源：[aquacropos/aquacrop](https://github.com/aquacropos/aquacrop)
+  - 作用：特别适合灌溉、干旱和水分受限生长问题。
+- `BioCro`
+  - 来源：[biocro/biocro](https://github.com/biocro/biocro)
+  - 作用：适合显式冠层光合和机理性作物生态生理问题。
+- `pyfao56`
+  - 来源：[kthorp/pyfao56](https://github.com/kthorp/pyfao56)
+  - 作用：很适合 ET、灌溉核算和作物水分平衡工作流。
+- `CPlantBox`
+  - 来源：[Plant-Root-Soil-Interactions-Modelling/CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox)
+  - 作用：很适合 3D 根-茎结构与植物-土壤互作。
+- `OpenAlea L-Py`
+  - 来源：[openalea/lpy](https://github.com/openalea/lpy)
+  - 作用：成熟的 L-system 植物结构建模环境。
+- `r3PG`
+  - 来源：[trotsiuk/r3PG](https://github.com/trotsiuk/r3PG)
+  - 作用：适合林分、人工林和木本生产力问题。
+- `medfate`
+  - 来源：[emf-creaf/medfate](https://github.com/emf-creaf/medfate)
+  - 作用：适合木本植被、干旱胁迫和植物水力过程。
+- `pyrealm`
+  - 来源：[ImperialCollegeLondon/pyrealm](https://github.com/ImperialCollegeLondon/pyrealm)
+  - 作用：能把环境因子、生产力和生态生理过程连起来。
+- `COBRApy`
+  - 来源：[opencobra/cobrapy](https://github.com/opencobra/cobrapy)
+  - 作用：微生物代谢增长模拟的基础框架。
+- `MICOM`
+  - 来源：[micom-dev/micom](https://github.com/micom-dev/micom)
+  - 作用：适合微生物群落代谢和 cross-feeding。
+- `COMETS`
+  - 来源：[segrelab/comets](https://github.com/segrelab/comets)
+  - 作用：适合带空间扩散和代谢交换的群落模拟。
+- `BacArena`
+  - 来源：[euba/BacArena](https://github.com/euba/BacArena)
+  - 作用：能把微生物个体和代谢交换同时显式表示出来。
+- `Community Simulator`
+  - 来源：[Emergent-Behaviors-in-Biology/community-simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator)
+  - 作用：适合资源竞争和群落组装导向的微生物生态问题。
+- `Tellurium`
+  - 来源：[sys-bio/tellurium](https://github.com/sys-bio/tellurium)
+  - 作用：很适合 SBML / ODE 风格的机理增长模型。
+- `COPASI`
+  - 来源：[copasi/COPASI](https://github.com/copasi/COPASI)
+  - 作用：成熟的动态系统和参数拟合平台。
+- `PySCeS`
+  - 来源：[PySCeS/pysces](https://github.com/PySCeS/pysces)
+  - 作用：Python 原生的动力学建模方案。
+- `NUFEB`
+  - 来源：[nufeb/NUFEB](https://github.com/nufeb/NUFEB)
+  - 作用：适合生物膜、个体基础微生物和反应器空间系统。
+- `Vivarium Core`
+  - 来源：[vivarium-collective/vivarium-core](https://github.com/vivarium-collective/vivarium-core)
+  - 作用：适合自定义多过程微生物生态工作流。
+- `MDSINE2`
+  - 来源：[gerberlab/MDSINE2](https://github.com/gerberlab/MDSINE2)
+  - 作用：适合带时间序列的微生物群落动态问题。
+- `miaSim`
+  - 来源：[microbiome/miaSim](https://github.com/microbiome/miaSim)
+  - 作用：适合微生物组 benchmark 和扰动情景模拟。
+- `pyPESTO`
+  - 来源：[ICB-DCM/pyPESTO](https://github.com/ICB-DCM/pyPESTO)
+  - 作用：很强的参数估计、不确定性和敏感性工具。
+- `NetLogo`
+  - 来源：[NetLogo/NetLogo](https://github.com/NetLogo/NetLogo)
+  - 作用：很适合作为主体生态和规则驱动空间模拟的起点。
+- `Mesa`
+  - 来源：[mesa/mesa](https://github.com/mesa/mesa)
+  - 作用：Python 原生主体模型框架，很适合 notebook 和科学计算工作流。
+- `GAMA Platform`
+  - 来源：[gama-platform/gama](https://github.com/gama-platform/gama)
+  - 作用：很适合 GIS 感知的多主体空间生态模型。
+- `DSSAT Cropping System Model`
+  - 来源：[DSSAT/dssat-csm-os](https://github.com/DSSAT/dssat-csm-os)
+  - 作用：经典作物系统模型，适合农业生态和管理情景分析。
+- `SWAT+`
+  - 来源：[SWAT+ 文档](https://swatplus.gitbook.io/docs/)
+  - 作用：很适合流域水文、水质和土地利用管理情景。
+- `Ecopath with Ecosim`
+  - 来源：[Ecopath 项目](https://ecopath.org/)
+  - 作用：成熟的食物网和营养级模拟系统。
+- `LPJ-GUESS`
+  - 来源：[LPJ-GUESS](https://web.nateko.lu.se/lpj-guess/index.html)
+  - 作用：很适合动态植被和陆地生态过程问题。
+- `ED2`
+  - 来源：[EDmodel/ED2](https://github.com/EDmodel/ED2)
+  - 作用：适合生态系统人口统计和植被结构问题。
+- `Biome-BGC`
+  - 来源：[Biome-BGC](https://carbonmodel.org/biome_bgc/)
+  - 作用：适合碳-水-氮循环和 LAI 驱动的生态系统响应。
+- `CENTURY / DayCent`
+  - 来源：[Colorado State Century 项目](https://www.nrel.colostate.edu/projects/century/)
+  - 作用：适合植物-土壤养分循环和土壤碳问题。
+- `RHESSys`
+  - 来源：[RHESSys/RHESSys](https://github.com/RHESSys/RHESSys)
+  - 作用：很适合生态水文耦合问题。
+- `LANDIS-II`
+  - 来源：[LANDIS-II](https://www.landis-ii.org/home)
+  - 作用：适合森林景观、干扰和经营模拟。
+- `Madingley Model`
+  - 来源：[Madingley Model](https://madingley.github.io/)
+  - 作用：适合一般生态系统和多营养级问题。
+- `RangeShifter 2.0`
+  - 来源：[RangeShifter 2.0](https://rangeshifter.github.io/software/rangeshifter2.0/)
+  - 作用：适合扩散、分布变化和空间 eco-evolution 情景。
 - `DeepForest`
   - 来源：[weecology/DeepForest](https://github.com/weecology/DeepForest)
   - 作用：航空影像中的树冠和鸟类检测。

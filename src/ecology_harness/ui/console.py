@@ -21,7 +21,14 @@ class ConsoleRenderer:
         self.width = max(72, min(120, shutil.get_terminal_size((100, 24)).columns))
 
     def print(self, text: str = "") -> None:
-        print(text, file=self.stream, flush=True)
+        try:
+            print(text, file=self.stream, flush=True)
+        except BrokenPipeError:
+            try:
+                self.stream.close()
+            except Exception:
+                pass
+            raise SystemExit(0)
 
     def rule(self, title: str = "") -> None:
         line_char = "─"

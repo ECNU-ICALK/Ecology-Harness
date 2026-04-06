@@ -13,9 +13,51 @@ surface, so new skills, MCP servers, and tools can keep accumulating without
 making the core messy. Contributions are very welcome, and we would love help
 from the community to keep improving and expanding the ecology stack together.
 
+Current release: `0.2.0 beta` (`0.2.0b0` package version).
+See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
+
+## News
+
+- `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
+- packaged the ecology skill library, MCP catalogs, plugin assets, and toolkit catalogs into installable wheel and sdist outputs.
+- expanded the ecology pack across literature review, geospatial reasoning, aquatic systems, photobioreactors, multimodal analysis, plant and microbial growth simulation, and traditional ecological process models.
+- added release-facing project metadata, CI, changelog, contribution guidance, and distribution checks for GitHub publishing.
+- the project is growing quickly, and contributions are very welcome if you want to help extend ecology skills, MCP integrations, and scientific tool adapters.
+
 ## Startup Preview
 
 ![Ecology Harness startup screen](imgs/start_img.png)
+
+## Project Structure
+
+```text
+EcologyHarness/
+├── .github/workflows/        # CI for tests and package smoke checks
+├── docs/                     # Pack notes, architecture, and domain references
+├── imgs/                     # README and startup screenshots
+├── scripts/                  # Local install helpers
+├── src/ecology_harness/
+│   ├── agents/               # Multi-agent coordination and task state
+│   ├── config/               # Settings and runtime configuration
+│   ├── ecology/              # Ecology catalogs and domain extension surface
+│   ├── mcp/                  # MCP registry, catalogs, and bridge logic
+│   ├── memory/               # Persistent memory management
+│   ├── permissions/          # Access policy and safety checks
+│   ├── plugins/              # Bundled plugin manifests and loaders
+│   ├── runtime/              # Agent loop, providers, sessions, compaction
+│   ├── sandbox/              # File, shell, and network sandbox helpers
+│   ├── skills/               # Built-in skills, including ecology packs
+│   ├── tasks/                # User and agent task tracking
+│   ├── tools/                # Built-in CLI/runtime tools
+│   ├── ui/                   # Terminal UI and REPL presentation
+│   ├── app.py                # Application assembly
+│   └── cli.py                # `eh` command entrypoint
+├── tests/unit/               # Standard-library unit test suite
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+└── pyproject.toml
+```
 
 ## What Is Included
 
@@ -60,6 +102,8 @@ The current ecology capability map is easiest to read by subdomain:
 | Hydrology and freshwater environment | flow, water level, flood context, watershed screening | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
 | Coastal, estuary, wetland, and blue-carbon work | tides, sea level, coastal flooding, wetland site screening | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
 | Agroecology and agricultural environment | crop-system screening, climate stress, landscape context | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| Plant, crop, and microbial growth simulation | crop growth, irrigation, woody vegetation, root-shoot architecture, plant-soil coupling, microbial growth, biofilms, parameter fitting | `plant-growth-model-selection`<br>`crop-growth-simulation-workflow`<br>`crop-water-and-irrigation-simulation`<br>`functional-structural-plant-modeling`<br>`root-and-rhizosphere-architecture-modeling`<br>`woody-plant-and-forest-simulation`<br>`microbial-growth-and-community-simulation`<br>`microbial-community-metabolism-simulation`<br>`microbial-biofilm-and-reactor-simulation`<br>`microbiome-timeseries-and-benchmark-simulation`<br>`plant-soil-microbe-coupled-simulation`<br>`growth-model-calibration-and-validation` | `jupyter-mcp`<br>`labarchives`<br>`unit-converter`<br>`weather-open-meteo`<br>`nasa`<br>`APSIM Next Generation`<br>`PCSE / WOFOST`<br>`AquaCrop-OSPy`<br>`BioCro`<br>`pyfao56`<br>`CPlantBox`<br>`OpenAlea L-Py`<br>`r3PG`<br>`medfate`<br>`pyrealm`<br>`COBRApy`<br>`MICOM`<br>`COMETS`<br>`BacArena`<br>`Community Simulator`<br>`NUFEB`<br>`miaSim` |
+| Traditional process models and ABM | agent-based ecology, watershed simulation, trophic scenarios, forest disturbance, terrestrial biosphere response, cross-model comparison | `process-model-selection`<br>`agent-based-ecology-modeling`<br>`watershed-and-ecohydrology-modeling`<br>`food-web-and-trophic-simulation`<br>`forest-landscape-disturbance-modeling`<br>`terrestrial-biosphere-and-vegetation-modeling`<br>`model-calibration-and-sensitivity`<br>`cross-model-scenario-comparison` | `NetLogo`<br>`Mesa`<br>`GAMA Platform`<br>`DSSAT Cropping System Model`<br>`SWAT+`<br>`Ecopath with Ecosim`<br>`LPJ-GUESS`<br>`ED2`<br>`Biome-BGC`<br>`CENTURY / DayCent`<br>`RHESSys`<br>`LANDIS-II`<br>`Madingley Model`<br>`RangeShifter 2.0` |
 | Freshwater microcosms, plankton, and biofilms | grazer-prey microcosms, plankton shifts, benthic biofilms, water quality, fluorescence, microscopy classification | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`simple-pubmed`<br>`pubchem` |
 | Closed algae systems and photobioreactors | sealed reactor design, light path, pH and CO2 control, contamination review, growth curves, mass balance | `closed-algae-system-design`<br>`photobioreactor-environment-control`<br>`microalgae-strain-and-inoculation`<br>`algal-monitoring-plan`<br>`photobioreactor-troubleshooting`<br>`algal-timeseries-and-mass-balance` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`pubchem` |
 | Plant phenotyping and trait extraction | leaf traits, morphology, herbarium measurements, organ detection | `plant-phenotyping-and-traits` | `PlantCV`<br>`LeafMachine2` |
@@ -92,6 +136,14 @@ Closed-system algae and photobioreactor-specific notes are tracked in [docs/alga
 
 Freshwater microcosm and plankton-specific notes are tracked in [docs/aquatic-microcosm-pack.md](docs/aquatic-microcosm-pack.md).
 
+Plant, crop, and microbial growth-simulation notes are tracked in [docs/plant-growth-simulation-pack.md](docs/plant-growth-simulation-pack.md).
+
+That pack now also covers plant-type-specific modeling for annual crops,
+irrigation and water balance, woody vegetation and forests, rhizosphere
+structure, and microbial-community or biofilm simulation.
+
+Traditional ecological process-model and ABM notes are tracked in [docs/ecology-process-modeling-pack.md](docs/ecology-process-modeling-pack.md).
+
 Example prompts:
 
 ```bash
@@ -100,6 +152,14 @@ eh prompt '/photobioreactor-environment-control CO2 and pH control for sealed Sp
 eh prompt '/algal-timeseries-and-mass-balance interpret pH, dissolved oxygen, and nitrate drawdown in a batch reactor'
 eh prompt '/aquatic-microcosm-foodweb-design Daphnia Chlorella Microcystis Navicula freshwater microcosm'
 eh prompt '/plankton-microscopy-and-auto-classification microscope camera workflow for Daphnia rotifers and algal colonies'
+eh prompt '/plant-growth-model-selection maize drought simulation with irrigation treatments'
+eh prompt '/crop-growth-simulation-workflow rice yield under heat stress and delayed sowing'
+eh prompt '/woody-plant-and-forest-simulation drought stress and stand development in pine plantations'
+eh prompt '/microbial-community-metabolism-simulation cross-feeding in a synthetic rhizosphere consortium'
+eh prompt '/microbial-growth-and-community-simulation rhizosphere consortium cross-feeding under carbon pulses'
+eh prompt '/process-model-selection restoration grazing fire and hydrology interactions in a catchment'
+eh prompt '/agent-based-ecology-modeling pollinator movement in fragmented farmland'
+eh prompt '/watershed-and-ecohydrology-modeling watershed nutrient export under changing fertilizer inputs'
 ```
 
 This pass also expanded coverage for finer-grained research directions that are common in ecology, agriculture, and environment projects:
@@ -126,6 +186,16 @@ See [docs/ecology-basic-tools.md](docs/ecology-basic-tools.md) for the full func
 This catalog now also includes laboratory and bioprocess analysis entries such as
 `Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `LabArchives MCP Server`,
 `unit-converter-mcp`, `PyLabRobot`, and `Opentrons`.
+
+It now also includes plant and microbial growth-simulation frameworks such as
+`APSIM Next Generation`, `PCSE / WOFOST`, `AquaCrop-OSPy`, `CPlantBox`,
+`OpenAlea L-Py`, `pyrealm`, `COBRApy`, `MICOM`, `Tellurium`, `COPASI`,
+`PySCeS`, `MDSINE2`, and `pyPESTO`.
+
+It now also includes traditional ecological simulators and ABM systems such as
+`NetLogo`, `Mesa`, `GAMA Platform`, `DSSAT Cropping System Model`, `SWAT+`,
+`Ecopath with Ecosim`, `LPJ-GUESS`, `ED2`, `Biome-BGC`, `CENTURY / DayCent`,
+`RHESSys`, `LANDIS-II`, `Madingley Model`, and `RangeShifter 2.0`.
 
 It now also includes microscopy, plankton, and molecular-analysis toolkits such as
 `Fiji / ImageJ`, `PyImageJ`, `CellProfiler`, `napari`, `ilastik`,

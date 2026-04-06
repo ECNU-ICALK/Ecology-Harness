@@ -67,6 +67,62 @@ agriculture, environment, and ecology pack for Ecology Harness.
     - connects water-quality telemetry with microscopy, fluorescence, and assay follow-up
     - gives the harness stronger support for community-composition and monitoring workflows
 
+- plant, crop, and microbial growth-simulation skills
+  - local skill set:
+    - `plant-growth-model-selection`
+    - `crop-growth-simulation-workflow`
+    - `crop-water-and-irrigation-simulation`
+    - `functional-structural-plant-modeling`
+    - `root-and-rhizosphere-architecture-modeling`
+    - `woody-plant-and-forest-simulation`
+    - `microbial-growth-and-community-simulation`
+    - `microbial-community-metabolism-simulation`
+    - `microbial-biofilm-and-reactor-simulation`
+    - `microbiome-timeseries-and-benchmark-simulation`
+    - `plant-soil-microbe-coupled-simulation`
+    - `growth-model-calibration-and-validation`
+  - why selected:
+    - fills a common gap between ecology observation workflows and mechanistic simulation work
+    - gives the harness a clean entry point for annual crops, irrigation, woody plants, plant architecture, microbial dynamics, and calibration workflows
+    - pairs naturally with the existing Jupyter, LabArchives, and unit-conversion MCP stack
+
+## Additional Toolkit Layer For Plant Types And Microbes
+
+- plant-type-specific additions
+  - `BioCro`
+  - `pyfao56`
+  - `r3PG`
+  - `medfate`
+  - why selected:
+    - improves coverage for annual crops, canopy physiology, irrigation accounting, forests, and woody plants
+    - complements rather than replaces `APSIM`, `WOFOST`, `AquaCrop`, `CPlantBox`, and `pyrealm`
+
+- microbial ecology additions
+  - `COMETS`
+  - `BacArena`
+  - `Community Simulator`
+  - `NUFEB`
+  - `Vivarium Core`
+  - `miaSim`
+  - why selected:
+    - covers community metabolism, resource competition, biofilms, spatial diffusion, and longitudinal microbiome benchmarks
+    - extends the earlier `COBRApy`, `MICOM`, `Tellurium`, and `MDSINE2` layer into richer microbial-ecology workflows
+
+- traditional ecological process-model and ABM skills
+  - local skill set:
+    - `process-model-selection`
+    - `agent-based-ecology-modeling`
+    - `watershed-and-ecohydrology-modeling`
+    - `food-web-and-trophic-simulation`
+    - `forest-landscape-disturbance-modeling`
+    - `terrestrial-biosphere-and-vegetation-modeling`
+    - `model-calibration-and-sensitivity`
+    - `cross-model-scenario-comparison`
+  - why selected:
+    - moves the harness beyond literature and data review into model-family selection for traditional ecological simulators
+    - creates a clean surface for future runner tools such as `RunNetLogoModel` or `RunSWATPlusProject`
+    - keeps heavy compiled systems in the toolkit layer while still making them discoverable now
+
 ## Installed MCP Catalog Entries
 
 - `mapbox`
@@ -184,6 +240,16 @@ default catalog entries yet:
   - why not default yet:
     - I did not find equally clear, maintained, install-ready MCP servers in this pass
     - these may be better added later as first-party native tools or adapters rather than copied from weaker third-party wrappers
+
+- plant-growth-specific MCP servers
+  - why not default yet:
+    - I did not find equally mature, broadly reusable MCP servers for crop or plant-growth simulation that clearly beat direct use of existing model frameworks
+    - the stronger current pattern is to catalog the simulation frameworks themselves and execute them through `jupyter-mcp` plus notebook or lab-record tooling
+
+- model-specific MCP servers for traditional ecological simulators
+  - why not default yet:
+    - I did not find broadly reused MCP servers for NetLogo, DSSAT, SWAT+, EwE, LANDIS-II, or LPJ-GUESS that were mature enough to treat as high-quality defaults
+    - the better near-term path is to add model runners or container adapters around the official systems while keeping the MCP spine focused on notebooks, provenance, and data handling
 
 ## Notes
 

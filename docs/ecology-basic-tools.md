@@ -10,6 +10,8 @@ cataloged in the repository.
 |---|---|---|---|
 | Field observation and species ID | identify a plant from a photo, normalize names, inspect nearby observations | `INaturalistSearchTaxa`, `INaturalistSearchObservations`, `PlantNetIdentify`, `ListEcologyFunctions`, `ListEcologyToolkits` | `pyinaturalist`, `Pl@ntNet API`, `pybioclip`, `nature-id` |
 | Plant phenotyping and traits | leaf traits, morphology, herbarium measurements, organ detection | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PlantCV`, `LeafMachine2` |
+| Plant, crop, and growth simulation | crop phenology, irrigation, woody vegetation, root-shoot structure, microbial growth, biofilms, parameter estimation, scenario comparison | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `APSIM Next Generation`, `PCSE / WOFOST`, `AquaCrop-OSPy`, `BioCro`, `pyfao56`, `CPlantBox`, `OpenAlea L-Py`, `r3PG`, `medfate`, `pyrealm`, `COBRApy`, `MICOM`, `COMETS`, `BacArena`, `Community Simulator`, `Tellurium`, `COPASI`, `PySCeS`, `NUFEB`, `Vivarium Core`, `MDSINE2`, `miaSim`, `pyPESTO` |
+| Traditional process models and ABM | agent-based ecology, watershed routing, trophic simulation, disturbance models, DGVM-style workflows | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `NetLogo`, `Mesa`, `GAMA Platform`, `DSSAT Cropping System Model`, `SWAT+`, `Ecopath with Ecosim`, `LPJ-GUESS`, `ED2`, `Biome-BGC`, `CENTURY / DayCent`, `RHESSys`, `LANDIS-II`, `Madingley Model`, `RangeShifter 2.0` |
 | Counting and density | plant counting, tree counting, wildlife counts, density estimates | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PlantCV`, `DeepForest`, `detectree2`, `TreeCountSegHeight`, `PyTorch-Wildlife` |
 | Detection and segmentation | object detection, masks, crown delineation, image tiling | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `DeepForest`, `detectree2`, `TreeCountSegHeight`, `PyTorch-Wildlife` |
 | Camera-trap wildlife workflows | empty-image filtering, animal detection, species classification | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PyTorch-Wildlife` |
@@ -57,6 +59,117 @@ cataloged in the repository.
 - `LeafMachine2`
   - Source: [Gene-Weaver/LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)
   - Why included: strong herbarium and leaf-measurement workflow.
+- `APSIM Next Generation`
+  - Source: [APSIMInitiative/ApsimX](https://github.com/APSIMInitiative/ApsimX)
+  - Why included: strong agro-ecosystem framework for management, crop, and rotation scenarios.
+- `PCSE / WOFOST`
+  - Source: [ajwdewit/pcse](https://github.com/ajwdewit/pcse)
+  - Why included: practical Python-first crop simulation environment for phenology, biomass, and yield studies.
+- `AquaCrop-OSPy`
+  - Source: [aquacropos/aquacrop](https://github.com/aquacropos/aquacrop)
+  - Why included: strong fit for irrigation, drought, and water-limited crop growth.
+- `BioCro`
+  - Source: [biocro/biocro](https://github.com/biocro/biocro)
+  - Why included: useful mechanistic crop-ecophysiology framework for canopy and photosynthesis-aware growth simulation.
+- `pyfao56`
+  - Source: [kthorp/pyfao56](https://github.com/kthorp/pyfao56)
+  - Why included: practical ET and irrigation-accounting layer for crop water-balance workflows.
+- `CPlantBox`
+  - Source: [Plant-Root-Soil-Interactions-Modelling/CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox)
+  - Why included: high-value framework for 3D root-shoot architecture and plant-soil interactions.
+- `OpenAlea L-Py`
+  - Source: [openalea/lpy](https://github.com/openalea/lpy)
+  - Why included: mature L-system plant-architecture environment for FSPM workflows.
+- `r3PG`
+  - Source: [trotsiuk/r3PG](https://github.com/trotsiuk/r3PG)
+  - Why included: practical forest and woody-plant productivity model for stands and plantations.
+- `medfate`
+  - Source: [emf-creaf/medfate](https://github.com/emf-creaf/medfate)
+  - Why included: strong woody-vegetation package for drought, hydraulics, and stand water-balance questions.
+- `pyrealm`
+  - Source: [ImperialCollegeLondon/pyrealm](https://github.com/ImperialCollegeLondon/pyrealm)
+  - Why included: useful bridge between environmental forcing, productivity, and ecophysiology.
+- `COBRApy`
+  - Source: [opencobra/cobrapy](https://github.com/opencobra/cobrapy)
+  - Why included: foundational metabolic-growth modeling framework for microbes.
+- `MICOM`
+  - Source: [micom-dev/micom](https://github.com/micom-dev/micom)
+  - Why included: strong community-metabolism and cross-feeding layer for microbiome-style questions.
+- `COMETS`
+  - Source: [segrelab/comets](https://github.com/segrelab/comets)
+  - Why included: valuable when microbial communities need spatial diffusion and metabolite exchange.
+- `BacArena`
+  - Source: [euba/BacArena](https://github.com/euba/BacArena)
+  - Why included: combines microbial individuals and metabolic exchange in one community simulator.
+- `Community Simulator`
+  - Source: [Emergent-Behaviors-in-Biology/community-simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator)
+  - Why included: strong consumer-resource and assembly modeling layer for microbial ecology.
+- `Tellurium`
+  - Source: [sys-bio/tellurium](https://github.com/sys-bio/tellurium)
+  - Why included: practical SBML and ODE environment for mechanistic growth dynamics.
+- `COPASI`
+  - Source: [copasi/COPASI](https://github.com/copasi/COPASI)
+  - Why included: mature dynamic-systems platform with fitting and optimization support.
+- `PySCeS`
+  - Source: [PySCeS/pysces](https://github.com/PySCeS/pysces)
+  - Why included: Python-native kinetic modeling option for mechanistic growth workflows.
+- `NUFEB`
+  - Source: [nufeb/NUFEB](https://github.com/nufeb/NUFEB)
+  - Why included: strong individual-based microbial and biofilm simulator for reactor-style spatial systems.
+- `Vivarium Core`
+  - Source: [vivarium-collective/vivarium-core](https://github.com/vivarium-collective/vivarium-core)
+  - Why included: flexible process-composition engine for custom microbial ecology workflows.
+- `MDSINE2`
+  - Source: [gerberlab/MDSINE2](https://github.com/gerberlab/MDSINE2)
+  - Why included: useful when microbial-growth questions are driven by longitudinal time-series.
+- `miaSim`
+  - Source: [microbiome/miaSim](https://github.com/microbiome/miaSim)
+  - Why included: useful benchmark and perturbation-simulation package for microbiome workflows.
+- `pyPESTO`
+  - Source: [ICB-DCM/pyPESTO](https://github.com/ICB-DCM/pyPESTO)
+  - Why included: strong parameter-estimation and uncertainty layer for model calibration.
+- `NetLogo`
+  - Source: [NetLogo/NetLogo](https://github.com/NetLogo/NetLogo)
+  - Why included: one of the most practical starting points for agent-based ecology and rule-based spatial simulations.
+- `Mesa`
+  - Source: [mesa/mesa](https://github.com/mesa/mesa)
+  - Why included: Python-native ABM framework that integrates cleanly with notebooks and scientific Python workflows.
+- `GAMA Platform`
+  - Source: [gama-platform/gama](https://github.com/gama-platform/gama)
+  - Why included: strong GIS-aware multi-agent platform for spatial ecology and social-ecological systems.
+- `DSSAT Cropping System Model`
+  - Source: [DSSAT/dssat-csm-os](https://github.com/DSSAT/dssat-csm-os)
+  - Why included: classic crop-system model family with strong relevance for agricultural ecology and management scenarios.
+- `SWAT+`
+  - Source: [SWAT+ docs](https://swatplus.gitbook.io/docs/)
+  - Why included: very practical watershed and water-quality model for land-use and management scenarios.
+- `Ecopath with Ecosim`
+  - Source: [Ecopath project](https://ecopath.org/)
+  - Why included: mature default option for trophic and food-web simulation.
+- `LPJ-GUESS`
+  - Source: [LPJ-GUESS](https://web.nateko.lu.se/lpj-guess/index.html)
+  - Why included: strong dynamic vegetation and terrestrial biosphere model for climate-response studies.
+- `ED2`
+  - Source: [EDmodel/ED2](https://github.com/EDmodel/ED2)
+  - Why included: useful for ecosystem demography and vegetation-structure questions.
+- `Biome-BGC`
+  - Source: [Biome-BGC](https://carbonmodel.org/biome_bgc/)
+  - Why included: classic process model for carbon-water-nitrogen and LAI-linked ecosystem response.
+- `CENTURY / DayCent`
+  - Source: [Colorado State Century project](https://www.nrel.colostate.edu/projects/century/)
+  - Why included: classic plant-soil nutrient cycling model family with strong soil-carbon relevance.
+- `RHESSys`
+  - Source: [RHESSys/RHESSys](https://github.com/RHESSys/RHESSys)
+  - Why included: strong ecohydrology option when hydrology and ecosystem response must stay coupled.
+- `LANDIS-II`
+  - Source: [LANDIS-II](https://www.landis-ii.org/home)
+  - Why included: strong forest landscape and disturbance framework.
+- `Madingley Model`
+  - Source: [Madingley Model](https://madingley.github.io/)
+  - Why included: useful general ecosystem model for multi-trophic and biodiversity-pattern questions.
+- `RangeShifter 2.0`
+  - Source: [RangeShifter 2.0](https://rangeshifter.github.io/software/rangeshifter2.0/)
+  - Why included: strong fit for dispersal, range dynamics, and spatial eco-evolutionary scenarios.
 - `DeepForest`
   - Source: [weecology/DeepForest](https://github.com/weecology/DeepForest)
   - Why included: practical ecological object detection in airborne imagery with tree crown and bird models.

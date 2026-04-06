@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 .ecology_harness/
 .venv/
+.release-venv/
+build/
+dist/
+*.egg-info/

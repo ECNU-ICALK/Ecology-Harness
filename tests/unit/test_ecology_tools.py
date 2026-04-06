@@ -46,6 +46,10 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("Field observation and species identification", result.content)
             self.assertIn("Plant phenotyping and trait extraction", result.content)
+            self.assertIn("Crop, plant, and growth simulation", result.content)
+            self.assertIn("Plant-type-specific growth and woody-vegetation simulation", result.content)
+            self.assertIn("Agent-based and individual-based ecosystem modeling", result.content)
+            self.assertIn("Microbial community, biofilm, and reactor simulation", result.content)
             self.assertIn("Closed algal systems and photobioreactors", result.content)
             self.assertIn("Aquatic microcosms, plankton, and biofilm monitoring", result.content)
 
@@ -91,6 +95,103 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("planktoscope", result.content)
             self.assertIn("ecotaxa-py-client", result.content)
+
+    def test_list_ecology_toolkits_can_find_growth_simulation_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "simulation"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("pcse-wofost", result.content)
+            self.assertIn("cobrapy", result.content)
+
+    def test_describe_ecology_toolkit_reports_growth_model_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "DescribeEcologyToolkit",
+                {"name": "aquacrop-ospy"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("AquaCrop-OSPy", result.content)
+            self.assertIn("water-limited crop growth", result.content)
+
+    def test_list_ecology_toolkits_can_find_woody_plant_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "woody"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("medfate", result.content)
+            self.assertIn("r3pg", result.content)
+
+    def test_list_ecology_toolkits_can_find_microbial_community_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "biofilm"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("nufeb", result.content)
+
+    def test_list_ecology_toolkits_can_find_process_model_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "agent-based"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("netlogo", result.content)
+            self.assertIn("mesa", result.content)
+
+    def test_describe_ecology_toolkit_reports_process_model_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "DescribeEcologyToolkit",
+                {"name": "dssat-csm"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("DSSAT Cropping System Model", result.content)
+            self.assertIn("Long-running crop-system modeling framework", result.content)
+
+    def test_describe_ecology_toolkit_reports_microbial_simulation_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "DescribeEcologyToolkit",
+                {"name": "comets"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("COMETS", result.content)
+            self.assertIn("Community metabolism simulator", result.content)
 
     def test_inaturalist_search_taxa_parses_results(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
