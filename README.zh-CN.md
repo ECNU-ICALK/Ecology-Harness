@@ -16,8 +16,8 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 - CLI + REPL 双入口，支持自然语言与 slash command 混合使用
 - 事件驱动的终端交互界面
 - Agent loop 与工具调用闭环
-- 对齐 `nano-claude-code` 的 provider 抽象层
-- 内置支持 `mock`、`anthropic`、`openai`、`gemini`、`kimi`、`qwen`、`zhipu`、`deepseek`、`ollama`、`lmstudio`、`custom`
+- 统一的模型 provider 抽象层，兼容本地与远端后端
+- 内置支持 `mock`、`anthropic`、`openai`、`openrouter`、`gemini`、`kimi`、`qwen`、`zhipu`、`deepseek`、`ollama`、`lmstudio`、`custom`
 - 会话持久化、恢复与上下文压缩
 - 可配置 Sandbox、权限策略与审计
 - 工具注册系统与内置通用工具
@@ -29,6 +29,7 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 - MCP 与 plugin 扩展骨架
 - 来自高质量上游仓库的生态技能包
 - 面向农业、环境、生态场景的 MCP 目录
+- 封闭藻类系统 / 光生物反应器 skills 与实验分析型 MCP 目录
 - 标准库 `unittest` 测试集
 
 ## Ecology Pack
@@ -48,6 +49,8 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 | 水文与淡水环境 | 水位、流量、洪水背景、流域预筛查 | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
 | 海岸、河口、湿地与蓝碳 | 潮位、海平面、沿海洪水、湿地选址预筛查 | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
 | 农业生态与农业环境 | 作物系统筛查、气候胁迫、景观背景 | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| 淡水微宇宙、浮游群落与生物膜 | 摄食微宇宙、浮游变化、底栖生物膜、水质、荧光、显微分类 | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`simple-pubmed`<br>`pubchem` |
+| 封闭藻类系统与光生物反应器 | 封闭反应器设计、光径、pH / CO2 控制、污染排查、生长曲线、物质平衡 | `closed-algae-system-design`<br>`photobioreactor-environment-control`<br>`microalgae-strain-and-inoculation`<br>`algal-monitoring-plan`<br>`photobioreactor-troubleshooting`<br>`algal-timeseries-and-mass-balance` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`pubchem` |
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits` | `PlantCV`<br>`LeafMachine2` |
 | 生态计数与分割 | 植株计数、树木计数、动物检测、树冠分割 | `ecology-counting-and-segmentation` | `DeepForest`<br>`detectree2`<br>`TreeCountSegHeight`<br>`PyTorch-Wildlife` |
 | 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | `weather-open-meteo`<br>`nasa`<br>`eosc-data-commons`<br>`dataverse`<br>`wsl-envidat` |
@@ -74,6 +77,20 @@ eh mcp
 
 上游来源说明见 [docs/ecology-pack.zh-CN.md](docs/ecology-pack.zh-CN.md)。
 
+封闭藻类系统与光生物反应器相关能力说明见 [docs/algae-photobioreactor-pack.zh-CN.md](docs/algae-photobioreactor-pack.zh-CN.md)。
+
+淡水微宇宙、浮游群落和生物膜相关能力说明见 [docs/aquatic-microcosm-pack.zh-CN.md](docs/aquatic-microcosm-pack.zh-CN.md)。
+
+可以直接这样试：
+
+```bash
+eh prompt '/closed-algae-system-design flat-panel Chlorella reactor for wastewater polishing'
+eh prompt '/photobioreactor-environment-control CO2 and pH control for sealed Spirulina cultivation'
+eh prompt '/algal-timeseries-and-mass-balance interpret pH, dissolved oxygen, and nitrate drawdown in a batch reactor'
+eh prompt '/aquatic-microcosm-foodweb-design Daphnia Chlorella Microcystis Navicula freshwater microcosm'
+eh prompt '/plankton-microscopy-and-auto-classification microscope camera workflow for Daphnia rotifers and algal colonies'
+```
+
 这一轮还进一步补齐了更细粒度的研究方向：
 
 - 个体胁迫与生理生态
@@ -94,6 +111,14 @@ eh mcp
 - 外部重型工具目录：表型、计数、分割、相机陷阱、生态声学
 
 完整功能树见 [docs/ecology-basic-tools.zh-CN.md](docs/ecology-basic-tools.zh-CN.md)。
+
+当前这个工具目录也已经纳入实验室和生物过程分析相关项，例如
+`Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`LabArchives MCP Server`、
+`unit-converter-mcp`、`PyLabRobot` 和 `Opentrons`。
+
+现在也纳入了显微图像、浮游生物和分子分析相关工具，例如
+`Fiji / ImageJ`、`PyImageJ`、`CellProfiler`、`napari`、`ilastik`、
+`EcoTaxa Python Client`、`PlanktoScope`、`QIIME 2 / Rachis Framework` 和 `DADA2`。
 
 可以直接查看：
 
@@ -233,6 +258,11 @@ eh mcp
 # 查看支持的模型来源
 eh providers
 
+# 直接使用 OpenRouter
+export OPENROUTER_API_KEY="sk-or-..."
+eh --provider openrouter --model openai/gpt-4.1-mini \
+  "summarize this repository in 5 bullets"
+
 # 查看生态技能
 eh skills
 
@@ -353,10 +383,11 @@ eh prompt '/tool ListAgentTypes {}'
 
 ## 模型来源
 
-当前支持的模型来源与 `nano-claude-code` 保持同一大类：
+当前支持的模型来源包括：
 
 - `anthropic`
 - `openai`
+- `openrouter`
 - `gemini`
 - `kimi`
 - `qwen`
@@ -378,6 +409,17 @@ eh providers
 ```bash
 export ANTHROPIC_API_KEY=your_key
 eh --provider anthropic --model claude-sonnet-4-6 prompt "Summarize this repository."
+```
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."
+
+# 可选，但推荐用于 OpenRouter 的应用标识
+export OPENROUTER_HTTP_REFERER="https://github.com/ECNU-ICALK/Ecology-Harness"
+export OPENROUTER_TITLE="Ecology Harness"
+
+eh --provider openrouter --model openai/gpt-4.1-mini prompt "Inspect the workspace."
+eh --provider openrouter --model anthropic/claude-3.7-sonnet prompt "Summarize this repository."
 ```
 
 ```bash

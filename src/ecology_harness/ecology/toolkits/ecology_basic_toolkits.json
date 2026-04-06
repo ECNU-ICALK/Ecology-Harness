@@ -126,6 +126,86 @@
         "compare a predicted species against community observations",
         "choose the right toolkit for plant traits or counting"
       ]
+    },
+    {
+      "category": "Closed algal systems and photobioreactors",
+      "capabilities": [
+        "sealed reactor design and light-path planning",
+        "pH, CO2, gas-exchange, and carbonate-control workflows",
+        "nutrient dosing and trace-element planning",
+        "sterile startup, inoculation, and contamination control",
+        "time-series growth analysis and mass-balance accounting",
+        "photobioreactor troubleshooting and corrective-action planning"
+      ],
+      "examples": [
+        "design a closed flat-panel reactor for microalgae cultivation",
+        "plan pH and CO2 control for a benchtop photobioreactor",
+        "analyze algal growth curves and nutrient drawdown in a sealed system"
+      ]
+    },
+    {
+      "category": "Lab protocols, automation, and notebook workflows",
+      "capabilities": [
+        "protocol discovery and SOP drafting",
+        "electronic lab notebook capture with provenance",
+        "liquid handling automation for media prep or dosing",
+        "sensor logging and notebook-driven analysis",
+        "scientific unit conversion across temperature, pressure, and density",
+        "publication-ready notebook and figure workflows"
+      ],
+      "examples": [
+        "capture a bioreactor run in an electronic lab notebook",
+        "automate sterile media dispensing or sampling steps",
+        "query and analyze reactor telemetry in Jupyter"
+      ]
+    },
+    {
+      "category": "Aquatic microcosms, plankton, and biofilm monitoring",
+      "capabilities": [
+        "zooplankton and phytoplankton interaction studies",
+        "bottom-photo and periphyton biofilm monitoring",
+        "water-column and benthic compartment tracking",
+        "multi-metric freshwater microcosm observation planning",
+        "time-resolved nutrient and dissolved-gas interpretation",
+        "community-level trophic screening in enclosed mesocosms"
+      ],
+      "examples": [
+        "monitor Daphnia grazing and phytoplankton change in a tank microcosm",
+        "track benthic diatom and filamentous green-algae biofilm development",
+        "design an observation plan for algae-zooplankton-bacteria interactions"
+      ]
+    },
+    {
+      "category": "Microscopy, automated classification, and bioimage analysis",
+      "capabilities": [
+        "microscope-image segmentation and object measurement",
+        "plankton and microbial image annotation workflows",
+        "semi-automatic classification from brightfield or fluorescence images",
+        "manual review with interactive labeling",
+        "feature extraction from mixed-community imagery",
+        "batch processing of microscopy images"
+      ],
+      "examples": [
+        "classify plankton taxa from microscope camera images",
+        "segment rotifers, cladocerans, and algal colonies in batches",
+        "measure cell or colony morphology from fluorescence images"
+      ]
+    },
+    {
+      "category": "Fluorescence, multispectral, and assay-linked analysis",
+      "capabilities": [
+        "chlorophyll and phycocyanin fluorescence workflows",
+        "multispectral absorption and fluorescence review",
+        "bottom-image and biofilm-thickness extraction",
+        "coupling image-derived signals with day-scale sampling assays",
+        "PCR and amplicon-sequencing downstream analysis planning",
+        "integration of total carbon and laboratory assay results with telemetry"
+      ],
+      "examples": [
+        "analyze chlorophyll and phycocyanin fluorescence alongside DO and pH",
+        "extract biofilm thickness from repeated bottom photographs",
+        "plan a PCR and sequencing workflow after time-series sampling"
+      ]
     }
   ],
   "toolkits": [
@@ -358,6 +438,357 @@
         "monitoring workflows"
       ],
       "notes": "Strongest acoustic option in this first pass."
+    },
+    {
+      "slug": "jupyter-mcp-server",
+      "name": "Jupyter MCP Server",
+      "status": "cataloged-mcp",
+      "modality": "notebook-analysis",
+      "repo": "https://github.com/datalayer/jupyter-mcp-server",
+      "install": "pip install uv && configure uvx jupyter-mcp-server@latest with JUPYTER_URL and JUPYTER_TOKEN.",
+      "summary": "Notebook-aware MCP server for code execution, notebook editing, kernel management, and rich-output analysis in Jupyter.",
+      "good_for": [
+        "growth-curve analysis",
+        "reactor telemetry notebooks",
+        "time-series preprocessing",
+        "derived-metric calculation"
+      ],
+      "capabilities": [
+        "notebook execution",
+        "cell editing",
+        "multi-notebook management",
+        "interactive analysis"
+      ],
+      "notes": "High-value bridge when algae-system analysis should stay inside reproducible notebooks."
+    },
+    {
+      "slug": "influxdb3-mcp-server",
+      "name": "InfluxDB 3 MCP Server",
+      "status": "cataloged-mcp",
+      "modality": "timeseries-database",
+      "repo": "https://github.com/influxdata/influxdb3_mcp_server",
+      "install": "Build the upstream Node server or run the provided Docker image, then configure instance URL and token.",
+      "summary": "Time-series MCP server for querying, writing, and inspecting InfluxDB 3 measurements and schemas.",
+      "good_for": [
+        "sensor telemetry",
+        "pH and dissolved oxygen logs",
+        "light and temperature histories",
+        "reactor anomaly review"
+      ],
+      "capabilities": [
+        "time-series query",
+        "line-protocol writes",
+        "schema inspection",
+        "database health checks"
+      ],
+      "notes": "Best fit when closed algal systems are heavily instrumented and data already lives in a telemetry database."
+    },
+    {
+      "slug": "labarchives-mcp",
+      "name": "LabArchives MCP Server",
+      "status": "cataloged-mcp",
+      "modality": "eln-and-provenance",
+      "repo": "https://github.com/SamuelBrudner/lab_archives_mcp",
+      "install": "Create the upstream Python environment, configure LabArchives API credentials and UID, then run python -m labarchives_mcp.",
+      "summary": "Electronic lab notebook MCP server for notebook search, page reads, provenance-aware uploads, and project tracking.",
+      "good_for": [
+        "experiment logging",
+        "SOP capture",
+        "run-level provenance",
+        "semantic search over notebooks"
+      ],
+      "capabilities": [
+        "notebook search",
+        "page read/write",
+        "file upload with provenance",
+        "project state tracking"
+      ],
+      "notes": "Useful when algal culture runs, corrective actions, and analysis outputs should be anchored in an ELN."
+    },
+    {
+      "slug": "unit-converter-mcp",
+      "name": "unit-converter-mcp",
+      "status": "cataloged-mcp",
+      "modality": "scientific-unit-conversion",
+      "repo": "https://github.com/zazencodes/unit-converter-mcp",
+      "install": "pip install uv && configure uvx unit-converter-mcp.",
+      "summary": "Scientific unit-conversion MCP server covering temperature, length, area, mass, volume, time, energy, pressure, power, and density.",
+      "good_for": [
+        "sensor-unit harmonization",
+        "gas and liquid conversions",
+        "light-path and reactor-volume calculations",
+        "mass-balance cleanup"
+      ],
+      "capabilities": [
+        "temperature conversion",
+        "pressure conversion",
+        "density conversion",
+        "energy and power conversion"
+      ],
+      "notes": "Small but highly practical for reconciling methods, instruments, and mixed-unit literature."
+    },
+    {
+      "slug": "pylabrobot",
+      "name": "PyLabRobot",
+      "status": "cataloged-external",
+      "modality": "lab-automation",
+      "repo": "https://github.com/PyLabRobot/pylabrobot",
+      "install": "pip install pylabrobot and configure the hardware or simulation backend you need.",
+      "summary": "Vendor-agnostic Python SDK for liquid handling, pumps, plate readers, incubators, heater shakers, and other lab automation devices.",
+      "good_for": [
+        "automated media preparation",
+        "liquid transfers",
+        "nutrient dosing workflows",
+        "simulation before hardware runs"
+      ],
+      "capabilities": [
+        "liquid handling",
+        "resource management",
+        "device integration",
+        "protocol simulation"
+      ],
+      "notes": "Strong option when closed algal workflows expand into automated dosing, sampling, or multi-device lab orchestration."
+    },
+    {
+      "slug": "opentrons",
+      "name": "Opentrons",
+      "status": "cataloged-external",
+      "modality": "lab-automation",
+      "repo": "https://github.com/Opentrons/opentrons",
+      "install": "Follow the upstream Protocol API setup for OT-2 or Flex and develop Python protocols against API v2.",
+      "summary": "Official Python-based automation platform for OT-2 and Flex robots with protocol, module, and labware support.",
+      "good_for": [
+        "sterile liquid handling",
+        "replicable dosing protocols",
+        "sampling and aliquoting",
+        "media or assay setup"
+      ],
+      "capabilities": [
+        "protocol scripting",
+        "deck and labware control",
+        "module control",
+        "simulation and validation"
+      ],
+      "notes": "Best when the immediate target is reliable, production-grade liquid-handling protocols on Opentrons hardware."
+    },
+    {
+      "slug": "fiji-imagej",
+      "name": "Fiji / ImageJ",
+      "status": "cataloged-external",
+      "modality": "bioimage-analysis",
+      "repo": "https://github.com/fiji/fiji",
+      "install": "Download Fiji from the upstream site or use the portable application bundle, then add needed plugins through the Fiji updater.",
+      "summary": "Batteries-included scientific image-analysis platform widely used for microscopy, fluorescence, segmentation, measurement, and plugin-driven workflows.",
+      "good_for": [
+        "microscope image review",
+        "fluorescence measurement",
+        "biofilm thickness estimation",
+        "manual and semi-automatic segmentation"
+      ],
+      "capabilities": [
+        "image measurement",
+        "plugin-based segmentation",
+        "time-series image processing",
+        "microscopy QA"
+      ],
+      "notes": "Most practical general-purpose image workstation for plankton, biofilm, and fluorescence images."
+    },
+    {
+      "slug": "pyimagej",
+      "name": "PyImageJ",
+      "status": "cataloged-external",
+      "modality": "python-bioimage-bridge",
+      "repo": "https://github.com/imagej/pyimagej",
+      "install": "pip install pyimagej",
+      "summary": "Python bridge to ImageJ2/Fiji that helps move image-processing workflows into notebooks and automated pipelines.",
+      "good_for": [
+        "notebook-driven microscopy workflows",
+        "batch image processing from Python",
+        "reusing ImageJ operations in reproducible pipelines"
+      ],
+      "capabilities": [
+        "ImageJ from Python",
+        "batch processing",
+        "notebook integration",
+        "pipeline scripting"
+      ],
+      "notes": "Useful when microscopy or fluorescence analysis should live beside Jupyter-based sensor and assay analysis."
+    },
+    {
+      "slug": "cellprofiler",
+      "name": "CellProfiler",
+      "status": "cataloged-external",
+      "modality": "bioimage-analysis",
+      "repo": "https://github.com/CellProfiler/CellProfiler",
+      "install": "Use the packaged desktop release or follow the source-install guide from the upstream wiki.",
+      "summary": "Open-source bioimage-analysis platform for segmentation, measurement, feature extraction, and batch processing of microscopy images.",
+      "good_for": [
+        "cell or colony segmentation",
+        "batch microscopy analysis",
+        "quantifying mixed-community imagery",
+        "feature extraction for downstream classifiers"
+      ],
+      "capabilities": [
+        "object segmentation",
+        "feature measurement",
+        "batch processing",
+        "pipeline export"
+      ],
+      "notes": "Strong when you need reproducible segmentation-and-measurement pipelines rather than ad hoc image inspection."
+    },
+    {
+      "slug": "napari",
+      "name": "napari",
+      "status": "cataloged-external",
+      "modality": "interactive-bioimage-viewer",
+      "repo": "https://github.com/napari/napari",
+      "install": "pip install \"napari[all]\" or install from conda-forge with a Qt backend.",
+      "summary": "Fast Python image viewer and annotation environment for N-dimensional microscopy, overlays, labels, and plugin-based review.",
+      "good_for": [
+        "manual review and correction",
+        "annotation",
+        "multichannel fluorescence images",
+        "interactive segmentation QA"
+      ],
+      "capabilities": [
+        "interactive visualization",
+        "annotation",
+        "label editing",
+        "plugin ecosystem"
+      ],
+      "notes": "Best fit when automatic classifiers still need human-in-the-loop validation."
+    },
+    {
+      "slug": "ilastik",
+      "name": "ilastik",
+      "status": "cataloged-external",
+      "modality": "interactive-classification",
+      "repo": "https://github.com/ilastik/ilastik",
+      "install": "Use the upstream installers or conda-based development setup from the project documentation.",
+      "summary": "Interactive machine-learning toolkit for pixel classification, object classification, segmentation, and tracking without heavy custom coding.",
+      "good_for": [
+        "pixel classification",
+        "plankton or colony object classification",
+        "rapid interactive model building",
+        "biofilm segmentation"
+      ],
+      "capabilities": [
+        "interactive training",
+        "segmentation",
+        "object classification",
+        "tracking"
+      ],
+      "notes": "Very practical for mixed plankton images when you need faster iteration than training a bespoke deep model."
+    },
+    {
+      "slug": "scikit-image",
+      "name": "scikit-image",
+      "status": "cataloged-external",
+      "modality": "python-image-processing",
+      "repo": "https://github.com/scikit-image/scikit-image",
+      "install": "pip install scikit-image",
+      "summary": "Widely used Python image-processing library for filtering, segmentation, morphology, registration, and measurement.",
+      "good_for": [
+        "custom image pipelines",
+        "morphology operations",
+        "thresholding and segmentation",
+        "feature extraction from microscopy"
+      ],
+      "capabilities": [
+        "filtering",
+        "segmentation",
+        "morphology",
+        "measurement"
+      ],
+      "notes": "Good backbone when custom plankton, biofilm, or fluorescence workflows need to stay in Python."
+    },
+    {
+      "slug": "ecotaxa-py-client",
+      "name": "EcoTaxa Python Client",
+      "status": "cataloged-external",
+      "modality": "plankton-classification-platform",
+      "repo": "https://github.com/ecotaxa/ecotaxa_py_client",
+      "install": "pip install git+https://github.com/ecotaxa/ecotaxa_py_client.git",
+      "summary": "Python client for the EcoTaxa platform, useful for plankton-image projects, object metadata, and classification-oriented workflows.",
+      "good_for": [
+        "plankton image projects",
+        "classification metadata",
+        "reviewing labeled objects",
+        "linking microscope outputs to taxonomic projects"
+      ],
+      "capabilities": [
+        "platform access",
+        "object metadata workflows",
+        "project interaction",
+        "plankton classification support"
+      ],
+      "notes": "Most relevant when microscope imaging is part of a plankton-focused labeling and classification workflow."
+    },
+    {
+      "slug": "planktoscope",
+      "name": "PlanktoScope",
+      "status": "cataloged-external",
+      "modality": "plankton-imaging-platform",
+      "repo": "https://github.com/PlanktoScope/PlanktoScope",
+      "install": "Follow the upstream hardware, imaging, and software setup documentation for the full platform.",
+      "summary": "Open imaging platform for plankton observation and quantitative image acquisition, with a strong fit for community monitoring workflows.",
+      "good_for": [
+        "plankton image acquisition",
+        "community monitoring",
+        "field or lab imaging workflows",
+        "repeated observational campaigns"
+      ],
+      "capabilities": [
+        "imaging platform",
+        "plankton acquisition",
+        "monitoring workflows",
+        "open hardware integration"
+      ],
+      "notes": "Useful when you want repeatable plankton imaging hardware instead of only offline image processing."
+    },
+    {
+      "slug": "qiime2-rachis",
+      "name": "QIIME 2 / Rachis Framework",
+      "status": "cataloged-external",
+      "modality": "amplicon-and-microbiome-analysis",
+      "repo": "https://github.com/qiime2/qiime2",
+      "install": "Use the upstream environment or distribution guidance from qiime2.org for amplicon and microbiome workflows.",
+      "summary": "Widely used framework for marker-gene, microbiome, and amplicon-sequencing analysis with provenance-aware artifacts and plugins.",
+      "good_for": [
+        "16S or amplicon workflows",
+        "microbial-community profiling",
+        "PCR-linked downstream analysis",
+        "reproducible microbiome artifacts"
+      ],
+      "capabilities": [
+        "amplicon analysis",
+        "taxonomy workflows",
+        "provenance tracking",
+        "plugin ecosystem"
+      ],
+      "notes": "Relevant for day-scale PCR or sequencing follow-up on bacterial or microbial-community dynamics."
+    },
+    {
+      "slug": "dada2",
+      "name": "DADA2",
+      "status": "cataloged-external",
+      "modality": "amplicon-denoising",
+      "repo": "https://github.com/benjjneb/dada2",
+      "install": "Install from the upstream R package workflow inside a suitable R environment.",
+      "summary": "Widely used amplicon-denoising workflow for high-resolution sequence inference from marker-gene data.",
+      "good_for": [
+        "amplicon denoising",
+        "ASV inference",
+        "microbial-community cleanup",
+        "PCR follow-up analyses"
+      ],
+      "capabilities": [
+        "sequence denoising",
+        "ASV inference",
+        "quality filtering",
+        "taxonomy-ready output"
+      ],
+      "notes": "Best added when the microcosm workflow moves from microscopy and sensors into marker-gene sequencing."
     }
   ]
 }

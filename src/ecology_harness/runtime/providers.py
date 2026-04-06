@@ -65,6 +65,15 @@ PROVIDERS: dict[str, ProviderSpec] = {
         model_examples=("gpt-4o", "gpt-4o-mini", "o3-mini"),
         description="OpenAI Chat Completions compatible endpoint for GPT and o-series models.",
     ),
+    "openrouter": ProviderSpec(
+        name="openrouter",
+        protocol="openai",
+        api_key_env="OPENROUTER_API_KEY",
+        base_url="https://openrouter.ai/api/v1",
+        context_limit=1_000_000,
+        model_examples=("openai/gpt-4.1-mini", "anthropic/claude-3.7-sonnet", "google/gemini-2.5-pro"),
+        description="OpenRouter OpenAI-compatible endpoint for routed multi-provider model access.",
+    ),
     "gemini": ProviderSpec(
         name="gemini",
         protocol="openai",
@@ -348,6 +357,13 @@ class OpenAICompatibleProvider(BaseProvider):
             "Content-Type": "application/json",
             "Authorization": "Bearer %s" % api_key,
         }
+        if spec.name == "openrouter":
+            referer = os.environ.get("OPENROUTER_HTTP_REFERER", "")
+            title = os.environ.get("OPENROUTER_TITLE", "")
+            if referer:
+                headers["HTTP-Referer"] = referer
+            if title:
+                headers["X-OpenRouter-Title"] = title
         req = request.Request(url, data=payload, headers=headers, method="POST")
         raw = _perform_json_request(req, timeout=settings.provider_timeout_sec)
         return _parse_openai_like_response(raw)
@@ -442,7 +458,12 @@ def resolve_provider(settings: HarnessSettings, explicit: str = "") -> tuple[Pro
     if provider_name not in PROVIDERS:
         raise ToolError("Unsupported provider: %s" % provider_name)
     spec = PROVIDERS[provider_name]
-    model_name = bare_model(settings.model)
+    if provider_name == "openrouter":
+        model_name = settings.model
+        if model_name.startswith("openrouter/"):
+            model_name = model_name.split("/", 1)[1]
+    else:
+        model_name = bare_model(settings.model)
     return spec, provider_name, model_name
 
 

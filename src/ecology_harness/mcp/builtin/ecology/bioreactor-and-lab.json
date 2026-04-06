@@ -1,0 +1,244 @@
+{
+  "servers": [
+    {
+      "name": "jupyter-mcp",
+      "transport": "stdio",
+      "description": "Jupyter MCP server for notebook-aware analysis, code execution, cell editing, and multi-notebook experimental workflows.",
+      "default_enabled": false,
+      "auth": "jupyter-url-and-token",
+      "command": "uvx",
+      "args": [
+        "jupyter-mcp-server@latest"
+      ],
+      "env": {
+        "JUPYTER_URL": "http://localhost:8888",
+        "JUPYTER_TOKEN": "<jupyter-token>",
+        "ALLOW_IMG_OUTPUT": "true"
+      },
+      "tools": [
+        {
+          "name": "list_files",
+          "description": "List files and directories exposed by the connected Jupyter server."
+        },
+        {
+          "name": "list_kernels",
+          "description": "Inspect running and available kernels."
+        },
+        {
+          "name": "connect_to_jupyter",
+          "description": "Connect dynamically to a Jupyter server without restarting the MCP server."
+        },
+        {
+          "name": "use_notebook",
+          "description": "Open, create, or switch to a managed notebook."
+        },
+        {
+          "name": "list_notebooks",
+          "description": "List notebooks and their active status."
+        },
+        {
+          "name": "read_notebook",
+          "description": "Read notebook cells in brief or detailed form."
+        },
+        {
+          "name": "read_cell",
+          "description": "Inspect the content, metadata, and outputs of one cell."
+        },
+        {
+          "name": "insert_cell",
+          "description": "Insert a code or markdown cell into a notebook."
+        },
+        {
+          "name": "overwrite_cell_source",
+          "description": "Replace the source code of an existing cell."
+        },
+        {
+          "name": "execute_cell",
+          "description": "Execute a cell with timeout handling and rich output capture."
+        },
+        {
+          "name": "insert_execute_code_cell",
+          "description": "Insert and immediately execute a new code cell."
+        },
+        {
+          "name": "execute_code",
+          "description": "Run code directly in the kernel, including magic commands and shell commands."
+        }
+      ]
+    },
+    {
+      "name": "influxdb3",
+      "transport": "stdio",
+      "description": "InfluxDB 3 MCP server for sensor logging, time-series querying, schema inspection, and line-protocol writes.",
+      "default_enabled": false,
+      "auth": "instance-url-and-token",
+      "command": "node",
+      "args": [
+        "/path/to/influxdb3_mcp_server/build/index.js"
+      ],
+      "env": {
+        "INFLUX_DB_INSTANCE_URL": "http://localhost:8181/",
+        "INFLUX_DB_TOKEN": "<influxdb-token>",
+        "INFLUX_DB_PRODUCT_TYPE": "core"
+      },
+      "tools": [
+        {
+          "name": "health_check",
+          "description": "Check connectivity and health for the configured InfluxDB instance."
+        },
+        {
+          "name": "list_databases",
+          "description": "List all available databases in the instance."
+        },
+        {
+          "name": "create_database",
+          "description": "Create a new time-series database."
+        },
+        {
+          "name": "execute_query",
+          "description": "Run SQL queries against a database and return results in multiple formats."
+        },
+        {
+          "name": "get_measurements",
+          "description": "List measurements or tables in a database."
+        },
+        {
+          "name": "get_measurement_schema",
+          "description": "Inspect columns and types for a measurement."
+        },
+        {
+          "name": "write_line_protocol",
+          "description": "Write time-series observations using InfluxDB line protocol."
+        },
+        {
+          "name": "load_database_context",
+          "description": "Load optional database context or documentation to improve downstream analysis."
+        },
+        {
+          "name": "get_help",
+          "description": "Retrieve built-in troubleshooting guidance for common InfluxDB operations."
+        }
+      ]
+    },
+    {
+      "name": "labarchives",
+      "transport": "stdio",
+      "description": "LabArchives MCP server for electronic lab notebooks, semantic notebook search, page reading, provenance-aware uploads, and project tracking.",
+      "default_enabled": false,
+      "auth": "labarchives-account-and-api-access",
+      "command": "python",
+      "args": [
+        "-m",
+        "labarchives_mcp"
+      ],
+      "env": {
+        "LABARCHIVES_REGION": "<us|uk|au>",
+        "LABARCHIVES_UID": "<labarchives-uid>",
+        "LABARCHIVES_ENABLE_UPLOAD": "true"
+      },
+      "tools": [
+        {
+          "name": "list_labarchives_notebooks",
+          "description": "List available lab notebooks."
+        },
+        {
+          "name": "list_notebook_pages",
+          "description": "Traverse pages and folders inside a notebook."
+        },
+        {
+          "name": "search_labarchives",
+          "description": "Run semantic search across indexed notebooks."
+        },
+        {
+          "name": "read_notebook_page",
+          "description": "Read content from a specific notebook page."
+        },
+        {
+          "name": "write_notebook_entry",
+          "description": "Write markdown, HTML, or plain text into a notebook page."
+        },
+        {
+          "name": "upload_to_labarchives",
+          "description": "Upload files with provenance metadata as page text or attachments."
+        },
+        {
+          "name": "create_project",
+          "description": "Create and activate a project workspace for notebook-linked work."
+        },
+        {
+          "name": "log_finding",
+          "description": "Append a finding to the active project context."
+        },
+        {
+          "name": "get_related_pages",
+          "description": "Find linked or related pages from the project graph."
+        },
+        {
+          "name": "trace_provenance",
+          "description": "Trace provenance metadata for a specific entry."
+        },
+        {
+          "name": "sync_vector_index",
+          "description": "Build or refresh the semantic search index for notebooks."
+        }
+      ]
+    },
+    {
+      "name": "unit-converter",
+      "transport": "stdio",
+      "description": "Unit Converter MCP server for scientific unit conversion across temperature, pressure, power, density, energy, volume, and related quantities.",
+      "default_enabled": false,
+      "auth": "none",
+      "command": "uvx",
+      "args": [
+        "unit-converter-mcp"
+      ],
+      "tools": [
+        {
+          "name": "list_supported_units",
+          "description": "List supported unit families and units."
+        },
+        {
+          "name": "convert_temperature",
+          "description": "Convert temperature between Celsius, Fahrenheit, and Kelvin."
+        },
+        {
+          "name": "convert_length",
+          "description": "Convert length and distance units."
+        },
+        {
+          "name": "convert_area",
+          "description": "Convert area units such as square meters and hectares."
+        },
+        {
+          "name": "convert_mass",
+          "description": "Convert mass units such as kilograms, grams, pounds, and tonnes."
+        },
+        {
+          "name": "convert_volume",
+          "description": "Convert volume units such as liters, cups, and gallons."
+        },
+        {
+          "name": "convert_time",
+          "description": "Convert between time units from seconds to years."
+        },
+        {
+          "name": "convert_energy",
+          "description": "Convert energy units such as joules, kilowatt-hours, and calories."
+        },
+        {
+          "name": "convert_pressure",
+          "description": "Convert pressure units such as pascals, bar, atmosphere, and psi."
+        },
+        {
+          "name": "convert_power",
+          "description": "Convert power units such as watts and horsepower."
+        },
+        {
+          "name": "convert_density",
+          "description": "Convert density units such as kg/L, g/cm^3, and mg/L."
+        }
+      ]
+    }
+  ]
+}

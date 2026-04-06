@@ -46,6 +46,8 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("Field observation and species identification", result.content)
             self.assertIn("Plant phenotyping and trait extraction", result.content)
+            self.assertIn("Closed algal systems and photobioreactors", result.content)
+            self.assertIn("Aquatic microcosms, plankton, and biofilm monitoring", result.content)
 
     def test_list_ecology_toolkits_filters_by_modality(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -60,6 +62,35 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("birdnet-analyzer", result.content)
             self.assertEqual(len(result.data["toolkits"]), 1)
+
+    def test_list_ecology_toolkits_can_filter_lab_automation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"modality": "lab-automation"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("pylabrobot", result.content)
+            self.assertIn("opentrons", result.content)
+            self.assertEqual(len(result.data["toolkits"]), 2)
+
+    def test_list_ecology_toolkits_can_find_plankton_classification_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "plankton"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("planktoscope", result.content)
+            self.assertIn("ecotaxa-py-client", result.content)
 
     def test_inaturalist_search_taxa_parses_results(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

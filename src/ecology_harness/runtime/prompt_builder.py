@@ -35,7 +35,7 @@ class PromptBuilder:
         ] or ["- No MCP servers configured."]
 
         prompt = (
-            "You are Ecology Harness, a terminal-native agent harness inspired by nano-claude-code.\n"
+            "You are Ecology Harness, a terminal-native agent harness.\n"
             "You can reason, use tools, maintain durable memory, delegate to subagents, and track tasks.\n\n"
             "Guidelines:\n"
             "- Be concise and direct.\n"

@@ -36,6 +36,36 @@
     - 自带可直接复用的 weather/climate skill
     - 对生态、农业、空气质量、洪水和气候风险问题都很有帮助
 
+## 已安装的场景化 Skills
+
+- 封闭藻类系统与光生物反应器 skills
+  - 本地 skill 集：
+    - `closed-algae-system-design`
+    - `photobioreactor-environment-control`
+    - `microalgae-strain-and-inoculation`
+    - `algal-monitoring-plan`
+    - `photobioreactor-troubleshooting`
+    - `algal-timeseries-and-mass-balance`
+  - 参考来源：
+    - https://github.com/K-Dense-AI/claude-scientific-skills
+  - 选择原因：
+    - 直接对应封闭藻类培养和台式光生物反应器工作流
+    - 能把文献、化学、时序、notebook 和实验记录串起来
+    - 给当前 Harness 补上一层真正面向实验系统的问题处理能力
+
+- 淡水微宇宙与浮游监测 skills
+  - 本地 skill 集：
+    - `aquatic-microcosm-foodweb-design`
+    - `zooplankton-grazing-and-plankton-dynamics`
+    - `benthic-biofilm-and-periphyton-monitoring`
+    - `water-quality-and-nutrient-panel`
+    - `plankton-microscopy-and-auto-classification`
+    - `fluorescence-spectra-and-molecular-assays`
+  - 选择原因：
+    - 直接对应浮游动物-浮游植物-底栖藻类-细菌的微宇宙研究
+    - 能把水质时序、显微分类、荧光信号和采样分析串在一起
+    - 给当前 Harness 补上一层更贴近水生态监测的问题处理能力
+
 ## 已安装的 MCP 目录项
 
 - `mapbox`
@@ -100,6 +130,18 @@
 
 - `pubchem`
   - 仓库：https://github.com/Augmented-Nature/PubChem-MCP-Server
+
+- `jupyter-mcp`
+  - 仓库：https://github.com/datalayer/jupyter-mcp-server
+
+- `influxdb3`
+  - 仓库：https://github.com/influxdata/influxdb3_mcp_server
+
+- `labarchives`
+  - 仓库：https://github.com/SamuelBrudner/lab_archives_mcp
+
+- `unit-converter`
+  - 仓库：https://github.com/zazencodes/unit-converter-mcp
 
 ## 候选扩展
 

@@ -16,7 +16,7 @@ def register_ecology_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="ListEcologyFunctions",
-            description="List foundational ecology observation, identification, phenotyping, counting, and monitoring functions grouped by task family.",
+            description="List foundational ecology observation, identification, phenotyping, counting, monitoring, lab workflow, and bioreactor-analysis functions grouped by task family.",
             input_schema={
                 "type": "object",
                 "properties": {
@@ -32,7 +32,7 @@ def register_ecology_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="ListEcologyToolkits",
-            description="List installed or cataloged ecology vision, observation, counting, and monitoring toolkits.",
+            description="List installed or cataloged ecology, laboratory, automation, notebook, and monitoring toolkits or MCP-backed analysis servers.",
             input_schema={
                 "type": "object",
                 "properties": {
@@ -49,7 +49,7 @@ def register_ecology_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="DescribeEcologyToolkit",
-            description="Describe one ecology toolkit, including modalities, capabilities, source repository, and install guidance.",
+            description="Describe one ecology or lab-analysis toolkit, including modalities, capabilities, source repository, and install guidance.",
             input_schema={
                 "type": "object",
                 "properties": {

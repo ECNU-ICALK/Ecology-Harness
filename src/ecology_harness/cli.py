@@ -138,6 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  eh prompt \"summarize this repository\"\n"
             "  eh --attach docs/paper.pdf \"summarize this paper\"\n"
             "  eh --attach imgs/specimen.jpg \"identify this species\"\n"
+            "  eh --provider openrouter --model openai/gpt-4.1-mini \"inspect this workspace\"\n"
             "  eh \"review src/ecology_harness/cli.py\"\n"
             "  eh tool Read '{\"path\":\"README.md\"}'\n"
             "  eh --resume latest repl"
@@ -152,7 +153,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--provider",
         default="auto",
-        help="Provider backend. Supported: auto, mock, anthropic, openai, gemini, kimi, qwen, zhipu, deepseek, ollama, lmstudio, custom.",
+        help="Provider backend. Supported: auto, mock, anthropic, openai, openrouter, gemini, kimi, qwen, zhipu, deepseek, ollama, lmstudio, custom.",
     )
     parser.add_argument(
         "--model",

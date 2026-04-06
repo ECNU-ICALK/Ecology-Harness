@@ -37,6 +37,36 @@ agriculture, environment, and ecology pack for Ecology Harness.
     - includes ready-made skills for everyday weather and advanced climate/model workflows
     - strong fit for ecology, agriculture, air-quality, flood, and climate-risk questions
 
+## Installed Domain-Focused Skills
+
+- closed algae and photobioreactor skills
+  - local skill set:
+    - `closed-algae-system-design`
+    - `photobioreactor-environment-control`
+    - `microalgae-strain-and-inoculation`
+    - `algal-monitoring-plan`
+    - `photobioreactor-troubleshooting`
+    - `algal-timeseries-and-mass-balance`
+  - informed by:
+    - https://github.com/K-Dense-AI/claude-scientific-skills
+  - why selected:
+    - directly matches sealed algal cultivation and benchtop photobioreactor workflows
+    - bridges literature, chemistry, telemetry, notebook analysis, and lab records
+    - gives the harness a practical experimental-systems layer instead of only field or geospatial ecology
+
+- freshwater microcosm and plankton-monitoring skills
+  - local skill set:
+    - `aquatic-microcosm-foodweb-design`
+    - `zooplankton-grazing-and-plankton-dynamics`
+    - `benthic-biofilm-and-periphyton-monitoring`
+    - `water-quality-and-nutrient-panel`
+    - `plankton-microscopy-and-auto-classification`
+    - `fluorescence-spectra-and-molecular-assays`
+  - why selected:
+    - directly matches plankton-biofilm-bacteria freshwater microcosm studies
+    - connects water-quality telemetry with microscopy, fluorescence, and assay follow-up
+    - gives the harness stronger support for community-composition and monitoring workflows
+
 ## Installed MCP Catalog Entries
 
 - `mapbox`
@@ -122,6 +152,22 @@ agriculture, environment, and ecology pack for Ecology Harness.
 - `pubchem`
   - repo: https://github.com/Augmented-Nature/PubChem-MCP-Server
   - rationale: useful for pollutant identity, chemical fate, toxicity, and environmental-chemistry workflows
+
+- `jupyter-mcp`
+  - repo: https://github.com/datalayer/jupyter-mcp-server
+  - rationale: notebook-native analysis for telemetry review, calculations, plots, and experiment notebooks
+
+- `influxdb3`
+  - repo: https://github.com/influxdata/influxdb3_mcp_server
+  - rationale: strong time-series database bridge for instrumented culture systems and reactor monitoring
+
+- `labarchives`
+  - repo: https://github.com/SamuelBrudner/lab_archives_mcp
+  - rationale: practical ELN and provenance layer for recording experiments, SOPs, and corrective actions
+
+- `unit-converter`
+  - repo: https://github.com/zazencodes/unit-converter-mcp
+  - rationale: compact but highly useful scientific conversion layer for temperature, pressure, density, power, and reactor-unit reconciliation
 
 ## Candidate Backlog
 

@@ -64,7 +64,7 @@ class ProviderTests(unittest.TestCase):
             )
         ]
 
-    def test_detect_provider_supports_nano_sources(self) -> None:
+    def test_detect_provider_supports_supported_sources(self) -> None:
         cases = {
             "claude-sonnet-4-6": "anthropic",
             "gpt-4o": "openai",
@@ -119,7 +119,7 @@ class ProviderTests(unittest.TestCase):
                 "https://example.com/v1",
             )
 
-    def test_list_provider_specs_includes_all_nano_sources(self) -> None:
+    def test_list_provider_specs_includes_all_supported_sources(self) -> None:
         names = [item.name for item in list_provider_specs()]
         self.assertEqual(
             names,
@@ -127,6 +127,7 @@ class ProviderTests(unittest.TestCase):
                 "mock",
                 "anthropic",
                 "openai",
+                "openrouter",
                 "gemini",
                 "kimi",
                 "qwen",
@@ -137,6 +138,16 @@ class ProviderTests(unittest.TestCase):
                 "custom",
             ],
         )
+
+    def test_openrouter_provider_preserves_routed_model_name(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.provider = "openrouter"
+        settings.model = "openai/gpt-4.1-mini"
+        spec, provider_name, model_name = resolve_provider(settings)
+
+        self.assertEqual(spec.name, "openrouter")
+        self.assertEqual(provider_name, "openrouter")
+        self.assertEqual(model_name, "openai/gpt-4.1-mini")
 
     def test_openai_compatible_provider_parses_tool_calls(self) -> None:
         settings = HarnessSettings.from_workspace(".")

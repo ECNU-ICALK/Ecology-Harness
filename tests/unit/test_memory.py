@@ -73,7 +73,7 @@ class MemoryTests(unittest.TestCase):
             app.memory_manager.save(
                 name="Project Context",
                 description="Current project focus",
-                content="Build a nano-inspired harness core.",
+                content="Build a reusable harness core.",
                 memory_type="project",
                 scope="project",
             )

@@ -30,13 +30,15 @@ and skills can be added on top of a stable runtime.
 - CLI + REPL entrypoints with a claw-inspired natural command flow
 - event-driven terminal UI with status header, trace stream, and session panels
 - agent loop with tool-use execution
-- provider layer aligned with `nano-claude-code`
-- built-in support for `mock`, `anthropic`, `openai`, `gemini`, `kimi`, `qwen`, `zhipu`, `deepseek`, `ollama`, `lmstudio`, and `custom`
+- unified provider layer for local and remote model backends
+- built-in support for `mock`, `anthropic`, `openai`, `openrouter`, `gemini`, `kimi`, `qwen`, `zhipu`, `deepseek`, `ollama`, `lmstudio`, and `custom`
 - managed session persistence with resume support and compaction metadata
 - context compaction with continuation summaries for long conversations
 - configurable sandbox policy for file, shell, and network boundaries
 - tool registry with typed metadata and validation
 - built-in file, shell, web, memory, skill, task, and subagent tools
+- multimodal prompt attachments for local images, audio, documents, and sampled video frames
+- document-analysis tools for `pdf`, `docx`, `md`, `csv`, `json`, `html`, and `ipynb`
 - dual-scope persistent memory with relevance ranking and auto-generated `MEMORY.md` indexes
 - specialized agent types, background subagents, dependency-aware coordination, and internal agent task tracking
 - task tracking with status, owner, metadata, and dependency edges
@@ -128,6 +130,54 @@ export PLANTNET_API_KEY=your_key_here
 eh tool PlantNetIdentify '{"image_paths":["leaf.jpg"],"organs":["leaf"]}'
 ```
 
+## Multimodal and Document Analysis
+
+The runtime now supports local multimodal inputs in the main conversation loop:
+
+- image attachments are passed as real multimodal content blocks for providers that support vision
+- audio attachments are passed natively for the OpenAI provider and fall back to metadata-aware context elsewhere
+- document attachments are normalized for analysis, with provider-specific handling where possible and plain-text fallback elsewhere
+- video attachments are expanded into sampled frames for frame-by-frame review, inspired by claw-style attachment preprocessing
+- REPL attachment flow is inspired by `claw-code`, with `/attach`, `/image`, `/doc`, and `/attachments`
+
+You can use it directly from the CLI:
+
+```bash
+# attach a local image
+eh --provider openai --model gpt-4o --attach imgs/specimen.jpg \
+  "identify the likely species and explain the visual cues"
+
+# attach a local paper or report
+eh --attach docs/wetland_report.pdf \
+  "summarize the methods, main findings, and restoration implications"
+
+# attach local audio
+eh --provider openai --model gpt-4o-audio-preview --attach audio/birdsong.wav \
+  "identify the likely bird species and describe the calling pattern"
+
+# attach local video; Ecology Harness will sample frames for analysis
+eh --attach video/camera_trap.mp4 \
+  "describe the observed animal activity across sampled frames"
+
+# inspect a document without going through the model loop
+eh tool DocumentInspect '{"path":"docs/wetland_report.pdf"}'
+eh tool DocumentExtract '{"path":"notes/field_log.docx","max_chars":12000}'
+eh tool AudioInspect '{"path":"audio/birdsong.wav"}'
+eh tool VideoInspect '{"path":"video/camera_trap.mp4"}'
+eh tool VideoSampleFrames '{"path":"video/camera_trap.mp4","frame_count":6}'
+```
+
+Inside the REPL:
+
+```text
+/attach docs/wetland_report.pdf
+/image imgs/specimen.jpg
+/audio audio/birdsong.wav
+/video video/camera_trap.mp4
+/attachments
+summarize the attached materials
+```
+
 ## Quick Start
 
 ### One-Command Setup
@@ -213,11 +263,19 @@ eh providers
 eh skills
 eh mcp
 
+# use OpenRouter directly
+export OPENROUTER_API_KEY="sk-or-..."
+eh --provider openrouter --model openai/gpt-4.1-mini \
+  "summarize this repository in 5 bullets"
+
 # one-shot prompt using the natural shorthand
 eh "summarize this repository in 5 bullets"
 
 # explicit prompt command
 eh prompt '/tool Read {"path":"README.md"}'
+
+# multimodal prompt with local attachments
+eh --attach docs/wetland_report.pdf prompt "summarize this report"
 
 # resume the latest saved session in the REPL
 eh --resume latest repl
@@ -290,6 +348,12 @@ Inside the REPL you can try:
 /session
 /plugins
 /mcp
+/attach docs/wetland_report.pdf
+/image imgs/specimen.jpg
+/audio audio/birdsong.wav
+/video video/camera_trap.mp4
+/doc notes/field_log.docx
+/attachments
 /ecology-dataset-hunt estuary methane flux datasets 2018-2024
 /ecology-evidence-synthesis blue carbon mangroves
 /literature-multi-source-search wetland methane ebullition
@@ -328,6 +392,13 @@ Useful REPL commands:
 - `/tasks`
 - `/providers`
 - `/sandbox`
+- `/attach`
+- `/image`
+- `/doc`
+- `/audio`
+- `/video`
+- `/attachments`
+- `/clear-attachments`
 - `/trace on`
 - `/trace off`
 - `/new`
@@ -425,10 +496,11 @@ eh prompt '/tool TaskCreate {"title":"Bootstrap"}'
 
 ### Supported Provider Sources
 
-The runtime now matches the provider families supported by `nano-claude-code`:
+The runtime supports these provider families:
 
 - `anthropic` for Claude
 - `openai` for GPT and o-series
+- `openrouter` for routed multi-provider model access
 - `gemini` for Google Gemini
 - `kimi` for Moonshot / Kimi
 - `qwen` for DashScope / Qwen
@@ -452,6 +524,29 @@ export ANTHROPIC_API_KEY=your_key
 eh \
   --provider anthropic \
   --model claude-sonnet-4-6 \
+  prompt "Summarize this repository and propose 3 refactors."
+```
+
+### OpenRouter Provider
+
+OpenRouter is exposed as a first-class provider in this build. Model names should keep the
+router format, for example `openai/gpt-4.1-mini` or `anthropic/claude-3.7-sonnet`.
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."
+
+# optional but recommended for OpenRouter app attribution
+export OPENROUTER_HTTP_REFERER="https://github.com/ECNU-ICALK/Ecology-Harness"
+export OPENROUTER_TITLE="Ecology Harness"
+
+eh \
+  --provider openrouter \
+  --model openai/gpt-4.1-mini \
+  prompt "Inspect the current workspace."
+
+eh \
+  --provider openrouter \
+  --model anthropic/claude-3.7-sonnet \
   prompt "Summarize this repository and propose 3 refactors."
 ```
 
@@ -593,7 +688,7 @@ python3 -m ecology_harness tool Write '{"path":"notes.txt","content":"hello"}'
 python3 -m ecology_harness prompt '/tool GetDiagnostics {"path":"src/ecology_harness/cli.py"}'
 
 # save durable memory in project scope
-python3 -m ecology_harness --exec-tool MemorySave --params '{"name":"Project Goal","description":"Current direction","content":"Build a nano-inspired ecology harness.","type":"project","scope":"project"}'
+python3 -m ecology_harness --exec-tool MemorySave --params '{"name":"Project Goal","description":"Current direction","content":"Build a reusable ecology harness core.","type":"project","scope":"project"}'
 
 # list persisted state
 python3 -m ecology_harness memories
@@ -603,7 +698,7 @@ python3 -m ecology_harness tasks
 python3 -m ecology_harness sandbox
 ```
 
-## Nano-Style Core Features
+## Core Runtime Features
 
 - Memory:
   user-level and project-level memory scopes, per-memory markdown files, automatic `MEMORY.md` regeneration, manifest scanning, freshness warnings, and prompt-aware relevance ranking.

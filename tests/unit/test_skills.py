@@ -25,6 +25,10 @@ class SkillTests(unittest.TestCase):
             self.assertTrue(any(item.slug == "open-meteo" for item in skills))
             self.assertTrue(any(item.slug == "species-occurrence-workbench" for item in skills))
             self.assertTrue(any(item.slug == "microbial-ecology-sequence-workflow" for item in skills))
+            self.assertTrue(any(item.slug == "closed-algae-system-design" for item in skills))
+            self.assertTrue(any(item.slug == "algal-timeseries-and-mass-balance" for item in skills))
+            self.assertTrue(any(item.slug == "aquatic-microcosm-foodweb-design" for item in skills))
+            self.assertTrue(any(item.slug == "plankton-microscopy-and-auto-classification" for item in skills))
             self.assertFalse(any(item.slug == "reference" for item in skills))
             self.assertFalse(any(item.slug == "performance-testing" for item in skills))
 

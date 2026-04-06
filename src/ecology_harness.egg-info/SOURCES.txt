@@ -51,9 +51,11 @@ src/ecology_harness/sandbox/runtime.py
 src/ecology_harness/skills/__init__.py
 src/ecology_harness/skills/executor.py
 src/ecology_harness/skills/loader.py
+src/ecology_harness/skills/builtin/audio-video-analysis.md
 src/ecology_harness/skills/builtin/batch.md
 src/ecology_harness/skills/builtin/commit.md
 src/ecology_harness/skills/builtin/debug.md
+src/ecology_harness/skills/builtin/document-analysis.md
 src/ecology_harness/skills/builtin/explain.md
 src/ecology_harness/skills/builtin/fix.md
 src/ecology_harness/skills/builtin/implement.md

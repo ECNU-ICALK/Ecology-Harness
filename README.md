@@ -18,8 +18,8 @@ and skills can be added on top of a stable runtime.
 - CLI + REPL entrypoints with a claw-inspired natural command flow
 - event-driven terminal UI with status header, trace stream, and session panels
 - agent loop with tool-use execution
-- provider layer aligned with `nano-claude-code`
-- built-in support for `mock`, `anthropic`, `openai`, `gemini`, `kimi`, `qwen`, `zhipu`, `deepseek`, `ollama`, `lmstudio`, and `custom`
+- unified provider layer for local and remote model backends
+- built-in support for `mock`, `anthropic`, `openai`, `openrouter`, `gemini`, `kimi`, `qwen`, `zhipu`, `deepseek`, `ollama`, `lmstudio`, and `custom`
 - managed session persistence with resume support and compaction metadata
 - context compaction with continuation summaries for long conversations
 - configurable sandbox policy for file, shell, and network boundaries
@@ -33,6 +33,7 @@ and skills can be added on top of a stable runtime.
 - built-in markdown skills
 - curated ecology skill bundles from high-quality upstream repositories
 - curated agriculture/environment/ecology MCP server catalog
+- closed-algae-system and photobioreactor skills plus lab-analysis MCP catalog entries
 - permission policy for read-only and workspace-write modes
 - unit test suite built on the standard library
 
@@ -54,6 +55,8 @@ The current ecology capability map is easiest to read by subdomain:
 | Hydrology and freshwater environment | flow, water level, flood context, watershed screening | `hydrology-and-flood-screen`<br>`environmental-site-screen` | `weather-open-meteo`<br>`swiss-environment`<br>`noaa-tides-currents` |
 | Coastal, estuary, wetland, and blue-carbon work | tides, sea level, coastal flooding, wetland site screening | `coastal-ecology-screen` | `noaa-tides-currents`<br>`nasa`<br>`weather-open-meteo` |
 | Agroecology and agricultural environment | crop-system screening, climate stress, landscape context | `agri-climate-screen` | `weather-open-meteo`<br>`nasa`<br>`mapbox`<br>`gis-mcp` |
+| Freshwater microcosms, plankton, and biofilms | grazer-prey microcosms, plankton shifts, benthic biofilms, water quality, fluorescence, microscopy classification | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`simple-pubmed`<br>`pubchem` |
+| Closed algae systems and photobioreactors | sealed reactor design, light path, pH and CO2 control, contamination review, growth curves, mass balance | `closed-algae-system-design`<br>`photobioreactor-environment-control`<br>`microalgae-strain-and-inoculation`<br>`algal-monitoring-plan`<br>`photobioreactor-troubleshooting`<br>`algal-timeseries-and-mass-balance` | `jupyter-mcp`<br>`influxdb3`<br>`labarchives`<br>`unit-converter`<br>`scientific-papers`<br>`openalex-research`<br>`pubchem` |
 | Plant phenotyping and trait extraction | leaf traits, morphology, herbarium measurements, organ detection | `plant-phenotyping-and-traits` | `PlantCV`<br>`LeafMachine2` |
 | Ecological counting and segmentation | plant counting, tree counting, animal detection, crown delineation | `ecology-counting-and-segmentation` | `DeepForest`<br>`detectree2`<br>`TreeCountSegHeight`<br>`PyTorch-Wildlife` |
 | Ecosystem biogeochemistry and soil systems | carbon, methane, nutrient cycling, soil health, remediation context | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | `weather-open-meteo`<br>`nasa`<br>`eosc-data-commons`<br>`dataverse`<br>`wsl-envidat` |
@@ -80,6 +83,20 @@ MCP status meanings in this build:
 
 Upstream source notes are tracked in [docs/ecology-pack.md](docs/ecology-pack.md).
 
+Closed-system algae and photobioreactor-specific notes are tracked in [docs/algae-photobioreactor-pack.md](docs/algae-photobioreactor-pack.md).
+
+Freshwater microcosm and plankton-specific notes are tracked in [docs/aquatic-microcosm-pack.md](docs/aquatic-microcosm-pack.md).
+
+Example prompts:
+
+```bash
+eh prompt '/closed-algae-system-design flat-panel Chlorella reactor for wastewater polishing'
+eh prompt '/photobioreactor-environment-control CO2 and pH control for sealed Spirulina cultivation'
+eh prompt '/algal-timeseries-and-mass-balance interpret pH, dissolved oxygen, and nitrate drawdown in a batch reactor'
+eh prompt '/aquatic-microcosm-foodweb-design Daphnia Chlorella Microcystis Navicula freshwater microcosm'
+eh prompt '/plankton-microscopy-and-auto-classification microscope camera workflow for Daphnia rotifers and algal colonies'
+```
+
 This pass also expanded coverage for finer-grained research directions that are common in ecology, agriculture, and environment projects:
 
 - organismal stress and physiological ecology
@@ -100,6 +117,14 @@ This repository now also includes a basic ecology observation-tool layer:
 - a catalog of heavier local toolkits for phenotyping, counting, segmentation, camera traps, and ecoacoustics
 
 See [docs/ecology-basic-tools.md](docs/ecology-basic-tools.md) for the full function map.
+
+This catalog now also includes laboratory and bioprocess analysis entries such as
+`Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `LabArchives MCP Server`,
+`unit-converter-mcp`, `PyLabRobot`, and `Opentrons`.
+
+It now also includes microscopy, plankton, and molecular-analysis toolkits such as
+`Fiji / ImageJ`, `PyImageJ`, `CellProfiler`, `napari`, `ilastik`,
+`EcoTaxa Python Client`, `PlanktoScope`, `QIIME 2 / Rachis Framework`, and `DADA2`.
 
 You can inspect the new layer directly:
 
@@ -250,6 +275,11 @@ eh mcp
 eh providers
 eh skills
 eh mcp
+
+# use OpenRouter directly
+export OPENROUTER_API_KEY="sk-or-..."
+eh --provider openrouter --model openai/gpt-4.1-mini \
+  "summarize this repository in 5 bullets"
 
 # one-shot prompt using the natural shorthand
 eh "summarize this repository in 5 bullets"
@@ -479,10 +509,11 @@ eh prompt '/tool TaskCreate {"title":"Bootstrap"}'
 
 ### Supported Provider Sources
 
-The runtime now matches the provider families supported by `nano-claude-code`:
+The runtime supports these provider families:
 
 - `anthropic` for Claude
 - `openai` for GPT and o-series
+- `openrouter` for routed multi-provider model access
 - `gemini` for Google Gemini
 - `kimi` for Moonshot / Kimi
 - `qwen` for DashScope / Qwen
@@ -506,6 +537,29 @@ export ANTHROPIC_API_KEY=your_key
 eh \
   --provider anthropic \
   --model claude-sonnet-4-6 \
+  prompt "Summarize this repository and propose 3 refactors."
+```
+
+### OpenRouter Provider
+
+OpenRouter is exposed as a first-class provider in this build. Model names should keep the
+router format, for example `openai/gpt-4.1-mini` or `anthropic/claude-3.7-sonnet`.
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."
+
+# optional but recommended for OpenRouter app attribution
+export OPENROUTER_HTTP_REFERER="https://github.com/ECNU-ICALK/Ecology-Harness"
+export OPENROUTER_TITLE="Ecology Harness"
+
+eh \
+  --provider openrouter \
+  --model openai/gpt-4.1-mini \
+  prompt "Inspect the current workspace."
+
+eh \
+  --provider openrouter \
+  --model anthropic/claude-3.7-sonnet \
   prompt "Summarize this repository and propose 3 refactors."
 ```
 
@@ -647,7 +701,7 @@ python3 -m ecology_harness tool Write '{"path":"notes.txt","content":"hello"}'
 python3 -m ecology_harness prompt '/tool GetDiagnostics {"path":"src/ecology_harness/cli.py"}'
 
 # save durable memory in project scope
-python3 -m ecology_harness --exec-tool MemorySave --params '{"name":"Project Goal","description":"Current direction","content":"Build a nano-inspired ecology harness.","type":"project","scope":"project"}'
+python3 -m ecology_harness --exec-tool MemorySave --params '{"name":"Project Goal","description":"Current direction","content":"Build a reusable ecology harness core.","type":"project","scope":"project"}'
 
 # list persisted state
 python3 -m ecology_harness memories
@@ -657,7 +711,7 @@ python3 -m ecology_harness tasks
 python3 -m ecology_harness sandbox
 ```
 
-## Nano-Style Core Features
+## Core Runtime Features
 
 - Memory:
   user-level and project-level memory scopes, per-memory markdown files, automatic `MEMORY.md` regeneration, manifest scanning, freshness warnings, and prompt-aware relevance ranking.

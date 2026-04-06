@@ -1,8 +1,7 @@
 # Architecture
 
-This repository implements a lightweight but complete harness core inspired by
-`nano-claude-code`, while using a package layout that is ready to grow into a more
-modular `OpenHarness`-style system.
+This repository implements a lightweight but complete harness core with a package
+layout that is ready to grow into a more modular `OpenHarness`-style system.
 
 ## Runtime Flow
 
