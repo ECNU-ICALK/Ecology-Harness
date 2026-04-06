@@ -19,10 +19,6 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 ## News
 
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
-- packaged the ecology skill library, MCP catalogs, plugin assets, and toolkit catalogs into installable wheel and sdist outputs.
-- expanded the ecology pack across literature review, geospatial reasoning, aquatic systems, photobioreactors, multimodal analysis, plant and microbial growth simulation, and traditional ecological process models.
-- added release-facing project metadata, CI, changelog, contribution guidance, and distribution checks for GitHub publishing.
-- the project is growing quickly, and contributions are very welcome if you want to help extend ecology skills, MCP integrations, and scientific tool adapters.
 
 ## Startup Preview
 
