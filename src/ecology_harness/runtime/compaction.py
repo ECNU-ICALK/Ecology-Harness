@@ -69,7 +69,7 @@ class CompactionResult:
 def estimate_tokens(messages: list[ChatMessage]) -> int:
     total_chars = 0
     for message in messages:
-        total_chars += len(message.content or "")
+        total_chars += len(message.content_text() or "")
         total_chars += len(message.name or "")
         for tool_call in message.tool_calls:
             total_chars += len(tool_call.name)
@@ -87,7 +87,7 @@ def snip_old_tool_results(
         message = messages[index]
         if message.role != "tool":
             continue
-        if len(message.content or "") <= max_chars:
+        if len(message.content_text() or "") <= max_chars:
             continue
         content = message.content
         first_half = content[: max_chars // 2]
@@ -350,7 +350,7 @@ def _extract_existing_summary(messages: list[ChatMessage]) -> str | None:
     candidate = messages[start]
     if not _is_compacted_summary_message(candidate):
         return None
-    content = candidate.content
+    content = candidate.content_text()
     content = content.replace(COMPACT_CONTINUATION_PREAMBLE, "", 1).strip()
     content = content.replace(COMPACT_RECENT_MESSAGES_NOTE, "").strip()
     content = content.replace(COMPACT_DIRECT_RESUME_INSTRUCTION, "").strip()
@@ -358,7 +358,7 @@ def _extract_existing_summary(messages: list[ChatMessage]) -> str | None:
 
 
 def _is_compacted_summary_message(message: ChatMessage) -> bool:
-    return message.role == "system" and COMPACT_CONTINUATION_PREAMBLE in (message.content or "")
+    return message.role == "system" and COMPACT_CONTINUATION_PREAMBLE in (message.content_text() or "")
 
 
 def _collect_recent_role_summaries(
@@ -381,7 +381,7 @@ def _infer_pending_work(messages: list[ChatMessage]) -> list[str]:
     pending = []
     keywords = ("todo", "next", "remaining", "follow up", "need to", "should", "plan")
     for message in reversed(messages[-12:]):
-        content = _collapse_inline_whitespace(message.content or "")
+        content = _collapse_inline_whitespace(message.summary_text())
         lowered = content.lower()
         if not content:
             continue
@@ -406,7 +406,7 @@ def _collect_key_files(messages: list[ChatMessage]) -> list[str]:
     found = []
     seen = set()
     for message in messages:
-        for match in pattern.findall(message.content or ""):
+        for match in pattern.findall(message.summary_text()):
             if match in seen:
                 continue
             seen.add(match)
@@ -424,7 +424,7 @@ def _infer_current_work(messages: list[ChatMessage]) -> str:
 
 def _summarize_message(message: ChatMessage) -> str:
     parts = []
-    content = _collapse_inline_whitespace(message.content or "")
+    content = _collapse_inline_whitespace(message.summary_text())
     if content:
         parts.append(_truncate_line(content, 180))
     if message.tool_calls:

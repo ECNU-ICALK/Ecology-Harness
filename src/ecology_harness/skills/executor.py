@@ -12,6 +12,7 @@ def execute_skill(
     depth: int = 0,
     event_handler=None,
     conversation: list[ChatMessage] | None = None,
+    attachment_paths: list[str] | None = None,
 ) -> AgentRunResult:
     rendered = app.skill_loader.render(skill, args)
     prompt = "[Skill: %s]\n\n%s" % (skill.name, rendered)
@@ -53,4 +54,5 @@ def execute_skill(
         depth=depth,
         event_handler=event_handler,
         conversation=conversation,
+        attachment_paths=attachment_paths,
     )

@@ -5,10 +5,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import difflib
 import json
+import shlex
 from typing import Sequence
 
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
+from ecology_harness.runtime.attachments import inspect_attachment
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.runtime.providers import ProviderError, list_provider_specs
 from ecology_harness.tools import ToolError
@@ -31,6 +33,13 @@ SESSION_COMMAND_LINES = [
     "/tasks      list tracked tasks",
     "/providers  list configured provider backends",
     "/sandbox    show sandbox state",
+    "/attach PATH add an image or document to the next turn",
+    "/image PATH  add an image attachment to the next turn",
+    "/doc PATH    add a document attachment to the next turn",
+    "/audio PATH  add an audio attachment to the next turn",
+    "/video PATH  add a video attachment to the next turn",
+    "/attachments show pending attachments",
+    "/clear-attachments remove pending attachments",
     "/trace on   enable intermediate step trace",
     "/trace off  disable intermediate step trace",
     "/new        start a fresh conversation",
@@ -60,6 +69,13 @@ SESSION_COMMANDS = {
     "/tasks",
     "/providers",
     "/sandbox",
+    "/attach",
+    "/image",
+    "/doc",
+    "/audio",
+    "/video",
+    "/attachments",
+    "/clear-attachments",
     "/trace",
     "/new",
     "/reset",
@@ -107,6 +123,7 @@ class ReplState:
     total_tool_calls: int = 0
     total_steps: int = 0
     last_prompt: str = ""
+    pending_attachment_paths: list[str] = field(default_factory=list)
     started_at: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -119,6 +136,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  eh repl\n"
             "  eh status\n"
             "  eh prompt \"summarize this repository\"\n"
+            "  eh --attach docs/paper.pdf \"summarize this paper\"\n"
+            "  eh --attach imgs/specimen.jpg \"identify this species\"\n"
             "  eh \"review src/ecology_harness/cli.py\"\n"
             "  eh tool Read '{\"path\":\"README.md\"}'\n"
             "  eh --resume latest repl"
@@ -207,6 +226,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--prompt",
         default="",
         help="Run one prompt and exit.",
+    )
+    parser.add_argument(
+        "--attach",
+        action="append",
+        default=[],
+        help="Attach a local image or document to the prompt. Can be repeated.",
     )
     parser.add_argument(
         "--list-tools",
@@ -341,6 +366,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.json,
             args.quiet,
             conversation=resumed_conversation,
+            attachment_paths=args.attach,
         )
     positional_result = _handle_positional_command(
         app,
@@ -350,6 +376,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         json_output=args.json,
         quiet=args.quiet,
         conversation=resumed_conversation,
+        attachment_paths=args.attach,
     )
     if positional_result is not None:
         return positional_result
@@ -360,6 +387,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         json_output=args.json,
         show_trace=not args.json and not args.quiet,
         initial_conversation=resumed_conversation,
+        initial_attachment_paths=args.attach,
     )
 
 
@@ -369,11 +397,13 @@ def run_repl(
     json_output: bool = False,
     show_trace: bool = True,
     initial_conversation: list[ChatMessage] | None = None,
+    initial_attachment_paths: list[str] | None = None,
 ) -> int:
     console = renderer or ConsoleRenderer()
     state = ReplState(
         conversation=initial_conversation,
         trace_enabled=show_trace,
+        pending_attachment_paths=_resolve_attachment_paths(app, initial_attachment_paths or []),
     )
     if initial_conversation:
         state.turn_count = _conversation_turn_count(initial_conversation)
@@ -388,6 +418,14 @@ def run_repl(
         )
     else:
         console.print_notice("Type / for commands, or ask directly in natural language.")
+    if state.pending_attachment_paths:
+        console.print_notice(
+            "Loaded %s pending attachment(s): %s"
+            % (
+                len(state.pending_attachment_paths),
+                ", ".join(_attachment_labels(app, state.pending_attachment_paths)),
+            )
+        )
 
     while True:
         try:
@@ -417,7 +455,10 @@ def run_repl(
                 continue
 
         if not json_output:
-            console.print_prompt_block(line)
+            console.print_prompt_block(
+                line,
+                attachments=_attachment_labels(app, state.pending_attachment_paths),
+            )
 
         try:
             result = app.run_prompt(
@@ -425,6 +466,7 @@ def run_repl(
                 provider_name=app.settings.provider,
                 event_handler=console.build_trace_printer() if state.trace_enabled and not json_output else None,
                 conversation=state.conversation,
+                attachment_paths=state.pending_attachment_paths,
             )
         except (ToolError, ProviderError) as exc:
             console.print_notice(str(exc), level="error")
@@ -436,6 +478,7 @@ def run_repl(
         state.total_steps += result.steps
         state.total_tool_calls += len(result.tool_invocations)
         state.last_prompt = line
+        state.pending_attachment_paths = []
 
         if json_output:
             print(
@@ -641,11 +684,16 @@ def _run_prompt(
     json_output: bool,
     quiet: bool,
     conversation: list[ChatMessage] | None = None,
+    attachment_paths: list[str] | None = None,
 ) -> int:
+    normalized_attachments = _resolve_attachment_paths(app, attachment_paths or [])
     event_handler = None
     if not json_output and not quiet:
         renderer.banner(app, mode="prompt")
-        renderer.print_prompt_block(prompt)
+        renderer.print_prompt_block(
+            prompt,
+            attachments=_attachment_labels(app, normalized_attachments),
+        )
         event_handler = renderer.build_trace_printer()
     try:
         result = app.run_prompt(
@@ -653,6 +701,7 @@ def _run_prompt(
             provider_name=provider_name,
             event_handler=event_handler,
             conversation=conversation,
+            attachment_paths=normalized_attachments,
         )
     except (ToolError, ProviderError) as exc:
         renderer.print_notice(str(exc), level="error")
@@ -689,6 +738,7 @@ def _handle_positional_command(
     json_output: bool,
     quiet: bool,
     conversation: list[ChatMessage] | None,
+    attachment_paths: list[str] | None,
 ) -> int | None:
     if not command_args:
         return None
@@ -702,6 +752,7 @@ def _handle_positional_command(
             json_output=json_output,
             show_trace=not json_output and not quiet,
             initial_conversation=conversation,
+            initial_attachment_paths=attachment_paths,
         )
     if head == "prompt":
         if not tail:
@@ -714,6 +765,7 @@ def _handle_positional_command(
             json_output,
             quiet,
             conversation=conversation,
+            attachment_paths=attachment_paths,
         )
     if head == "status":
         renderer.print_status_panel(
@@ -800,6 +852,7 @@ def _handle_positional_command(
         json_output,
         quiet,
         conversation=conversation,
+        attachment_paths=attachment_paths,
     )
 
 
@@ -904,6 +957,51 @@ def _handle_repl_command(
     if normalized == "/sandbox":
         _sandbox_status(app, renderer, False)
         return {"action": "continue"}
+    if normalized == "/attachments":
+        if not state.pending_attachment_paths:
+            renderer.print_notice("No pending attachments.")
+            return {"action": "continue"}
+        renderer.section(
+            "Pending Attachments",
+            [
+                "- %s" % item
+                for item in _attachment_labels(app, state.pending_attachment_paths)
+            ],
+        )
+        return {"action": "continue"}
+    if normalized == "/clear-attachments":
+        state.pending_attachment_paths = []
+        renderer.print_notice("Pending attachments cleared.")
+        return {"action": "continue"}
+    if (
+        normalized.startswith("/attach")
+        or normalized.startswith("/image")
+        or normalized.startswith("/doc")
+        or normalized.startswith("/audio")
+        or normalized.startswith("/video")
+    ):
+        parts = normalized.split(None, 1)
+        if len(parts) == 1:
+            renderer.print_notice("Usage: %s <path>" % parts[0], level="warn")
+            return {"action": "continue"}
+        try:
+            raw_paths = shlex.split(parts[1])
+        except ValueError as exc:
+            renderer.print_notice("Invalid attachment path: %s" % exc, level="error")
+            return {"action": "continue"}
+        try:
+            resolved = _resolve_attachment_paths(app, raw_paths)
+        except ToolError as exc:
+            renderer.print_notice(str(exc), level="error")
+            return {"action": "continue"}
+        state.pending_attachment_paths.extend(
+            item for item in resolved if item not in state.pending_attachment_paths
+        )
+        renderer.print_notice(
+            "Pending attachments: %s"
+            % ", ".join(_attachment_labels(app, state.pending_attachment_paths))
+        )
+        return {"action": "continue"}
     if normalized.startswith("/trace"):
         parts = normalized.split()
         if len(parts) == 1:
@@ -1000,6 +1098,38 @@ def _suggest_session_command(command: str) -> str:
     if remainder:
         return "%s %s" % (suggestion, remainder)
     return suggestion
+
+
+def _resolve_attachment_paths(app: EcologyHarnessApp, raw_paths: list[str]) -> list[str]:
+    resolved = []
+    for raw_path in raw_paths:
+        if not raw_path:
+            continue
+        info = inspect_attachment(
+            raw_path,
+            app.settings,
+            sandbox=getattr(app, "sandbox", None),
+        )
+        candidate = str(info.resolved_path)
+        if candidate not in resolved:
+            resolved.append(candidate)
+    return resolved
+
+
+def _attachment_labels(app: EcologyHarnessApp, attachment_paths: list[str]) -> list[str]:
+    labels = []
+    for raw_path in attachment_paths:
+        try:
+            info = inspect_attachment(
+                raw_path,
+                app.settings,
+                sandbox=getattr(app, "sandbox", None),
+            )
+        except ToolError:
+            labels.append(raw_path)
+            continue
+        labels.append("%s: %s" % (info.kind, info.display_path))
+    return labels
 
 
 if __name__ == "__main__":

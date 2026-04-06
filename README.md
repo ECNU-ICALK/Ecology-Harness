@@ -25,6 +25,8 @@ and skills can be added on top of a stable runtime.
 - configurable sandbox policy for file, shell, and network boundaries
 - tool registry with typed metadata and validation
 - built-in file, shell, web, memory, skill, task, and subagent tools
+- multimodal prompt attachments for local images, audio, documents, and sampled video frames
+- document-analysis tools for `pdf`, `docx`, `md`, `csv`, `json`, `html`, and `ipynb`
 - dual-scope persistent memory with relevance ranking and auto-generated `MEMORY.md` indexes
 - specialized agent types, background subagents, dependency-aware coordination, and internal agent task tracking
 - task tracking with status, owner, metadata, and dependency edges
@@ -114,6 +116,54 @@ If you have a Pl@ntNet API key:
 ```bash
 export PLANTNET_API_KEY=your_key_here
 eh tool PlantNetIdentify '{"image_paths":["leaf.jpg"],"organs":["leaf"]}'
+```
+
+## Multimodal and Document Analysis
+
+The runtime now supports local multimodal inputs in the main conversation loop:
+
+- image attachments are passed as real multimodal content blocks for providers that support vision
+- audio attachments are passed natively for the OpenAI provider and fall back to metadata-aware context elsewhere
+- document attachments are normalized for analysis, with provider-specific handling where possible and plain-text fallback elsewhere
+- video attachments are expanded into sampled frames for frame-by-frame review, inspired by claw-style attachment preprocessing
+- REPL attachment flow is inspired by `claw-code`, with `/attach`, `/image`, `/doc`, and `/attachments`
+
+You can use it directly from the CLI:
+
+```bash
+# attach a local image
+eh --provider openai --model gpt-4o --attach imgs/specimen.jpg \
+  "identify the likely species and explain the visual cues"
+
+# attach a local paper or report
+eh --attach docs/wetland_report.pdf \
+  "summarize the methods, main findings, and restoration implications"
+
+# attach local audio
+eh --provider openai --model gpt-4o-audio-preview --attach audio/birdsong.wav \
+  "identify the likely bird species and describe the calling pattern"
+
+# attach local video; Ecology Harness will sample frames for analysis
+eh --attach video/camera_trap.mp4 \
+  "describe the observed animal activity across sampled frames"
+
+# inspect a document without going through the model loop
+eh tool DocumentInspect '{"path":"docs/wetland_report.pdf"}'
+eh tool DocumentExtract '{"path":"notes/field_log.docx","max_chars":12000}'
+eh tool AudioInspect '{"path":"audio/birdsong.wav"}'
+eh tool VideoInspect '{"path":"video/camera_trap.mp4"}'
+eh tool VideoSampleFrames '{"path":"video/camera_trap.mp4","frame_count":6}'
+```
+
+Inside the REPL:
+
+```text
+/attach docs/wetland_report.pdf
+/image imgs/specimen.jpg
+/audio audio/birdsong.wav
+/video video/camera_trap.mp4
+/attachments
+summarize the attached materials
 ```
 
 ## Quick Start
@@ -207,6 +257,9 @@ eh "summarize this repository in 5 bullets"
 # explicit prompt command
 eh prompt '/tool Read {"path":"README.md"}'
 
+# multimodal prompt with local attachments
+eh --attach docs/wetland_report.pdf prompt "summarize this report"
+
 # resume the latest saved session in the REPL
 eh --resume latest repl
 ```
@@ -278,6 +331,12 @@ Inside the REPL you can try:
 /session
 /plugins
 /mcp
+/attach docs/wetland_report.pdf
+/image imgs/specimen.jpg
+/audio audio/birdsong.wav
+/video video/camera_trap.mp4
+/doc notes/field_log.docx
+/attachments
 /ecology-dataset-hunt estuary methane flux datasets 2018-2024
 /ecology-evidence-synthesis blue carbon mangroves
 /literature-multi-source-search wetland methane ebullition
@@ -316,6 +375,13 @@ Useful REPL commands:
 - `/tasks`
 - `/providers`
 - `/sandbox`
+- `/attach`
+- `/image`
+- `/doc`
+- `/audio`
+- `/video`
+- `/attachments`
+- `/clear-attachments`
 - `/trace on`
 - `/trace off`
 - `/new`

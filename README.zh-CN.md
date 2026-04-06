@@ -21,6 +21,8 @@ Ecology Harness 是一个面向生态数据分析与推理工作流的 Python Ag
 - 会话持久化、恢复与上下文压缩
 - 可配置 Sandbox、权限策略与审计
 - 工具注册系统与内置通用工具
+- 支持本地图片、音频、文档与视频抽帧附件的多模态输入
+- 内置文档分析工具，可处理 `pdf`、`docx`、`md`、`csv`、`json`、`html`、`ipynb`
 - 双 scope 记忆系统与自动 `MEMORY.md`
 - 多智能体与子智能体协同机制
 - Markdown skill 系统
@@ -110,6 +112,54 @@ export PLANTNET_API_KEY=your_key_here
 eh tool PlantNetIdentify '{"image_paths":["leaf.jpg"],"organs":["leaf"]}'
 ```
 
+## 多模态与文档分析
+
+当前运行时已经支持把本地图片、音频、文档与视频带进主对话链路：
+
+- 图片附件会按支持视觉输入的 provider 发送为真正的多模态内容块
+- 音频附件在 OpenAI provider 上会按原生音频输入发送，其它 provider 暂时退化为带元数据的上下文
+- 文档附件会先做规范化提取，在支持原生文件输入的 provider 上走更合适的格式，其余 provider 退化为纯文本分析
+- 视频附件会在本地先抽取多帧图像，再进入分析链路
+- REPL 的附件交互参考了 `claw-code`，支持 `/attach`、`/image`、`/audio`、`/video`、`/doc`、`/attachments`
+
+可以直接这样使用：
+
+```bash
+# 附带本地图片
+eh --provider openai --model gpt-4o --attach imgs/specimen.jpg \
+  "识别这个物种，并说明你判断时看到的关键特征"
+
+# 附带本地报告或论文
+eh --attach docs/wetland_report.pdf \
+  "总结这个报告的方法、主要发现，以及对湿地修复的启示"
+
+# 附带本地音频
+eh --provider openai --model gpt-4o-audio-preview --attach audio/birdsong.wav \
+  "识别可能的鸟种，并描述鸣叫节律"
+
+# 附带本地视频；框架会先抽取多帧图像供分析
+eh --attach video/camera_trap.mp4 \
+  "基于采样帧描述这个相机陷阱视频中的动物活动"
+
+# 不走模型，直接做文档检查/提取
+eh tool DocumentInspect '{"path":"docs/wetland_report.pdf"}'
+eh tool DocumentExtract '{"path":"notes/field_log.docx","max_chars":12000}'
+eh tool AudioInspect '{"path":"audio/birdsong.wav"}'
+eh tool VideoInspect '{"path":"video/camera_trap.mp4"}'
+eh tool VideoSampleFrames '{"path":"video/camera_trap.mp4","frame_count":6}'
+```
+
+在 REPL 中：
+
+```text
+/attach docs/wetland_report.pdf
+/image imgs/specimen.jpg
+/audio audio/birdsong.wav
+/video video/camera_trap.mp4
+/attachments
+总结这些附件里的关键信息
+```
+
 ## 快速开始
 
 ### 一键安装
@@ -195,6 +245,9 @@ eh "summarize this repository in 5 bullets"
 # 显式 prompt 命令
 eh prompt '/tool Read {"path":"README.md"}'
 
+# 带本地附件的多模态 prompt
+eh --attach docs/wetland_report.pdf prompt "summarize this report"
+
 # 恢复最近一次会话
 eh --resume latest repl
 ```
@@ -214,6 +267,12 @@ REPL 是有状态的，新的输入会继续沿用当前会话，直到你执行
 /session
 /plugins
 /mcp
+/attach docs/wetland_report.pdf
+/image imgs/specimen.jpg
+/audio audio/birdsong.wav
+/video video/camera_trap.mp4
+/doc notes/field_log.docx
+/attachments
 /ecology-dataset-hunt estuary methane flux datasets 2018-2024
 /ecology-evidence-synthesis blue carbon mangroves
 /literature-multi-source-search wetland methane ebullition
@@ -252,6 +311,13 @@ REPL 是有状态的，新的输入会继续沿用当前会话，直到你执行
 - `/tasks`
 - `/providers`
 - `/sandbox`
+- `/attach`
+- `/image`
+- `/doc`
+- `/audio`
+- `/video`
+- `/attachments`
+- `/clear-attachments`
 - `/trace on`
 - `/trace off`
 - `/new`

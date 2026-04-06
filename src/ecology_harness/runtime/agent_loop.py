@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from ecology_harness.config import HarnessSettings
+from ecology_harness.runtime.attachments import build_user_message
 from ecology_harness.runtime.compaction import CompactionResult, maybe_compact_messages
 from ecology_harness.runtime.events import Event
 from ecology_harness.runtime.messages import ChatMessage
@@ -38,6 +39,7 @@ class AgentLoop:
         settings: HarnessSettings | None = None,
         system_prompt: str = "",
         conversation: list[ChatMessage] | None = None,
+        attachment_paths: list[str] | None = None,
         depth: int = 0,
         event_handler: Callable[[Event], None] | None = None,
     ) -> AgentRunResult:
@@ -52,7 +54,14 @@ class AgentLoop:
                     content=system_prompt or self.app.build_system_prompt(),
                 ),
             )
-        messages.append(ChatMessage(role="user", content=prompt))
+        messages.append(
+            build_user_message(
+                prompt,
+                attachment_paths=attachment_paths,
+                settings=active_settings,
+                sandbox=getattr(self.app, "sandbox", None),
+            )
+        )
 
         tool_invocations: list[dict[str, Any]] = []
         compactions: list[dict[str, Any]] = []

@@ -141,6 +141,7 @@ class EcologyHarnessApp:
         settings: HarnessSettings | None = None,
         event_handler=None,
         conversation: list[ChatMessage] | None = None,
+        attachment_paths: list[str] | None = None,
     ):
         self._ensure_initialized()
         active_settings = settings or self.settings
@@ -155,6 +156,7 @@ class EcologyHarnessApp:
                 depth=0,
                 event_handler=event_handler,
                 conversation=conversation,
+                attachment_paths=attachment_paths,
             )
             if getattr(result, "messages", None):
                 compactions = getattr(result, "compactions", [])
@@ -177,6 +179,7 @@ class EcologyHarnessApp:
                 conversation=conversation,
             ),
             conversation=conversation,
+            attachment_paths=attachment_paths,
             event_handler=event_handler,
         )
         self.save_session(

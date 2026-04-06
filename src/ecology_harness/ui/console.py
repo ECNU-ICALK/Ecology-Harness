@@ -80,6 +80,7 @@ class ConsoleRenderer:
             [
                 self._style("enter", "accent") + self._style(" send", "muted"),
                 self._style("/", "accent") + self._style(" commands", "muted"),
+                self._style("/attach", "accent") + self._style(" media", "muted"),
                 self._style("↑↓", "accent") + self._style(" history", "muted"),
                 self._style("ctrl+c", "accent") + self._style(" exit", "muted"),
             ]
@@ -93,13 +94,21 @@ class ConsoleRenderer:
             self.print(line)
         self.rule()
 
-    def print_prompt_block(self, prompt: str) -> None:
+    def print_prompt_block(self, prompt: str, attachments: list[str] | None = None) -> None:
         wrapped = _wrap_block(prompt, self.width)
         if not wrapped:
             wrapped = [""]
         self.print("%s%s" % (self._style("> ", "user"), wrapped[0]))
         for line in wrapped[1:]:
             self.print("  %s" % line)
+        if attachments:
+            self.print(
+                "  %s%s"
+                % (
+                    self._style("attachments: ", "muted"),
+                    self._style(", ".join(attachments), "accent"),
+                )
+            )
         self.print()
 
     def print_final_block(
@@ -208,6 +217,9 @@ class ConsoleRenderer:
                 "runtime_mode: %s" % getattr(app, "runtime_mode", "default"),
                 "max_agent_loops: %s" % _loop_limit_text(settings.max_agent_loops),
                 "max_context_tokens: %s" % settings.max_context_tokens,
+                "max_attachment_bytes: %s" % settings.max_attachment_bytes,
+                "max_document_chars: %s" % settings.max_document_chars,
+                "video_frame_sample_count: %s" % settings.video_frame_sample_count,
                 "",
                 self._style("Execution", "accent"),
                 "command_timeout_sec: %s" % settings.command_timeout_sec,

@@ -13,7 +13,7 @@ from ecology_harness.runtime.compaction import (
     summarize_messages,
 )
 from ecology_harness.runtime.events import Event, ToolExecutionEvent
-from ecology_harness.runtime.messages import ChatMessage, ModelResponse, ToolCall
+from ecology_harness.runtime.messages import ChatMessage, MessagePart, ModelResponse, ToolCall
 from ecology_harness.runtime.providers import (
     PROVIDERS,
     AnthropicProvider,
@@ -48,6 +48,7 @@ __all__ = [
     "maybe_compact_messages",
     "MockProvider",
     "ModelResponse",
+    "MessagePart",
     "OllamaProvider",
     "OpenAICompatibleProvider",
     "PROVIDERS",

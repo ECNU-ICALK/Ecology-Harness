@@ -40,6 +40,13 @@ SESSION_COMMAND_SUGGESTIONS = [
     CommandSuggestion("/tasks", "list tracked tasks", "session"),
     CommandSuggestion("/providers", "list configured provider backends", "session"),
     CommandSuggestion("/sandbox", "show sandbox state", "session"),
+    CommandSuggestion("/attach", "add an image or document attachment to the next turn", "session"),
+    CommandSuggestion("/image", "add an image attachment to the next turn", "session"),
+    CommandSuggestion("/doc", "add a document attachment to the next turn", "session"),
+    CommandSuggestion("/audio", "add an audio attachment to the next turn", "session"),
+    CommandSuggestion("/video", "add a video attachment to the next turn", "session"),
+    CommandSuggestion("/attachments", "show pending attachments", "session"),
+    CommandSuggestion("/clear-attachments", "remove pending attachments", "session"),
     CommandSuggestion("/trace on", "enable intermediate step trace", "session"),
     CommandSuggestion("/trace off", "disable intermediate step trace", "session"),
     CommandSuggestion("/new", "start a fresh conversation", "session"),
@@ -127,6 +134,7 @@ def build_toolbar_text(app, state=None) -> str:
     turns = getattr(state, "turn_count", 0)
     trace_enabled = getattr(state, "trace_enabled", True)
     total_tool_calls = getattr(state, "total_tool_calls", 0)
+    attachment_count = len(getattr(state, "pending_attachment_paths", []) or [])
     provider = getattr(app.settings, "provider", "auto") or "auto"
     model = getattr(app.settings, "model", "")
     permission_mode = getattr(app.settings, "permission_mode", "workspace-write")
@@ -143,6 +151,7 @@ def build_toolbar_text(app, state=None) -> str:
         "trace: %s" % ("on" if trace_enabled else "off"),
         "turns: %s" % turns,
         "tools: %s" % total_tool_calls,
+        "attachments: %s" % attachment_count,
     ]
     return " \u2502 ".join(parts)
 

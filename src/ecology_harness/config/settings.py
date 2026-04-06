@@ -30,6 +30,9 @@ class HarnessSettings:
     max_glob_results: int = 200
     max_web_bytes: int = 300_000
     max_command_output: int = 12_000
+    max_attachment_bytes: int = 15_000_000
+    max_document_chars: int = 18_000
+    video_frame_sample_count: int = 6
     command_timeout_sec: int = 20
     provider_timeout_sec: int = 0
     max_agent_loops: int = 0

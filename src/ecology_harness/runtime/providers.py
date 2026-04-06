@@ -11,7 +11,8 @@ from urllib import error, request
 import uuid
 
 from ecology_harness.config import HarnessSettings
-from ecology_harness.runtime.messages import ChatMessage, ModelResponse, ToolCall
+from ecology_harness.runtime.attachments import audio_format_for_openai, encode_file_base64
+from ecology_harness.runtime.messages import ChatMessage, MessagePart, ModelResponse, ToolCall
 from ecology_harness.tools import ToolDefinition, ToolError
 
 
@@ -195,14 +196,14 @@ class MockProvider(BaseProvider):
             for item in recent_tools:
                 header = item.name or "tool"
                 lines.append("%s:" % header)
-                lines.append(item.content.strip())
+                lines.append(item.content_text().strip())
             return ModelResponse(content="\n".join(lines))
 
         user_message = _last_message_by_role(messages, "user")
         if user_message is None:
             return ModelResponse(content="No user input received.")
 
-        stripped = user_message.content.strip()
+        stripped = user_message.content_text().strip()
         tool_line = ""
         if stripped.startswith("/tool "):
             tool_line = stripped
@@ -337,7 +338,7 @@ class OpenAICompatibleProvider(BaseProvider):
         ]
         request_body = {
             "model": model_name,
-            "messages": messages_to_openai(messages),
+            "messages": messages_to_openai(messages, provider_name=spec.name),
             "tools": tool_payload,
             "tool_choice": "auto",
         }
@@ -494,17 +495,25 @@ def list_provider_specs() -> list[ProviderSpec]:
     return list(PROVIDERS.values())
 
 
-def messages_to_openai(messages: list[ChatMessage]) -> list[dict[str, Any]]:
+def messages_to_openai(
+    messages: list[ChatMessage],
+    provider_name: str = "openai",
+) -> list[dict[str, Any]]:
     result = []
     for message in messages:
         if message.role == "system":
-            result.append({"role": "system", "content": message.content})
+            result.append({"role": "system", "content": message.content_text()})
         elif message.role == "user":
-            result.append({"role": "user", "content": message.content})
+            result.append(
+                {
+                    "role": "user",
+                    "content": _openai_user_content(message, provider_name=provider_name),
+                }
+            )
         elif message.role == "assistant":
             payload: dict[str, Any] = {
                 "role": "assistant",
-                "content": message.content or None,
+                "content": message.content_text() or None,
             }
             if message.tool_calls:
                 payload["tool_calls"] = [item.to_openai_dict() for item in message.tool_calls]
@@ -514,7 +523,7 @@ def messages_to_openai(messages: list[ChatMessage]) -> list[dict[str, Any]]:
                 {
                     "role": "tool",
                     "tool_call_id": message.tool_call_id,
-                    "content": message.content,
+                    "content": message.content_text(),
                 }
             )
     return result
@@ -529,13 +538,13 @@ def messages_to_anthropic(messages: list[ChatMessage]) -> list[dict[str, Any]]:
             index += 1
             continue
         if message.role == "user":
-            result.append({"role": "user", "content": message.content})
+            result.append({"role": "user", "content": _anthropic_user_content(message)})
             index += 1
             continue
         if message.role == "assistant":
             blocks = []
-            if message.content:
-                blocks.append({"type": "text", "text": message.content})
+            if message.content_text():
+                blocks.append({"type": "text", "text": message.content_text()})
             for tool_call in message.tool_calls:
                 blocks.append(
                     {
@@ -556,7 +565,7 @@ def messages_to_anthropic(messages: list[ChatMessage]) -> list[dict[str, Any]]:
                     {
                         "type": "tool_result",
                         "tool_use_id": tool_message.tool_call_id,
-                        "content": tool_message.content,
+                        "content": tool_message.content_text(),
                     }
                 )
                 index += 1
@@ -567,18 +576,46 @@ def messages_to_anthropic(messages: list[ChatMessage]) -> list[dict[str, Any]]:
 
 
 def messages_to_ollama(messages: list[ChatMessage]) -> list[dict[str, Any]]:
-    payload = messages_to_openai(messages)
-    for message in payload:
-        if "tool_calls" not in message:
+    payload = []
+    for message in messages:
+        if message.role == "system":
+            payload.append({"role": "system", "content": message.content_text()})
             continue
-        for tool_call in message["tool_calls"]:
-            function_payload = tool_call.get("function", {})
-            raw_arguments = function_payload.get("arguments")
-            if isinstance(raw_arguments, str):
-                try:
-                    function_payload["arguments"] = json.loads(raw_arguments)
-                except json.JSONDecodeError:
-                    function_payload["arguments"] = {"_raw": raw_arguments}
+        if message.role == "user":
+            item: dict[str, Any] = {
+                "role": "user",
+                "content": _ollama_user_text(message),
+            }
+            images = _ollama_user_images(message)
+            if images:
+                item["images"] = images
+            payload.append(item)
+            continue
+        if message.role == "assistant":
+            item = {
+                "role": "assistant",
+                "content": message.content_text() or None,
+            }
+            if message.tool_calls:
+                item["tool_calls"] = [tool_call.to_openai_dict() for tool_call in message.tool_calls]
+                for tool_call in item["tool_calls"]:
+                    function_payload = tool_call.get("function", {})
+                    raw_arguments = function_payload.get("arguments")
+                    if isinstance(raw_arguments, str):
+                        try:
+                            function_payload["arguments"] = json.loads(raw_arguments)
+                        except json.JSONDecodeError:
+                            function_payload["arguments"] = {"_raw": raw_arguments}
+            payload.append(item)
+            continue
+        if message.role == "tool":
+            payload.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": message.tool_call_id,
+                    "content": message.content_text(),
+                }
+            )
     return payload
 
 
@@ -606,7 +643,7 @@ def _parse_openai_like_response(raw: dict[str, Any]) -> ModelResponse:
             )
         )
     return ModelResponse(
-        content=message.get("content") or "",
+        content=_flatten_openai_response_content(message.get("content")),
         tool_calls=tool_calls,
         raw=raw,
     )
@@ -635,7 +672,7 @@ def _perform_json_request(req: request.Request, timeout: int | None) -> dict[str
 def _system_prompt(messages: list[ChatMessage]) -> str:
     for message in messages:
         if message.role == "system":
-            return message.content
+            return message.content_text()
     return ""
 
 
@@ -644,6 +681,157 @@ def _last_message_by_role(messages: list[ChatMessage], role: str) -> ChatMessage
         if message.role == role:
             return message
     return None
+
+
+def _flatten_openai_response_content(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        chunks = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "text" and item.get("text"):
+                chunks.append(str(item.get("text", "")))
+            elif item.get("type") == "output_text" and item.get("text"):
+                chunks.append(str(item.get("text", "")))
+        return "".join(chunks)
+    return ""
+
+
+def _openai_user_content(message: ChatMessage, provider_name: str) -> str | list[dict[str, Any]]:
+    if not message.content_parts:
+        return message.content
+    if not _has_non_text_parts(message):
+        return message.content_text()
+
+    blocks: list[dict[str, Any]] = []
+    for part in message.content_parts:
+        if part.type == "text":
+            if part.text:
+                blocks.append({"type": "text", "text": part.text})
+            continue
+        if part.type == "image":
+            blocks.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": _data_url(part),
+                    },
+                }
+            )
+            continue
+        if part.type == "document":
+            if provider_name == "openai":
+                blocks.append(
+                    {
+                        "type": "file",
+                        "file": {
+                            "filename": part.label(),
+                            "file_data": encode_file_base64(part.path),
+                        },
+                    }
+                )
+            else:
+                text = part.plain_text()
+                if text:
+                    blocks.append({"type": "text", "text": text})
+            continue
+        if part.type == "audio":
+            if provider_name == "openai":
+                blocks.append(
+                    {
+                        "type": "input_audio",
+                        "input_audio": {
+                            "data": encode_file_base64(part.path),
+                            "format": audio_format_for_openai(part.path),
+                        },
+                    }
+                )
+            else:
+                text = part.plain_text()
+                if text:
+                    blocks.append({"type": "text", "text": text})
+            continue
+        if part.type == "video":
+            text = part.plain_text()
+            if text:
+                blocks.append({"type": "text", "text": text})
+    return blocks or message.content_text()
+
+
+def _anthropic_user_content(message: ChatMessage) -> str | list[dict[str, Any]]:
+    if not message.content_parts:
+        return message.content
+    blocks: list[dict[str, Any]] = []
+    for part in message.content_parts:
+        if part.type == "text":
+            if part.text:
+                blocks.append({"type": "text", "text": part.text})
+            continue
+        if part.type == "image":
+            blocks.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": part.mime_type or "image/png",
+                        "data": encode_file_base64(part.path),
+                    },
+                }
+            )
+            continue
+        if part.type == "document" and (part.mime_type or "").lower() == "application/pdf":
+            blocks.append(
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": encode_file_base64(part.path),
+                    },
+                }
+            )
+            continue
+        if part.type in {"audio", "video"}:
+            text = part.plain_text()
+            if text:
+                blocks.append({"type": "text", "text": text})
+            continue
+        text = part.plain_text()
+        if text:
+            blocks.append({"type": "text", "text": text})
+    return blocks or message.content_text()
+
+
+def _ollama_user_text(message: ChatMessage) -> str:
+    if not message.content_parts:
+        return message.content
+    chunks = []
+    for part in message.content_parts:
+        if part.type == "text" and part.text:
+            chunks.append(part.text)
+        elif part.type in {"document", "audio", "video"}:
+            chunks.append(part.plain_text())
+    return "\n\n".join(item for item in chunks if item).strip()
+
+
+def _ollama_user_images(message: ChatMessage) -> list[str]:
+    images = []
+    for part in message.content_parts:
+        if part.type != "image":
+            continue
+        images.append(encode_file_base64(part.path))
+    return images
+
+
+def _data_url(part: MessagePart) -> str:
+    mime_type = part.mime_type or "application/octet-stream"
+    return "data:%s;base64,%s" % (mime_type, encode_file_base64(part.path))
+
+
+def _has_non_text_parts(message: ChatMessage) -> bool:
+    return any(part.type != "text" for part in message.content_parts)
 
 
 def _provider_timeout_message(timeout: int | None) -> str:
