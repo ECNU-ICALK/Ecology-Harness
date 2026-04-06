@@ -454,12 +454,6 @@ def run_repl(
             if action == "continue":
                 continue
 
-        if not json_output:
-            console.print_prompt_block(
-                line,
-                attachments=_attachment_labels(app, state.pending_attachment_paths),
-            )
-
         try:
             result = app.run_prompt(
                 line,

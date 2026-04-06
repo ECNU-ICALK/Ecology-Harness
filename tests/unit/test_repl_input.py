@@ -1,10 +1,16 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
-from ecology_harness.ui.repl_input import build_toolbar_text, suggest_repl_commands
+from ecology_harness.ui.repl_input import (
+    _should_use_prompt_toolkit,
+    _strip_control_sequences,
+    build_toolbar_text,
+    suggest_repl_commands,
+)
 
 
 class ReplInputTests(unittest.TestCase):
@@ -72,6 +78,14 @@ class ReplInputTests(unittest.TestCase):
         self.assertIn("trace: off", toolbar)
         self.assertIn("turns: 2", toolbar)
         self.assertIn("tools: 4", toolbar)
+
+    def test_strip_control_sequences_removes_arrow_escape_codes(self) -> None:
+        cleaned = _strip_control_sequences("hello\x1b[A\x1b[Bworld")
+        self.assertEqual(cleaned, "helloworld")
+
+    def test_prompt_toolkit_can_be_forced_off(self) -> None:
+        with patch.dict("os.environ", {"EH_FORCE_BASIC_REPL": "1"}, clear=False):
+            self.assertFalse(_should_use_prompt_toolkit())
 
 
 if __name__ == "__main__":

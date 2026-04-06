@@ -369,6 +369,24 @@ class CliTests(unittest.TestCase):
             self.assertIn("Unknown session command: \\statu", output)
             self.assertIn("Did you mean /status?", output)
 
+    def test_repl_does_not_reprint_submitted_prompt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                with patch("builtins.input", side_effect=["hello leaf", "/quit"]):
+                    exit_code = main(
+                        [
+                            "--workspace",
+                            tmpdir,
+                            "--repl",
+                        ]
+                    )
+
+            self.assertEqual(exit_code, 0)
+            output = buffer.getvalue()
+            self.assertNotIn("> hello leaf", output)
+            self.assertEqual(output.count("hello leaf"), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

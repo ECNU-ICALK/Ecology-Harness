@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 import sys
 from typing import Iterable
+
+try:  # pragma: no cover - platform dependent
+    import readline
+except Exception:  # pragma: no cover - optional dependency fallback
+    readline = None  # type: ignore[assignment]
 
 try:
     from prompt_toolkit import PromptSession
@@ -105,29 +111,70 @@ def suggest_repl_commands(app, text: str) -> list[CommandSuggestion]:
 
 
 def create_repl_reader(app, console, state_getter=None):
-    if PromptSession is None or not console.is_tty or not sys.stdin.isatty():
-        return _fallback_reader
-
-    completer = ReplCompleter(app)
-    session = PromptSession(
-        history=InMemoryHistory(),
-        completer=completer,
-        complete_while_typing=True,
-        complete_style=CompleteStyle.MULTI_COLUMN,
-        reserve_space_for_menu=10,
-    )
-
-    def _read(prompt_text: str) -> str:
-        return session.prompt(
-            prompt_text,
-            bottom_toolbar=lambda: build_toolbar_text(app, state_getter() if state_getter else None),
+    if _should_use_prompt_toolkit():
+        completer = ReplCompleter(app)
+        session = PromptSession(
+            history=InMemoryHistory(),
+            completer=completer,
+            complete_while_typing=True,
+            complete_style=CompleteStyle.MULTI_COLUMN,
+            reserve_space_for_menu=10,
         )
 
-    return _read
+        def _read(prompt_text: str) -> str:
+            return session.prompt(
+                prompt_text,
+                bottom_toolbar=lambda: build_toolbar_text(app, state_getter() if state_getter else None),
+            )
+
+        return _read
+
+    if _should_use_readline():
+        return _readline_reader
+
+    return _fallback_reader
 
 
 def _fallback_reader(prompt_text: str) -> str:
     return input(prompt_text)
+
+
+def _readline_reader(prompt_text: str) -> str:
+    line = input(prompt_text)
+    if line and readline is not None:  # pragma: no branch - tiny guard
+        try:
+            readline.add_history(line)
+        except Exception:
+            pass
+    return _strip_control_sequences(line)
+
+
+def _should_use_prompt_toolkit() -> bool:
+    if os.environ.get("EH_FORCE_BASIC_REPL") == "1":
+        return False
+    if PromptSession is None:
+        return False
+    return bool(getattr(sys.stdin, "isatty", lambda: False)()) and bool(
+        getattr(sys.stdout, "isatty", lambda: False)()
+    )
+
+
+def _should_use_readline() -> bool:
+    if readline is None:
+        return False
+    return bool(getattr(sys.stdin, "isatty", lambda: False)()) and bool(
+        getattr(sys.stdout, "isatty", lambda: False)()
+    )
+
+
+def _strip_control_sequences(text: str) -> str:
+    if not text:
+        return text
+    sequences = ("\x1b[A", "\x1b[B", "\x1b[C", "\x1b[D")
+    cleaned = text
+    for sequence in sequences:
+        cleaned = cleaned.replace(sequence, "")
+    return cleaned
 
 
 def build_toolbar_text(app, state=None) -> str:
