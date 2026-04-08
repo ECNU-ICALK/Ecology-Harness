@@ -52,6 +52,10 @@ class EcologyToolTests(unittest.TestCase):
             self.assertIn("Microbial community, biofilm, and reactor simulation", result.content)
             self.assertIn("Closed algal systems and photobioreactors", result.content)
             self.assertIn("Aquatic microcosms, plankton, and biofilm monitoring", result.content)
+            self.assertIn("Root phenotyping and rhizosphere imaging", result.content)
+            self.assertIn("Lake, reservoir, and aquatic ecosystem modeling", result.content)
+            self.assertIn("Microbial amplicon, taxonomy, and metabolic reconstruction", result.content)
+            self.assertIn("Animal behavior and pose tracking", result.content)
 
     def test_list_ecology_toolkits_filters_by_modality(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -165,6 +169,48 @@ class EcologyToolTests(unittest.TestCase):
             self.assertIn("netlogo", result.content)
             self.assertIn("mesa", result.content)
 
+    def test_list_ecology_toolkits_can_find_root_phenotyping_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "root"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("rhizovision-explorer", result.content)
+            self.assertIn("opensimroot", result.content)
+
+    def test_list_ecology_toolkits_can_find_aquatic_modeling_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "lake"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("glm", result.content)
+            self.assertIn("glm-py", result.content)
+
+    def test_list_ecology_toolkits_can_find_behavior_tracking_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "pose"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("deeplabcut", result.content)
+            self.assertIn("sleap", result.content)
+
     def test_describe_ecology_toolkit_reports_process_model_details(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = self._make_app(Path(tmpdir))
@@ -192,6 +238,20 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("COMETS", result.content)
             self.assertIn("Community metabolism simulator", result.content)
+
+    def test_describe_ecology_toolkit_reports_amplicon_tool_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "DescribeEcologyToolkit",
+                {"name": "mothur"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("mothur", result.content)
+            self.assertIn("amplicon-analysis platform", result.content)
 
     def test_inaturalist_search_taxa_parses_results(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

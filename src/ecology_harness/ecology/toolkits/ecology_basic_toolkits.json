@@ -398,6 +398,70 @@
         "extract biofilm thickness from repeated bottom photographs",
         "plan a PCR and sequencing workflow after time-series sampling"
       ]
+    },
+    {
+      "category": "Root phenotyping and rhizosphere imaging",
+      "capabilities": [
+        "root crown and washed-root image analysis",
+        "root length, diameter, angle, branching, and tip measurement",
+        "rhizobox and minirhizotron-style segmentation workflows",
+        "root masking and annotation for noisy soil backgrounds",
+        "linking measured root traits to mechanistic root models",
+        "root-system architecture review for ecology and crop experiments"
+      ],
+      "examples": [
+        "measure root architectural traits from scanned root systems",
+        "segment roots from soil-background images before trait extraction",
+        "connect observed root traits to a root-system simulation workflow"
+      ]
+    },
+    {
+      "category": "Lake, reservoir, and aquatic ecosystem modeling",
+      "capabilities": [
+        "lake and reservoir hydrodynamics",
+        "thermal stratification and mixing analysis",
+        "oxygen, nutrient, and bloom-related water-quality simulation",
+        "modular aquatic biogeochemistry and ecosystem coupling",
+        "scenario comparison for aquatic management and climate change",
+        "notebook-driven setup for water-column models"
+      ],
+      "examples": [
+        "simulate lake temperature and dissolved oxygen under warming",
+        "compare reservoir nutrient scenarios under altered inflows",
+        "build an aquatic ecosystem model around bloom and stratification questions"
+      ]
+    },
+    {
+      "category": "Microbial amplicon, taxonomy, and metabolic reconstruction",
+      "capabilities": [
+        "amplicon preprocessing, denoising, and clustering",
+        "taxonomy assignment and marker-gene workflows",
+        "sequence-to-genome-scale metabolic reconstruction",
+        "community metabolic model assembly",
+        "linking taxonomic profiles to mechanistic cross-feeding workflows",
+        "quality-control review across sequence and model stages"
+      ],
+      "examples": [
+        "screen a 16S workflow before downstream ecological interpretation",
+        "reconstruct metabolic models for dominant isolates in a community study",
+        "bridge amplicon taxonomy outputs into community metabolism analysis"
+      ]
+    },
+    {
+      "category": "Animal behavior and pose tracking",
+      "capabilities": [
+        "markerless pose estimation",
+        "multi-animal identity-aware tracking",
+        "movement, courtship, and foraging behavior extraction",
+        "controlled arena and semi-natural video analysis",
+        "pose-to-behavior classification workflows",
+        "video-labeling and QA planning for ecology studies"
+      ],
+      "examples": [
+        "track pollinator movement in an arena experiment",
+        "extract courtship or aggression behavior from animal videos",
+        "compare pose-estimation stacks for multi-animal interaction footage"
+      ]
     }
   ],
   "toolkits": [
@@ -1795,6 +1859,314 @@
         "spatial scenarios"
       ],
       "notes": "A strong option when the research focus is dispersal, range change, or landscape connectivity through time."
+    },
+    {
+      "slug": "rhizovision-explorer",
+      "name": "RhizoVision Explorer",
+      "status": "cataloged-external",
+      "modality": "root-phenotyping",
+      "repo": "https://github.com/noble-research-group/RhizoVisionExplorer",
+      "install": "Follow the upstream installation instructions or download the packaged release from the official project.",
+      "summary": "Root-image analysis software for extracting root-system architecture and morphology traits from scanned or photographed root images.",
+      "good_for": [
+        "root crown and washed-root analysis",
+        "root trait extraction",
+        "root-system architecture measurements",
+        "rhizosphere imaging follow-up"
+      ],
+      "capabilities": [
+        "root measurement",
+        "trait extraction",
+        "root morphology",
+        "image-based root phenotyping"
+      ],
+      "notes": "High-value addition when plant trait work shifts belowground and needs standardized root metrics."
+    },
+    {
+      "slug": "root-painter",
+      "name": "RootPainter",
+      "status": "cataloged-external",
+      "modality": "image-segmentation",
+      "repo": "https://github.com/Abe404/root_painter",
+      "install": "Follow the upstream desktop and Python environment guidance from the official repository.",
+      "summary": "Corrective-annotation segmentation toolkit for roots and other biological objects in noisy images.",
+      "good_for": [
+        "root segmentation",
+        "soil-background masking",
+        "interactive annotation",
+        "training data creation"
+      ],
+      "capabilities": [
+        "segmentation",
+        "interactive annotation",
+        "mask correction",
+        "root-background separation"
+      ],
+      "notes": "Useful when ecology image workflows fail at the segmentation stage rather than the trait-extraction stage."
+    },
+    {
+      "slug": "opensimroot",
+      "name": "OpenSimRoot",
+      "status": "cataloged-external",
+      "modality": "root-architecture-simulation",
+      "repo": "https://rootsystemml.github.io/ISMCROOT/opensimroot/",
+      "install": "Follow the official OpenSimRoot build and usage guidance from the upstream project site.",
+      "summary": "Mechanistic root-system architecture model for simulating root growth, resource capture, and competition.",
+      "good_for": [
+        "root architecture simulation",
+        "root competition",
+        "nutrient foraging",
+        "crop root scenarios"
+      ],
+      "capabilities": [
+        "root simulation",
+        "resource capture",
+        "mechanistic root growth",
+        "trait-based root scenario analysis"
+      ],
+      "notes": "Best when root image measurements need to be connected to a mechanistic, belowground process model."
+    },
+    {
+      "slug": "fates",
+      "name": "FATES",
+      "status": "cataloged-external",
+      "modality": "terrestrial-biosphere-modeling",
+      "repo": "https://github.com/NGEET/fates",
+      "install": "Follow the official FATES installation guidance, typically as part of ELM/CTSM-capable terrestrial modeling environments.",
+      "summary": "Functionally Assembled Terrestrial Ecosystem Simulator for vegetation demography, disturbance, and terrestrial ecosystem processes.",
+      "good_for": [
+        "forest and vegetation dynamics",
+        "demography",
+        "disturbance and succession",
+        "climate-response experiments"
+      ],
+      "capabilities": [
+        "vegetation demography",
+        "terrestrial ecosystem simulation",
+        "disturbance response",
+        "long-term vegetation change"
+      ],
+      "notes": "Strong second-wave process model for terrestrial vegetation and demography questions that sit between stand models and DGVMs."
+    },
+    {
+      "slug": "glm",
+      "name": "GLM",
+      "status": "cataloged-external",
+      "modality": "aquatic-ecosystem-modeling",
+      "repo": "https://github.com/AquaticEcoDynamics/GLM",
+      "install": "Use the official GLM release or build instructions from Aquatic EcoDynamics.",
+      "summary": "General Lake Model for one-dimensional hydrodynamics, thermal structure, and lake or reservoir process simulation.",
+      "good_for": [
+        "lake thermal structure",
+        "reservoir simulations",
+        "stratification",
+        "hydrodynamic forcing experiments"
+      ],
+      "capabilities": [
+        "lake hydrodynamics",
+        "thermal stratification",
+        "mixing analysis",
+        "aquatic scenario modeling"
+      ],
+      "notes": "A strong baseline for aquatic ecosystem modeling before adding more detailed biogeochemical coupling."
+    },
+    {
+      "slug": "glm-py",
+      "name": "glm-py",
+      "status": "cataloged-external",
+      "modality": "aquatic-ecosystem-modeling",
+      "repo": "https://github.com/AquaticEcoDynamics/glm-py",
+      "install": "pip install glmpy or follow the upstream project documentation.",
+      "summary": "Python interface and workflow layer around GLM for reproducible setup, forcing assembly, and batch aquatic model runs.",
+      "good_for": [
+        "Python-driven lake modeling",
+        "notebook workflows",
+        "batch scenario generation",
+        "GLM setup automation"
+      ],
+      "capabilities": [
+        "Python setup",
+        "batch model configuration",
+        "forcing preparation",
+        "reproducible aquatic workflows"
+      ],
+      "notes": "Useful when Ecology Harness should orchestrate lake-model experiments through Python-first workflows."
+    },
+    {
+      "slug": "fabm",
+      "name": "FABM",
+      "status": "cataloged-external",
+      "modality": "aquatic-biogeochemistry-modeling",
+      "repo": "https://github.com/fabm-model/fabm",
+      "install": "Follow the upstream build guidance and couple FABM with a supported host model.",
+      "summary": "Framework for Aquatic Biogeochemical Models, designed to couple modular ecosystem and water-quality processes to host hydrodynamic models.",
+      "good_for": [
+        "aquatic biogeochemistry",
+        "water-quality coupling",
+        "custom ecosystem process modules",
+        "lake and coastal ecosystem experiments"
+      ],
+      "capabilities": [
+        "biogeochemical coupling",
+        "aquatic ecosystem modules",
+        "water-quality simulation",
+        "host-model integration"
+      ],
+      "notes": "Best when the question moves from physics-only water columns into richer aquatic ecosystem process coupling."
+    },
+    {
+      "slug": "morphocut",
+      "name": "MorphoCut",
+      "status": "cataloged-external",
+      "modality": "plankton-image-processing",
+      "repo": "https://github.com/morphocut/morphocut",
+      "install": "pip install morphocut or follow the upstream environment guidance.",
+      "summary": "Python framework for image-processing pipelines, often used in plankton and ecological imaging workflows.",
+      "good_for": [
+        "plankton image pipelines",
+        "object extraction",
+        "batch microscopy preprocessing",
+        "custom ecological image workflows"
+      ],
+      "capabilities": [
+        "pipeline composition",
+        "image preprocessing",
+        "object extraction",
+        "batch processing"
+      ],
+      "notes": "Useful bridge between raw plankton imagery and downstream classification or measurement systems."
+    },
+    {
+      "slug": "mothur",
+      "name": "mothur",
+      "status": "cataloged-external",
+      "modality": "amplicon-taxonomy",
+      "repo": "https://github.com/mothur/mothur",
+      "install": "Build from the official repository or use upstream binary distributions.",
+      "summary": "Widely used amplicon-analysis platform for microbial community sequence processing and taxonomic workflows.",
+      "good_for": [
+        "16S and ITS workflows",
+        "taxonomy assignment",
+        "sequence QC",
+        "community composition analysis"
+      ],
+      "capabilities": [
+        "amplicon preprocessing",
+        "taxonomy workflows",
+        "chimera handling",
+        "community sequence analysis"
+      ],
+      "notes": "A dependable option for ecological amplicon pipelines when users need something beyond high-level wrappers."
+    },
+    {
+      "slug": "vsearch",
+      "name": "VSEARCH",
+      "status": "cataloged-external",
+      "modality": "amplicon-taxonomy",
+      "repo": "https://github.com/torognes/vsearch",
+      "install": "Build from source or use package-manager binaries from the official project.",
+      "summary": "Open-source sequence-searching and clustering tool widely used in amplicon and metabarcoding workflows.",
+      "good_for": [
+        "sequence clustering",
+        "chimera detection",
+        "metabarcoding preprocessing",
+        "fast amplicon filtering"
+      ],
+      "capabilities": [
+        "clustering",
+        "chimera checking",
+        "sequence search",
+        "amplicon preprocessing"
+      ],
+      "notes": "Fits well when ecology workflows need a lightweight, transparent sequence-processing core."
+    },
+    {
+      "slug": "carveme",
+      "name": "CarveMe",
+      "status": "cataloged-external",
+      "modality": "metabolic-reconstruction",
+      "repo": "https://github.com/cdanielmachado/carveme",
+      "install": "pip install carveme plus the solver and dependency stack recommended by the upstream project.",
+      "summary": "Genome-scale metabolic model reconstruction toolkit for microbes from genomic inputs.",
+      "good_for": [
+        "metabolic reconstruction",
+        "microbial isolates",
+        "draft GEM creation",
+        "sequence-to-model workflows"
+      ],
+      "capabilities": [
+        "metabolic reconstruction",
+        "genome-to-model conversion",
+        "draft GEM generation",
+        "downstream community modeling"
+      ],
+      "notes": "Useful bridge from microbial genomics or isolate collections into COBRA-style ecological modeling."
+    },
+    {
+      "slug": "pycomo",
+      "name": "PyCoMo",
+      "status": "cataloged-external",
+      "modality": "community-metabolic-modeling",
+      "repo": "https://github.com/univieCUBE/PyCoMo",
+      "install": "pip install pycomo or follow the official environment instructions.",
+      "summary": "Python toolkit for community metabolic modeling built around constraint-based community analysis.",
+      "good_for": [
+        "community metabolism",
+        "cross-feeding analysis",
+        "microbial consortia",
+        "community GEM workflows"
+      ],
+      "capabilities": [
+        "community metabolic models",
+        "constraint-based analysis",
+        "cross-feeding workflows",
+        "community-level scenario comparison"
+      ],
+      "notes": "A useful complement to MICOM and COMETS when the focus is community metabolic structure rather than only single-species models."
+    },
+    {
+      "slug": "deeplabcut",
+      "name": "DeepLabCut",
+      "status": "cataloged-external",
+      "modality": "behavior-tracking",
+      "repo": "https://github.com/DeepLabCut/DeepLabCut",
+      "install": "Follow the official conda or pip environment guidance from the DeepLabCut project.",
+      "summary": "Markerless pose-estimation toolkit for animal behavior and movement analysis from video.",
+      "good_for": [
+        "behavior ecology",
+        "movement tracking",
+        "foraging and courtship analysis",
+        "pose estimation"
+      ],
+      "capabilities": [
+        "pose estimation",
+        "video tracking",
+        "kinematics",
+        "behavior analysis"
+      ],
+      "notes": "One of the strongest open tools for behavior-rich ecology video analysis when detection alone is not enough."
+    },
+    {
+      "slug": "sleap",
+      "name": "SLEAP",
+      "status": "cataloged-external",
+      "modality": "behavior-tracking",
+      "repo": "https://github.com/talmolab/sleap",
+      "install": "Follow the official environment setup instructions from the upstream project.",
+      "summary": "Multi-animal pose tracking toolkit designed for interaction-rich video datasets.",
+      "good_for": [
+        "multi-animal tracking",
+        "interaction studies",
+        "group behavior",
+        "identity-aware pose estimation"
+      ],
+      "capabilities": [
+        "multi-animal pose tracking",
+        "identity maintenance",
+        "interaction analysis",
+        "video labeling"
+      ],
+      "notes": "Especially useful when ecology experiments involve multiple interacting animals in the same frame."
     }
   ]
 }

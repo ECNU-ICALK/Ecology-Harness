@@ -9,18 +9,21 @@ cataloged in the repository.
 | Function Cluster | Typical Needs | Installed Native Tools | Cataloged External Toolkits |
 |---|---|---|---|
 | Field observation and species ID | identify a plant from a photo, normalize names, inspect nearby observations | `INaturalistSearchTaxa`, `INaturalistSearchObservations`, `PlantNetIdentify`, `ListEcologyFunctions`, `ListEcologyToolkits` | `pyinaturalist`, `Pl@ntNet API`, `pybioclip`, `nature-id` |
-| Plant phenotyping and traits | leaf traits, morphology, herbarium measurements, organ detection | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PlantCV`, `LeafMachine2` |
-| Plant, crop, and growth simulation | crop phenology, irrigation, woody vegetation, root-shoot structure, microbial growth, biofilms, parameter estimation, scenario comparison | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `APSIM Next Generation`, `PCSE / WOFOST`, `AquaCrop-OSPy`, `BioCro`, `pyfao56`, `CPlantBox`, `OpenAlea L-Py`, `r3PG`, `medfate`, `pyrealm`, `COBRApy`, `MICOM`, `COMETS`, `BacArena`, `Community Simulator`, `Tellurium`, `COPASI`, `PySCeS`, `NUFEB`, `Vivarium Core`, `MDSINE2`, `miaSim`, `pyPESTO` |
-| Traditional process models and ABM | agent-based ecology, watershed routing, trophic simulation, disturbance models, DGVM-style workflows | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `NetLogo`, `Mesa`, `GAMA Platform`, `DSSAT Cropping System Model`, `SWAT+`, `Ecopath with Ecosim`, `LPJ-GUESS`, `ED2`, `Biome-BGC`, `CENTURY / DayCent`, `RHESSys`, `LANDIS-II`, `Madingley Model`, `RangeShifter 2.0` |
+| Plant phenotyping and traits | leaf traits, morphology, herbarium measurements, organ detection | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PlantCV`, `LeafMachine2`, `RhizoVision Explorer`, `RootPainter` |
+| Root phenotyping and rhizosphere imaging | root crowns, washed roots, rhizoboxes, minirhizotron follow-up, root trait extraction | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `RhizoVision Explorer`, `RootPainter`, `OpenSimRoot` |
+| Plant, crop, and growth simulation | crop phenology, irrigation, woody vegetation, root-shoot structure, microbial growth, biofilms, parameter estimation, scenario comparison | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `APSIM Next Generation`, `PCSE / WOFOST`, `AquaCrop-OSPy`, `BioCro`, `pyfao56`, `CPlantBox`, `OpenAlea L-Py`, `OpenSimRoot`, `r3PG`, `medfate`, `pyrealm`, `FATES`, `COBRApy`, `MICOM`, `COMETS`, `BacArena`, `Community Simulator`, `Tellurium`, `COPASI`, `PySCeS`, `NUFEB`, `Vivarium Core`, `MDSINE2`, `miaSim`, `pyPESTO`, `CarveMe`, `PyCoMo` |
+| Traditional process models and ABM | agent-based ecology, watershed routing, trophic simulation, disturbance models, DGVM-style workflows | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `NetLogo`, `Mesa`, `GAMA Platform`, `DSSAT Cropping System Model`, `SWAT+`, `Ecopath with Ecosim`, `LPJ-GUESS`, `FATES`, `ED2`, `Biome-BGC`, `CENTURY / DayCent`, `RHESSys`, `LANDIS-II`, `Madingley Model`, `RangeShifter 2.0` |
+| Lake, reservoir, and aquatic ecosystem modeling | stratification, oxygen, blooms, nutrient scenarios, water-quality and aquatic biogeochemistry | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `GLM`, `glm-py`, `FABM` |
 | Counting and density | plant counting, tree counting, wildlife counts, density estimates | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PlantCV`, `DeepForest`, `detectree2`, `TreeCountSegHeight`, `PyTorch-Wildlife` |
 | Detection and segmentation | object detection, masks, crown delineation, image tiling | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `DeepForest`, `detectree2`, `TreeCountSegHeight`, `PyTorch-Wildlife` |
 | Camera-trap wildlife workflows | empty-image filtering, animal detection, species classification | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `PyTorch-Wildlife` |
+| Animal behavior and pose tracking | movement trajectories, foraging, courtship, multi-animal interactions, markerless tracking | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `DeepLabCut`, `SLEAP`, `PyTorch-Wildlife` |
 | Ecoacoustics | bird sound recognition, batch acoustic review | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `BirdNET-Analyzer` |
 | Closed algal systems and photobioreactors | sealed reactor design, pH and CO2 control, contamination review, growth curves, mass balance | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `LabArchives MCP Server`, `unit-converter-mcp`, `PyLabRobot`, `Opentrons` |
 | Lab protocols, automation, and notebook workflows | SOP drafting, notebook capture, telemetry notebooks, liquid handling, unit harmonization | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `LabArchives MCP Server`, `unit-converter-mcp`, `PyLabRobot`, `Opentrons` |
-| Aquatic microcosms, plankton, and biofilms | grazer-prey microcosms, biofilm monitoring, water-column vs benthic tracking, community shifts | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `Fiji / ImageJ`, `CellProfiler`, `napari`, `ilastik`, `EcoTaxa Python Client`, `PlanktoScope` |
-| Microscopy, automated classification, and fluorescence workflows | microscope-camera classification, object segmentation, fluorescence channels, multispectral image review | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Fiji / ImageJ`, `PyImageJ`, `CellProfiler`, `napari`, `ilastik`, `scikit-image`, `EcoTaxa Python Client` |
-| Molecular and assay-linked follow-up | PCR, amplicon workflows, microbial-community follow-up, total-carbon-linked lab assays | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `QIIME 2 / Rachis Framework`, `DADA2`, `Jupyter MCP Server`, `LabArchives MCP Server` |
+| Aquatic microcosms, plankton, and biofilms | grazer-prey microcosms, biofilm monitoring, water-column vs benthic tracking, community shifts | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `Fiji / ImageJ`, `CellProfiler`, `napari`, `ilastik`, `EcoTaxa Python Client`, `PlanktoScope`, `MorphoCut`, `GLM`, `glm-py`, `FABM` |
+| Microscopy, automated classification, and fluorescence workflows | microscope-camera classification, object segmentation, fluorescence channels, multispectral image review | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Fiji / ImageJ`, `PyImageJ`, `CellProfiler`, `napari`, `ilastik`, `scikit-image`, `EcoTaxa Python Client`, `MorphoCut`, `RootPainter` |
+| Molecular and assay-linked follow-up | PCR, amplicon workflows, microbial-community follow-up, total-carbon-linked lab assays | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `QIIME 2 / Rachis Framework`, `DADA2`, `mothur`, `VSEARCH`, `CarveMe`, `PyCoMo`, `Jupyter MCP Server`, `LabArchives MCP Server` |
 | Workflow planning and QA | choose the right toolkit, compare capabilities, review constraints | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | all cataloged toolkits |
 
 ## Installed Native Tools
@@ -59,6 +62,12 @@ cataloged in the repository.
 - `LeafMachine2`
   - Source: [Gene-Weaver/LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)
   - Why included: strong herbarium and leaf-measurement workflow.
+- `RhizoVision Explorer`
+  - Source: [noble-research-group/RhizoVisionExplorer](https://github.com/noble-research-group/RhizoVisionExplorer)
+  - Why included: practical root-image analysis and belowground trait extraction toolkit.
+- `RootPainter`
+  - Source: [Abe404/root_painter](https://github.com/Abe404/root_painter)
+  - Why included: useful corrective segmentation layer for difficult root and soil-background images.
 - `APSIM Next Generation`
   - Source: [APSIMInitiative/ApsimX](https://github.com/APSIMInitiative/ApsimX)
   - Why included: strong agro-ecosystem framework for management, crop, and rotation scenarios.
@@ -80,6 +89,9 @@ cataloged in the repository.
 - `OpenAlea L-Py`
   - Source: [openalea/lpy](https://github.com/openalea/lpy)
   - Why included: mature L-system plant-architecture environment for FSPM workflows.
+- `OpenSimRoot`
+  - Source: [OpenSimRoot project](https://rootsystemml.github.io/ISMCROOT/opensimroot/)
+  - Why included: strong mechanistic root-system architecture simulator for belowground ecology and crop questions.
 - `r3PG`
   - Source: [trotsiuk/r3PG](https://github.com/trotsiuk/r3PG)
   - Why included: practical forest and woody-plant productivity model for stands and plantations.
@@ -89,6 +101,9 @@ cataloged in the repository.
 - `pyrealm`
   - Source: [ImperialCollegeLondon/pyrealm](https://github.com/ImperialCollegeLondon/pyrealm)
   - Why included: useful bridge between environmental forcing, productivity, and ecophysiology.
+- `FATES`
+  - Source: [NGEET/fates](https://github.com/NGEET/fates)
+  - Why included: useful vegetation-demography and disturbance layer between stand models and large-scale terrestrial biosphere models.
 - `COBRApy`
   - Source: [opencobra/cobrapy](https://github.com/opencobra/cobrapy)
   - Why included: foundational metabolic-growth modeling framework for microbes.
@@ -128,6 +143,12 @@ cataloged in the repository.
 - `pyPESTO`
   - Source: [ICB-DCM/pyPESTO](https://github.com/ICB-DCM/pyPESTO)
   - Why included: strong parameter-estimation and uncertainty layer for model calibration.
+- `CarveMe`
+  - Source: [cdanielmachado/carveme](https://github.com/cdanielmachado/carveme)
+  - Why included: useful bridge from microbial genomic inputs into draft metabolic model reconstruction.
+- `PyCoMo`
+  - Source: [univieCUBE/PyCoMo](https://github.com/univieCUBE/PyCoMo)
+  - Why included: good complement for community-scale metabolic modeling and cross-feeding analysis.
 - `NetLogo`
   - Source: [NetLogo/NetLogo](https://github.com/NetLogo/NetLogo)
   - Why included: one of the most practical starting points for agent-based ecology and rule-based spatial simulations.
@@ -143,6 +164,15 @@ cataloged in the repository.
 - `SWAT+`
   - Source: [SWAT+ docs](https://swatplus.gitbook.io/docs/)
   - Why included: very practical watershed and water-quality model for land-use and management scenarios.
+- `GLM`
+  - Source: [AquaticEcoDynamics/GLM](https://github.com/AquaticEcoDynamics/GLM)
+  - Why included: practical default entry point for lake and reservoir hydrodynamics and stratification modeling.
+- `glm-py`
+  - Source: [AquaticEcoDynamics/glm-py](https://github.com/AquaticEcoDynamics/glm-py)
+  - Why included: Python-native orchestration layer for reproducible GLM workflows and notebook-driven scenario setup.
+- `FABM`
+  - Source: [fabm-model/fabm](https://github.com/fabm-model/fabm)
+  - Why included: modular aquatic biogeochemistry framework for richer water-quality and ecosystem process coupling.
 - `Ecopath with Ecosim`
   - Source: [Ecopath project](https://ecopath.org/)
   - Why included: mature default option for trophic and food-web simulation.
@@ -182,6 +212,12 @@ cataloged in the repository.
 - `PyTorch-Wildlife`
   - Source: [microsoft/CameraTraps](https://github.com/microsoft/CameraTraps)
   - Why included: strong camera-trap detection and classification platform around MegaDetector and related models.
+- `DeepLabCut`
+  - Source: [DeepLabCut/DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
+  - Why included: strong markerless pose-estimation toolkit for behavior ecology and movement analysis.
+- `SLEAP`
+  - Source: [talmolab/sleap](https://github.com/talmolab/sleap)
+  - Why included: valuable when multi-animal interactions and identity-aware pose tracking are central.
 - `BirdNET-Analyzer`
   - Source: [birdnet-team/BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer)
   - Why included: strong ecoacoustic option for bird sound recognition.
@@ -227,12 +263,21 @@ cataloged in the repository.
 - `PlanktoScope`
   - Source: [PlanktoScope/PlanktoScope](https://github.com/PlanktoScope/PlanktoScope)
   - Why included: open plankton imaging platform that complements offline image analysis with acquisition workflows.
+- `MorphoCut`
+  - Source: [morphocut/morphocut](https://github.com/morphocut/morphocut)
+  - Why included: practical Python pipeline layer for plankton and ecological image processing before classification.
 - `QIIME 2 / Rachis Framework`
   - Source: [qiime2/qiime2](https://github.com/qiime2/qiime2)
   - Why included: strong provenance-aware framework for amplicon and microbiome follow-up after PCR or sequencing.
 - `DADA2`
   - Source: [benjjneb/dada2](https://github.com/benjjneb/dada2)
   - Why included: widely used denoising workflow for sequence-level microbial-community analysis.
+- `mothur`
+  - Source: [mothur/mothur](https://github.com/mothur/mothur)
+  - Why included: dependable amplicon-analysis platform for microbial ecology sequence processing and taxonomy workflows.
+- `VSEARCH`
+  - Source: [torognes/vsearch](https://github.com/torognes/vsearch)
+  - Why included: transparent, open sequence-search and clustering tool widely used in metabarcoding pipelines.
 
 ## Notes
 

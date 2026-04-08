@@ -7,18 +7,21 @@
 | 功能簇 | 典型需求 | 已安装原生工具 | 已编目外部工具 |
 |---|---|---|---|
 | 野外观测与物种识别 | 从照片识别植物、规范学名、查看附近观测 | `INaturalistSearchTaxa`、`INaturalistSearchObservations`、`PlantNetIdentify`、`ListEcologyFunctions`、`ListEcologyToolkits` | `pyinaturalist`、`Pl@ntNet API`、`pybioclip`、`nature-id` |
-| 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PlantCV`、`LeafMachine2` |
-| 植物、作物与成长模拟 | 作物物候、灌溉、木本植被、根-茎结构、微生物增长、生物膜、参数估计、情景比较 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `APSIM Next Generation`、`PCSE / WOFOST`、`AquaCrop-OSPy`、`BioCro`、`pyfao56`、`CPlantBox`、`OpenAlea L-Py`、`r3PG`、`medfate`、`pyrealm`、`COBRApy`、`MICOM`、`COMETS`、`BacArena`、`Community Simulator`、`Tellurium`、`COPASI`、`PySCeS`、`NUFEB`、`Vivarium Core`、`MDSINE2`、`miaSim`、`pyPESTO` |
-| 传统生态过程模型与主体模型 | 主体生态、流域路由、食物网模拟、森林干扰、DGVM 风格工作流 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `NetLogo`、`Mesa`、`GAMA Platform`、`DSSAT Cropping System Model`、`SWAT+`、`Ecopath with Ecosim`、`LPJ-GUESS`、`ED2`、`Biome-BGC`、`CENTURY / DayCent`、`RHESSys`、`LANDIS-II`、`Madingley Model`、`RangeShifter 2.0` |
+| 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PlantCV`、`LeafMachine2`、`RhizoVision Explorer`、`RootPainter` |
+| 根系表型与根际成像 | 根冠、洗根图像、rhizobox、minirhizotron、根系性状提取 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `RhizoVision Explorer`、`RootPainter`、`OpenSimRoot` |
+| 植物、作物与成长模拟 | 作物物候、灌溉、木本植被、根-茎结构、微生物增长、生物膜、参数估计、情景比较 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `APSIM Next Generation`、`PCSE / WOFOST`、`AquaCrop-OSPy`、`BioCro`、`pyfao56`、`CPlantBox`、`OpenAlea L-Py`、`OpenSimRoot`、`r3PG`、`medfate`、`pyrealm`、`FATES`、`COBRApy`、`MICOM`、`COMETS`、`BacArena`、`Community Simulator`、`Tellurium`、`COPASI`、`PySCeS`、`NUFEB`、`Vivarium Core`、`MDSINE2`、`miaSim`、`pyPESTO`、`CarveMe`、`PyCoMo` |
+| 传统生态过程模型与主体模型 | 主体生态、流域路由、食物网模拟、森林干扰、DGVM 风格工作流 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `NetLogo`、`Mesa`、`GAMA Platform`、`DSSAT Cropping System Model`、`SWAT+`、`Ecopath with Ecosim`、`LPJ-GUESS`、`FATES`、`ED2`、`Biome-BGC`、`CENTURY / DayCent`、`RHESSys`、`LANDIS-II`、`Madingley Model`、`RangeShifter 2.0` |
+| 湖库与水体生态过程模拟 | 分层、溶氧、藻华、营养盐情景、水质和水体生物地球化学 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `GLM`、`glm-py`、`FABM` |
 | 计数与密度估计 | 植株计数、树木计数、动物计数、密度估计 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PlantCV`、`DeepForest`、`detectree2`、`TreeCountSegHeight`、`PyTorch-Wildlife` |
 | 检测与分割 | 目标检测、实例分割、树冠分割、影像切片 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `DeepForest`、`detectree2`、`TreeCountSegHeight`、`PyTorch-Wildlife` |
 | 相机陷阱工作流 | 空图过滤、动物检测、检测后分类 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PyTorch-Wildlife` |
+| 动物行为与姿态跟踪 | 运动轨迹、觅食、求偶、多动物互动、无标记跟踪 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `DeepLabCut`、`SLEAP`、`PyTorch-Wildlife` |
 | 生态声学 | 鸟声识别、批量音频筛查 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `BirdNET-Analyzer` |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、pH/CO2 控制、污染排查、生长曲线、物质平衡 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`LabArchives MCP Server`、`unit-converter-mcp`、`PyLabRobot`、`Opentrons` |
 | 实验协议、自动化与 notebook 工作流 | SOP 草拟、实验记录、时序 notebook、液体处理、单位统一 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`LabArchives MCP Server`、`unit-converter-mcp`、`PyLabRobot`、`Opentrons` |
-| 水体微宇宙、浮游生物与生物膜 | 摄食微宇宙、附着生物膜、上下层分区、群落变化 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`Fiji / ImageJ`、`CellProfiler`、`napari`、`ilastik`、`EcoTaxa Python Client`、`PlanktoScope` |
-| 显微图像、自动分类与荧光工作流 | 显微镜相机分类、对象分割、荧光通道、多光谱图像复核 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Fiji / ImageJ`、`PyImageJ`、`CellProfiler`、`napari`、`ilastik`、`scikit-image`、`EcoTaxa Python Client` |
-| 分子与采样后续分析 | PCR、扩增子、微生物群落后续分析、总碳等实验室指标 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `QIIME 2 / Rachis Framework`、`DADA2`、`Jupyter MCP Server`、`LabArchives MCP Server` |
+| 水体微宇宙、浮游生物与生物膜 | 摄食微宇宙、附着生物膜、上下层分区、群落变化 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`Fiji / ImageJ`、`CellProfiler`、`napari`、`ilastik`、`EcoTaxa Python Client`、`PlanktoScope`、`MorphoCut`、`GLM`、`glm-py`、`FABM` |
+| 显微图像、自动分类与荧光工作流 | 显微镜相机分类、对象分割、荧光通道、多光谱图像复核 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Fiji / ImageJ`、`PyImageJ`、`CellProfiler`、`napari`、`ilastik`、`scikit-image`、`EcoTaxa Python Client`、`MorphoCut`、`RootPainter` |
+| 分子与采样后续分析 | PCR、扩增子、微生物群落后续分析、总碳等实验室指标 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `QIIME 2 / Rachis Framework`、`DADA2`、`mothur`、`VSEARCH`、`CarveMe`、`PyCoMo`、`Jupyter MCP Server`、`LabArchives MCP Server` |
 | 工作流选择与质控 | 选型、能力比较、约束说明 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | 全部已编目工具 |
 
 ## 已安装原生工具
@@ -57,6 +60,12 @@
 - `LeafMachine2`
   - 来源：[Gene-Weaver/LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)
   - 作用：腊叶标本、叶片测量和档案组件识别。
+- `RhizoVision Explorer`
+  - 来源：[noble-research-group/RhizoVisionExplorer](https://github.com/noble-research-group/RhizoVisionExplorer)
+  - 作用：很适合根图像分析、根系性状提取和地下表型工作流。
+- `RootPainter`
+  - 来源：[Abe404/root_painter](https://github.com/Abe404/root_painter)
+  - 作用：适合根系与土壤背景分割困难场景下的交互式校正分割。
 - `APSIM Next Generation`
   - 来源：[APSIMInitiative/ApsimX](https://github.com/APSIMInitiative/ApsimX)
   - 作用：很强的农业系统框架，适合管理、作物和轮作情景。
@@ -78,6 +87,9 @@
 - `OpenAlea L-Py`
   - 来源：[openalea/lpy](https://github.com/openalea/lpy)
   - 作用：成熟的 L-system 植物结构建模环境。
+- `OpenSimRoot`
+  - 来源：[OpenSimRoot project](https://rootsystemml.github.io/ISMCROOT/opensimroot/)
+  - 作用：很适合把根系成像测量进一步推进到机制性根系模拟。
 - `r3PG`
   - 来源：[trotsiuk/r3PG](https://github.com/trotsiuk/r3PG)
   - 作用：适合林分、人工林和木本生产力问题。
@@ -87,6 +99,9 @@
 - `pyrealm`
   - 来源：[ImperialCollegeLondon/pyrealm](https://github.com/ImperialCollegeLondon/pyrealm)
   - 作用：能把环境因子、生产力和生态生理过程连起来。
+- `FATES`
+  - 来源：[NGEET/fates](https://github.com/NGEET/fates)
+  - 作用：适合植被种群统计、干扰和长期陆地生态过程研究。
 - `COBRApy`
   - 来源：[opencobra/cobrapy](https://github.com/opencobra/cobrapy)
   - 作用：微生物代谢增长模拟的基础框架。
@@ -126,6 +141,12 @@
 - `pyPESTO`
   - 来源：[ICB-DCM/pyPESTO](https://github.com/ICB-DCM/pyPESTO)
   - 作用：很强的参数估计、不确定性和敏感性工具。
+- `CarveMe`
+  - 来源：[cdanielmachado/carveme](https://github.com/cdanielmachado/carveme)
+  - 作用：适合把微生物基因组或分离株信息连接到代谢模型重建。
+- `PyCoMo`
+  - 来源：[univieCUBE/PyCoMo](https://github.com/univieCUBE/PyCoMo)
+  - 作用：适合做群落尺度代谢建模和交叉喂养分析。
 - `NetLogo`
   - 来源：[NetLogo/NetLogo](https://github.com/NetLogo/NetLogo)
   - 作用：很适合作为主体生态和规则驱动空间模拟的起点。
@@ -141,6 +162,15 @@
 - `SWAT+`
   - 来源：[SWAT+ 文档](https://swatplus.gitbook.io/docs/)
   - 作用：很适合流域水文、水质和土地利用管理情景。
+- `GLM`
+  - 来源：[AquaticEcoDynamics/GLM](https://github.com/AquaticEcoDynamics/GLM)
+  - 作用：湖库分层、水动力和水柱模拟的实用入口。
+- `glm-py`
+  - 来源：[AquaticEcoDynamics/glm-py](https://github.com/AquaticEcoDynamics/glm-py)
+  - 作用：适合用 Python 和 notebook 驱动可重复的 GLM 工作流。
+- `FABM`
+  - 来源：[fabm-model/fabm](https://github.com/fabm-model/fabm)
+  - 作用：适合更进一步接入水体生物地球化学和生态过程模块。
 - `Ecopath with Ecosim`
   - 来源：[Ecopath 项目](https://ecopath.org/)
   - 作用：成熟的食物网和营养级模拟系统。
@@ -180,6 +210,12 @@
 - `PyTorch-Wildlife`
   - 来源：[microsoft/CameraTraps](https://github.com/microsoft/CameraTraps)
   - 作用：相机陷阱动物检测和分类。
+- `DeepLabCut`
+  - 来源：[DeepLabCut/DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
+  - 作用：行为生态和运动分析里很强的无标记姿态估计工具。
+- `SLEAP`
+  - 来源：[talmolab/sleap](https://github.com/talmolab/sleap)
+  - 作用：多动物互动和身份保持场景下很有价值。
 - `BirdNET-Analyzer`
   - 来源：[birdnet-team/BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer)
   - 作用：鸟声识别和批量生态声学处理。
@@ -225,12 +261,21 @@
 - `PlanktoScope`
   - 来源：[PlanktoScope/PlanktoScope](https://github.com/PlanktoScope/PlanktoScope)
   - 作用：开源浮游生物成像平台，适合长期成像监测。
+- `MorphoCut`
+  - 来源：[morphocut/morphocut](https://github.com/morphocut/morphocut)
+  - 作用：很适合把原始 plankton 图像处理成后续分类和测量可用的对象流水线。
 - `QIIME 2 / Rachis Framework`
   - 来源：[qiime2/qiime2](https://github.com/qiime2/qiime2)
   - 作用：PCR / 扩增子后的微生物群落分析与溯源。
 - `DADA2`
   - 来源：[benjjneb/dada2](https://github.com/benjjneb/dada2)
   - 作用：高分辨率扩增子去噪和 ASV 推断。
+- `mothur`
+  - 来源：[mothur/mothur](https://github.com/mothur/mothur)
+  - 作用：稳定可靠的扩增子与分类工作流平台。
+- `VSEARCH`
+  - 来源：[torognes/vsearch](https://github.com/torognes/vsearch)
+  - 作用：透明、开源、在 metabarcoding 中常见的序列搜索与聚类工具。
 
 ## 说明
 
