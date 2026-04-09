@@ -47,6 +47,23 @@ def register_skill_tools(registry: ToolRegistry) -> None:
             concurrent_safe=True,
         )
     )
+    registry.register(
+        ToolDefinition(
+            name="SkillSearch",
+            description="Rewrite a task query with context and rank relevant skills using BM25.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer"},
+                },
+                "required": ["query"],
+            },
+            handler=_skill_search,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
 
 
 def _loader(context: ToolContext):
@@ -70,6 +87,31 @@ def _skill_read(params: dict, context: ToolContext) -> ToolResult:
     if skill is None:
         raise ToolError("Skill not found: %s" % params["name"])
     return ToolResult(content=skill.content, data=skill.to_index_dict())
+
+
+def _skill_search(params: dict, context: ToolContext) -> ToolResult:
+    limit = params.get("limit")
+    if limit is None:
+        settings = context.services.get("settings") or context.settings
+        limit = getattr(settings, "skill_search_default_k", 8)
+    report = _loader(context).search(
+        params["query"],
+        conversation=context.services.get("conversation"),
+        limit=max(int(limit), 1),
+        user_invocable_only=True,
+    )
+    if not report.hits:
+        return ToolResult(
+            content="No relevant skills found for: %s" % params["query"],
+            data=report.to_dict(),
+        )
+    lines = [
+        "%s\t%.3f\t%s"
+        % (item.skill.slug, item.score, item.skill.description)
+        for item in report.hits
+    ]
+    header = "Rewritten query: %s" % report.rewrite.rewritten_query
+    return ToolResult(content=header + "\n" + "\n".join(lines), data=report.to_dict())
 
 
 def _skill_execute(params: dict, context: ToolContext) -> ToolResult:

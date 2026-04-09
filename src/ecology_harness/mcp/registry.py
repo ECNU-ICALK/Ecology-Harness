@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from ecology_harness.claw_compat import CLAW_SKILL_SPECS, list_claw_tools, search_claw_tools
+from ecology_harness.mcp.retrieval import McpBM25Retriever, McpSearchHit, McpSearchReport
+from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.tools import ToolDefinition, ToolError, ToolResult
 
 
@@ -124,11 +126,19 @@ class McpServerState:
 
 
 class McpServerRegistry:
-    def __init__(self, app: Any, builtin_dir: Path, user_dir: Path, project_dir: Path) -> None:
+    def __init__(
+        self,
+        app: Any,
+        builtin_dir: Path,
+        user_dir: Path,
+        project_dir: Path,
+        history_turns: int = 4,
+    ) -> None:
         self.app = app
         self.builtin_dir = builtin_dir
         self.user_dir = user_dir
         self.project_dir = project_dir
+        self.history_turns = history_turns
         self.user_dir.mkdir(parents=True, exist_ok=True)
         self.project_dir.mkdir(parents=True, exist_ok=True)
 
@@ -149,27 +159,7 @@ class McpServerRegistry:
     def list_server_states(self) -> list[McpServerState]:
         states = []
         for server in self.list_servers():
-            enabled = bool(server.default_enabled)
-            if server.transport == "inprocess" and enabled:
-                status = "connected"
-            elif server.transport == "inprocess":
-                status = "installed"
-            elif enabled:
-                status = "configured"
-            else:
-                status = "cataloged"
-            states.append(
-                McpServerState(
-                    server_name=server.name,
-                    status=status,
-                    transport=server.transport,
-                    description=server.description,
-                    enabled=enabled,
-                    tool_count=len(server.tools),
-                    resource_count=len(server.resources),
-                    auth=server.auth,
-                )
-            )
+            states.append(self._state_for_server(server))
         return states
 
     def get_server(self, name: str) -> McpServerConfig | None:
@@ -195,6 +185,87 @@ class McpServerRegistry:
                         "transport": server.transport,
                     }
                 )
+        return rows
+
+    def search(
+        self,
+        query: str,
+        conversation: list[ChatMessage] | None = None,
+        limit: int = 6,
+        enabled_only: bool = False,
+    ) -> McpSearchReport:
+        servers = self.list_servers()
+        if enabled_only:
+            servers = [item for item in servers if item.default_enabled]
+        retriever = McpBM25Retriever(servers, history_turns=self.history_turns)
+        return retriever.search(query, conversation=conversation, limit=limit)
+
+    def select_for_prompt(
+        self,
+        query: str,
+        conversation: list[ChatMessage] | None = None,
+        limit: int = 6,
+    ) -> McpSearchReport:
+        report = self.search(
+            query=query,
+            conversation=conversation,
+            limit=limit,
+            enabled_only=False,
+        )
+        if report.hits or not limit:
+            return report
+        fallback_servers = self.list_servers()[:limit]
+        report.hits = [
+            McpSearchHit(
+                server=item,
+                score=0.0,
+                matched_terms=[],
+                matched_tools=[],
+                matched_resources=[],
+                exact_match=False,
+            )
+            for item in fallback_servers
+        ]
+        report.fallback_used = True
+        return report
+
+    def relevant_dynamic_tool_names(
+        self,
+        query: str,
+        conversation: list[ChatMessage] | None = None,
+        limit: int = 6,
+    ) -> set[str]:
+        report = self.select_for_prompt(query=query, conversation=conversation, limit=limit)
+        names: set[str] = set()
+        query_text = report.rewrite.rewritten_query.lower()
+        for hit in report.hits:
+            for tool in hit.server.tools:
+                bridge_name = mcp_tool_name(hit.server.name, tool.name)
+                if bridge_name.lower() in query_text or tool.name.lower() in query_text:
+                    names.add(bridge_name)
+                elif hit.matched_tools:
+                    names.add(bridge_name)
+                else:
+                    names.add(bridge_name)
+        return names
+
+    def prompt_index_from_hits(self, hits: list[McpSearchHit]) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for hit in hits:
+            item = self._state_for_server(hit.server).to_dict()
+            item["score"] = round(hit.score, 4)
+            item["matched_tools"] = hit.matched_tools
+            item["matched_resources"] = hit.matched_resources
+            item["matched_tools_text"] = (
+                " matched_tools=" + ", ".join(hit.matched_tools[:4]) if hit.matched_tools else ""
+            )
+            item["matched_resources_text"] = (
+                " matched_resources=" + ", ".join(hit.matched_resources[:3])
+                if hit.matched_resources
+                else ""
+            )
+            item["tool_prefix"] = hit.server.tool_prefix
+            rows.append(item)
         return rows
 
     def list_resources(self, server_name: str) -> list[dict[str, Any]]:
@@ -267,6 +338,27 @@ class McpServerRegistry:
             return self.call_tool(server_name, tool_name, params, services=context.services)
 
         return _handler
+
+    def _state_for_server(self, server: McpServerConfig) -> McpServerState:
+        enabled = bool(server.default_enabled)
+        if server.transport == "inprocess" and enabled:
+            status = "connected"
+        elif server.transport == "inprocess":
+            status = "installed"
+        elif enabled:
+            status = "configured"
+        else:
+            status = "cataloged"
+        return McpServerState(
+            server_name=server.name,
+            status=status,
+            transport=server.transport,
+            description=server.description,
+            enabled=enabled,
+            tool_count=len(server.tools),
+            resource_count=len(server.resources),
+            auth=server.auth,
+        )
 
     def _load_config_file(self, config_path: Path, source: str) -> list[McpServerConfig]:
         raw = json.loads(config_path.read_text(encoding="utf-8"))

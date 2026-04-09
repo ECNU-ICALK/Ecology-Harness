@@ -64,6 +64,7 @@ class EcologyHarnessApp:
             builtin_dir=builtin_skill_dir,
             user_dir=self.settings.user_skill_dir,
             project_dir=self.settings.skill_dir,
+            history_turns=self.settings.skill_retrieval_history_turns,
         )
         builtin_plugin_dir = Path(__file__).resolve().parent / "plugins" / "builtin"
         self.plugin_manager = PluginManager(
@@ -77,6 +78,7 @@ class EcologyHarnessApp:
             builtin_dir=builtin_mcp_dir,
             user_dir=self.settings.user_mcp_dir,
             project_dir=self.settings.mcp_dir,
+            history_turns=self.settings.mcp_retrieval_history_turns,
         )
         self.task_store = TaskStore(self.settings.task_file)
         self.subagent_manager = SubAgentManager(self)
@@ -95,18 +97,24 @@ class EcologyHarnessApp:
     ) -> str:
         self._ensure_initialized()
         active_settings = settings or self.settings
-        skill_index = [
-            item.to_index_dict() for item in self.skill_loader.list_skills()  # type: ignore[union-attr]
-        ]
+        skill_report = self.skill_loader.select_for_prompt(  # type: ignore[union-attr]
+            query=prompt_text,
+            conversation=conversation,
+            limit=active_settings.skill_prompt_top_k,
+        )
+        skill_index = [item.skill.to_index_dict() for item in skill_report.hits]
         agent_index = [
             item.to_index_dict() for item in self.subagent_manager.list_agent_definitions()  # type: ignore[union-attr]
         ]
         plugin_index = [
             item.to_index_dict() for item in self.plugin_manager.list_enabled_plugins()  # type: ignore[union-attr]
         ]
-        mcp_index = [
-            item.to_dict() for item in self.mcp_registry.list_server_states()  # type: ignore[union-attr]
-        ]
+        mcp_report = self.mcp_registry.select_for_prompt(  # type: ignore[union-attr]
+            query=prompt_text,
+            conversation=conversation,
+            limit=active_settings.mcp_prompt_top_k,
+        )
+        mcp_index = self.mcp_registry.prompt_index_from_hits(mcp_report.hits)  # type: ignore[union-attr]
         memory_context = self.memory_manager.get_memory_context(  # type: ignore[union-attr]
             query=prompt_text,
             conversation=conversation,
@@ -116,11 +124,44 @@ class EcologyHarnessApp:
             active_settings,
             memory_context=memory_context,
             skill_index=skill_index,
+            skill_retrieval=skill_report.to_prompt_dict(),
             agent_index=agent_index,
             plugin_index=plugin_index,
             mcp_index=mcp_index,
+            mcp_retrieval=mcp_report.to_prompt_dict(),
             runtime_mode=self.runtime_mode,
         )
+
+    def select_available_tools(
+        self,
+        prompt_text: str,
+        conversation: list[ChatMessage] | None = None,
+        allowed_tools: set[str] | None = None,
+        settings: HarnessSettings | None = None,
+    ):
+        self._ensure_initialized()
+        active_settings = settings or self.settings
+        tools = self.registry.list_tools()
+        if allowed_tools:
+            tools = [item for item in tools if item.name in allowed_tools]
+
+        relevant_dynamic_mcp = self.mcp_registry.relevant_dynamic_tool_names(  # type: ignore[union-attr]
+            query=prompt_text,
+            conversation=conversation,
+            limit=active_settings.mcp_prompt_top_k,
+        )
+        selected = []
+        normalized_prompt = (prompt_text or "").lower()
+        for tool in tools:
+            if not tool.name.startswith("mcp__"):
+                selected.append(tool)
+                continue
+            if allowed_tools and tool.name in allowed_tools:
+                selected.append(tool)
+                continue
+            if tool.name in relevant_dynamic_mcp or tool.name.lower() in normalized_prompt:
+                selected.append(tool)
+        return selected
 
     def create_agent_loop(
         self,

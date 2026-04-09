@@ -3,6 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.skills.retrieval import (
+    SkillBM25Retriever,
+    SkillQueryRewriter,
+    SkillSearchHit,
+    SkillSearchReport,
+)
 from ecology_harness.utils import parse_frontmatter, slugify
 
 
@@ -45,10 +52,17 @@ def _parse_list(value: str) -> list[str]:
 
 
 class SkillLoader:
-    def __init__(self, builtin_dir: Path, user_dir: Path, project_dir: Path) -> None:
+    def __init__(
+        self,
+        builtin_dir: Path,
+        user_dir: Path,
+        project_dir: Path,
+        history_turns: int = 4,
+    ) -> None:
         self.builtin_dir = builtin_dir
         self.user_dir = user_dir
         self.project_dir = project_dir
+        self.history_turns = history_turns
         self.user_dir.mkdir(parents=True, exist_ok=True)
         self.project_dir.mkdir(parents=True, exist_ok=True)
 
@@ -74,6 +88,57 @@ class SkillLoader:
             if skill.slug == normalized or skill.name == slug_or_name:
                 return skill
         return None
+
+    def search(
+        self,
+        query: str,
+        conversation: list[ChatMessage] | None = None,
+        limit: int = 8,
+        user_invocable_only: bool = True,
+    ) -> SkillSearchReport:
+        skills = self.list_skills()
+        if user_invocable_only:
+            skills = [item for item in skills if item.user_invocable]
+        rewriter = SkillQueryRewriter(history_turns=self.history_turns)
+        rewrite = rewriter.rewrite(query, conversation=conversation)
+        retriever = SkillBM25Retriever(skills)
+        hits = retriever.search(rewrite, limit=limit)
+        return SkillSearchReport(
+            rewrite=rewrite,
+            hits=hits,
+            total_skills=len(skills),
+            fallback_used=False,
+        )
+
+    def select_for_prompt(
+        self,
+        query: str,
+        conversation: list[ChatMessage] | None = None,
+        limit: int = 8,
+    ) -> SkillSearchReport:
+        report = self.search(
+            query=query,
+            conversation=conversation,
+            limit=limit,
+            user_invocable_only=True,
+        )
+        if report.hits or not limit:
+            return report
+
+        fallback = [
+            item for item in self.list_skills() if item.user_invocable
+        ][:limit]
+        report.hits = [
+            SkillSearchHit(
+                skill=item,
+                score=0.0,
+                matched_terms=[],
+                exact_match=False,
+            )
+            for item in fallback
+        ]
+        report.fallback_used = True
+        return report
 
     def find_by_trigger(self, query: str) -> Skill | None:
         first = query.strip().split(" ", 1)[0] if query.strip() else ""

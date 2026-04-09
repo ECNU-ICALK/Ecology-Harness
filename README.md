@@ -19,6 +19,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 ## News
 
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
+- `2026-04-09`: upgraded skills and MCP catalogs to query-aware retrieval, using local query rewriting plus BM25 ranking so only relevant skills and MCP servers are injected into the model context.
 - `2026-04-09`: imported a curated scientific research skill set from `K-Dense-AI/claude-scientific-skills`, adding upstream bundles for literature review, paper lookup, geospatial analysis, statistics, visualization, bioinformatics, lab notebooks, and protocol automation.
 - `2026-04-09`: added three more builtin skill packs: workflow skills from `obra/superpowers`, writing cleanup with `blader/humanizer`, and a large AI research stack from `Orchestra-Research/AI-Research-SKILLs`.
 

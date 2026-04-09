@@ -106,11 +106,12 @@ class AgentLoop:
                     token_estimate_after=compaction_result.token_estimate_after,
                     compressed_summary=compaction_result.compressed_summary,
                 )
-            available_tools = self.app.registry.list_tools()
-            if self.allowed_tools:
-                available_tools = [
-                    item for item in available_tools if item.name in self.allowed_tools
-                ]
+            available_tools = self.app.select_available_tools(
+                prompt_text=prompt,
+                conversation=messages,
+                allowed_tools=self.allowed_tools,
+                settings=active_settings,
+            )
             response = self.provider.complete(
                 messages,
                 available_tools,

@@ -14,9 +14,11 @@ class PromptBuilder:
         settings: HarnessSettings,
         memory_context: str,
         skill_index: list[dict[str, str]],
+        skill_retrieval: dict | None,
         agent_index: list[dict[str, str]],
         plugin_index: list[dict[str, str]],
         mcp_index: list[dict[str, str]],
+        mcp_retrieval: dict | None,
         runtime_mode: str = "default",
     ) -> str:
         skill_lines = [
@@ -29,10 +31,43 @@ class PromptBuilder:
             "- %(name)s (%(source)s): %(description)s" % item for item in plugin_index[:10]
         ] or ["- No active plugins."]
         mcp_lines = [
-            "- %(server_name)s (%(transport)s, %(status)s): tools=%(tool_count)s resources=%(resource_count)s"
+            "- %(server_name)s (%(transport)s, %(status)s): tools=%(tool_count)s resources=%(resource_count)s%(matched_tools_text)s%(matched_resources_text)s"
             % item
             for item in mcp_index[:10]
         ] or ["- No MCP servers configured."]
+        skill_heading = "Available skills:"
+        skill_query_line = ""
+        if skill_retrieval:
+            skill_heading = "Relevant skills for this request:"
+            rewritten_query = str(skill_retrieval.get("rewritten_query", "")).strip()
+            total_skills = int(skill_retrieval.get("total_skills", 0) or 0)
+            fallback_used = bool(skill_retrieval.get("fallback_used"))
+            if rewritten_query:
+                skill_query_line = "Skill retrieval query: %s\n" % self._shorten(
+                    rewritten_query,
+                    280,
+                )
+            if total_skills:
+                mode = "fallback" if fallback_used else "retrieved"
+                skill_heading = "Relevant skills for this request (%s from %s total):" % (
+                    mode,
+                    total_skills,
+                )
+        mcp_heading = "Available MCP servers:"
+        mcp_query_line = ""
+        if mcp_retrieval:
+            mcp_heading = "Relevant MCP servers for this request:"
+            rewritten_query = str(mcp_retrieval.get("rewritten_query", "")).strip()
+            total_servers = int(mcp_retrieval.get("total_servers", 0) or 0)
+            fallback_used = bool(mcp_retrieval.get("fallback_used"))
+            if rewritten_query:
+                mcp_query_line = "MCP retrieval query: %s\n" % self._shorten(rewritten_query, 280)
+            if total_servers:
+                mode = "fallback" if fallback_used else "retrieved"
+                mcp_heading = "Relevant MCP servers for this request (%s from %s total):" % (
+                    mode,
+                    total_servers,
+                )
 
         prompt = (
             "You are Ecology Harness, a terminal-native agent harness.\n"
@@ -52,10 +87,10 @@ class PromptBuilder:
             "- Permission mode: %s\n"
             "- Runtime mode: %s\n"
             "%s%s\n"
-            "Available skills:\n%s\n\n"
+            "%s%s\n%s\n\n"
             "Available agent types:\n%s\n"
             "\nActive plugins:\n%s\n"
-            "\nAvailable MCP servers:\n%s\n"
+            "\n%s%s\n%s\n"
             % (
                 datetime.now().strftime("%Y-%m-%d %A"),
                 settings.workspace_root,
@@ -64,15 +99,25 @@ class PromptBuilder:
                 runtime_mode,
                 self._get_git_info(settings.workspace_root),
                 self._get_claude_md(settings.workspace_root),
+                skill_query_line,
+                skill_heading,
                 "\n".join(skill_lines),
                 "\n".join(agent_lines),
                 "\n".join(plugin_lines),
+                mcp_query_line,
+                mcp_heading,
                 "\n".join(mcp_lines),
             )
         )
         if memory_context:
             prompt += "\n# Memory\n%s\n" % memory_context
         return prompt
+
+    def _shorten(self, text: str, limit: int) -> str:
+        stripped = text.strip()
+        if len(stripped) <= limit:
+            return stripped
+        return stripped[: limit - 3].rstrip() + "..."
 
     def _get_git_info(self, workspace_root: Path) -> str:
         try:

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
+from ecology_harness.runtime.messages import ChatMessage
 
 
 class SkillTests(unittest.TestCase):
@@ -202,6 +203,103 @@ class SkillTests(unittest.TestCase):
 
             self.assertIn("Skill bundle root:", rendered)
             self.assertIn("research-state.yaml", rendered)
+
+    def test_skill_search_rewrites_chinese_growth_query(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            report = app.skill_loader.search("植物生长模拟 玉米 干旱 灌溉", limit=5)
+            slugs = [item.skill.slug for item in report.hits]
+
+            self.assertIn("plant-growth-model-selection", slugs)
+            self.assertIn("crop-water-and-irrigation-simulation", slugs)
+            self.assertIn("plant growth simulation", report.rewrite.rewritten_query)
+            self.assertIn("maize", report.rewrite.rewritten_query)
+            self.assertIn("drought", report.rewrite.rewritten_query)
+
+    def test_skill_search_uses_conversation_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            custom_skill = app.settings.skill_dir / "benthic-biofilm-monitor.md"
+            custom_skill.write_text(
+                "---\n"
+                "name: benthic-biofilm-monitor\n"
+                "description: Monitor benthic algae, periphyton, and biofilm thickness in aquatic systems.\n"
+                "slug: benthic-biofilm-monitor\n"
+                "triggers: [/benthic-biofilm-monitor]\n"
+                "context: inline\n"
+                "---\n"
+                "Focus on microscopy, fluorescence, and biofilm monitoring workflows.\n",
+                encoding="utf-8",
+            )
+
+            conversation = [
+                ChatMessage(
+                    role="user",
+                    content="我们在做底栖藻类、生物膜厚度和荧光监测的水体微宇宙实验。",
+                )
+            ]
+            report = app.skill_loader.search("这个系统怎么监测？", conversation=conversation, limit=3)
+
+            self.assertEqual(report.hits[0].skill.slug, "benthic-biofilm-monitor")
+            self.assertTrue(report.rewrite.context_snippets)
+            self.assertIn("biofilm", report.rewrite.rewritten_query)
+
+    def test_build_system_prompt_injects_retrieved_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            settings.skill_prompt_top_k = 1
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            custom_skill = app.settings.skill_dir / "lichen-succession-benchmark.md"
+            custom_skill.write_text(
+                "---\n"
+                "name: lichen-succession-benchmark\n"
+                "description: Compare monitoring and modeling workflows for lichen succession benchmark studies.\n"
+                "slug: lichen-succession-benchmark\n"
+                "triggers: [/lichen-succession-benchmark]\n"
+                "context: inline\n"
+                "---\n"
+                "Use this for lichen succession benchmark analysis and monitoring.\n",
+                encoding="utf-8",
+            )
+
+            prompt = app.build_system_prompt(prompt_text="lichen succession benchmark workflow")
+
+            self.assertIn("Relevant skills for this request", prompt)
+            self.assertIn("Skill retrieval query:", prompt)
+            self.assertIn("lichen-succession-benchmark", prompt)
+
+    def test_skill_search_tool_returns_ranked_results(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            result = app.registry.execute(
+                "SkillSearch",
+                {"query": "微生物群落代谢模拟 根际 共喂养", "limit": 3},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("Rewritten query:", result.content)
+            self.assertIn("microbial-community-metabolism-simulation", result.content)
+            self.assertTrue(result.data["hits"])
 
 
 if __name__ == "__main__":

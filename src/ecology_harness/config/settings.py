@@ -38,6 +38,12 @@ class HarnessSettings:
     max_agent_loops: int = 0
     max_context_tokens: int = 128_000
     preserve_last_n_turns: int = 6
+    skill_prompt_top_k: int = 8
+    skill_search_default_k: int = 8
+    skill_retrieval_history_turns: int = 4
+    mcp_prompt_top_k: int = 6
+    mcp_search_default_k: int = 6
+    mcp_retrieval_history_turns: int = 4
     subagent_max_depth: int = 2
     subagent_max_concurrent: int = 4
     memory_index_max_lines: int = 200

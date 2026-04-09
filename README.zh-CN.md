@@ -12,6 +12,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 ## News
 
 - `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
+- `2026-04-09`：把 skill 和 MCP 目录升级成按查询检索注入的模式，采用本地 query 改写与 BM25 排序，只把和当前请求相关的 skills 与 MCP servers 放进模型上下文。
 - `2026-04-09`：从 `K-Dense-AI/claude-scientific-skills` 引入了一批经过筛选的科研技能包，补充了文献综述、论文检索、地理空间分析、统计分析、科学可视化、生物信息、实验记录与 protocol 自动化等能力。
 - `2026-04-09`：继续补充了三类内置技能包：来自 `obra/superpowers` 的 workflow 工程技能、来自 `blader/humanizer` 的写作去 AI 腔技能，以及来自 `Orchestra-Research/AI-Research-SKILLs` 的大规模 AI 研究技能树。
 

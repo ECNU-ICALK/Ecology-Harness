@@ -97,6 +97,24 @@ def register_mcp_tools(registry: ToolRegistry) -> None:
             source="mcp",
         )
     )
+    registry.register(
+        ToolDefinition(
+            name="McpSearchTool",
+            description="Rewrite a task query with context and rank relevant MCP servers for the request.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer"},
+                },
+                "required": ["query"],
+            },
+            handler=_mcp_search,
+            read_only=True,
+            concurrent_safe=True,
+            source="mcp",
+        )
+    )
 
 
 def _manager(context: ToolContext):
@@ -175,3 +193,32 @@ def _mcp_auth(params: dict, context: ToolContext) -> ToolResult:
             "transport": server.transport,
         },
     )
+
+
+def _mcp_search(params: dict, context: ToolContext) -> ToolResult:
+    limit = params.get("limit")
+    if limit is None:
+        settings = context.services.get("settings") or context.settings
+        limit = getattr(settings, "mcp_search_default_k", 6)
+    report = _manager(context).search(
+        params["query"],
+        conversation=context.services.get("conversation"),
+        limit=max(int(limit), 1),
+        enabled_only=False,
+    )
+    if not report.hits:
+        return ToolResult(
+            content="No relevant MCP servers found for: %s" % params["query"],
+            data=report.to_dict(),
+        )
+    lines = []
+    for item in report.hits:
+        suffix = ""
+        if item.matched_tools:
+            suffix = " matched_tools=" + ", ".join(item.matched_tools[:4])
+        lines.append(
+            "%s\t%.3f\t%s%s"
+            % (item.server.name, item.score, item.server.description, suffix)
+        )
+    header = "Rewritten query: %s" % report.rewrite.rewritten_query
+    return ToolResult(content=header + "\n" + "\n".join(lines), data=report.to_dict())

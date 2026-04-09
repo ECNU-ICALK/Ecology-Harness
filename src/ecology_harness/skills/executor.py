@@ -48,7 +48,7 @@ def execute_skill(
         settings=settings,
         system_prompt=app.build_system_prompt(
             settings=settings,
-            prompt_text=prompt,
+            prompt_text="%s %s" % (skill.name, args or ""),
             conversation=conversation,
         ),
         depth=depth,
