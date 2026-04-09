@@ -20,6 +20,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
 - `2026-04-09`: imported a curated scientific research skill set from `K-Dense-AI/claude-scientific-skills`, adding upstream bundles for literature review, paper lookup, geospatial analysis, statistics, visualization, bioinformatics, lab notebooks, and protocol automation.
+- `2026-04-09`: added three more builtin skill packs: workflow skills from `obra/superpowers`, writing cleanup with `blader/humanizer`, and a large AI research stack from `Orchestra-Research/AI-Research-SKILLs`.
 
 ## Startup Preview
 
@@ -43,7 +44,7 @@ EcologyHarness/
 │   ├── plugins/              # Bundled plugin manifests and loaders
 │   ├── runtime/              # Agent loop, providers, sessions, compaction
 │   ├── sandbox/              # File, shell, and network sandbox helpers
-│   ├── skills/               # Built-in skills, including ecology and scientific packs
+│   ├── skills/               # Built-in skills, including ecology, scientific, workflow, writing, and AI research packs
 │   ├── tasks/                # User and agent task tracking
 │   ├── tools/                # Built-in CLI/runtime tools
 │   ├── ui/                   # Terminal UI and REPL presentation
@@ -77,10 +78,21 @@ EcologyHarness/
 - built-in markdown skills
 - curated ecology skill bundles from high-quality upstream repositories
 - vendored scientific research skill bundles for literature, stats, geo, omics, visualization, and lab workflows
+- workflow engineering skills from `obra/superpowers`
+- writing cleanup and anti-AI-slop editing with `humanizer`
+- broad AI research skill bundles for model training, evaluation, serving, multimodal work, MLOps, and paper writing
 - curated agriculture/environment/ecology MCP server catalog
 - closed-algae-system and photobioreactor skills plus lab-analysis MCP catalog entries
 - permission policy for read-only and workspace-write modes
 - unit test suite built on the standard library
+
+## Installed Skill Packs
+
+- `ecology`: project-authored ecology, environment, and agroecology workflows plus imported domain bundles such as Mapbox, Open-Meteo, and Semantic Scholar related packs.
+- `scientific`: curated scientific skills from `K-Dense-AI/claude-scientific-skills`, including `literature-review`, `paper-lookup`, `geopandas`, `statistical-analysis`, `scientific-visualization`, `biopython`, and `scikit-bio`.
+- `superpowers`: workflow and engineering guidance from `obra/superpowers`, including `systematic-debugging`, `test-driven-development`, `verification-before-completion`, `writing-plans`, and `using-git-worktrees`.
+- `writing`: writing cleanup helpers, currently including `humanizer` from `blader/humanizer`.
+- `ai-research`: a large AI research skill tree from `Orchestra-Research/AI-Research-SKILLs`, covering `autoresearch`, model architecture, fine-tuning, evaluation, inference serving, MLOps, multimodal systems, ML paper writing, and research ideation.
 
 ## Ecology Pack
 
