@@ -41,6 +41,15 @@ class SkillTests(unittest.TestCase):
             self.assertTrue(any(item.slug == "process-model-selection" for item in skills))
             self.assertTrue(any(item.slug == "agent-based-ecology-modeling" for item in skills))
             self.assertTrue(any(item.slug == "food-web-and-trophic-simulation" for item in skills))
+            self.assertTrue(any(item.slug == "literature-review" for item in skills))
+            self.assertTrue(any(item.slug == "paper-lookup" for item in skills))
+            self.assertTrue(any(item.slug == "geopandas" for item in skills))
+            self.assertTrue(any(item.slug == "statistical-analysis" for item in skills))
+            self.assertTrue(any(item.slug == "scientific-visualization" for item in skills))
+            self.assertTrue(any(item.slug == "biopython" for item in skills))
+            self.assertTrue(any(item.slug == "scikit-bio" for item in skills))
+            self.assertTrue(any(item.slug == "phylogenetics" for item in skills))
+            self.assertTrue(any(item.slug == "open-notebook" for item in skills))
             self.assertFalse(any(item.slug == "reference" for item in skills))
             self.assertFalse(any(item.slug == "performance-testing" for item in skills))
 
@@ -109,6 +118,23 @@ class SkillTests(unittest.TestCase):
 
             self.assertIn("Skill bundle root:", rendered)
             self.assertIn("scripts/run.py", rendered)
+
+    def test_vendored_scientific_bundle_skill_render_preserves_bundle_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill = app.skill_loader.get("literature-review")
+            self.assertIsNotNone(skill)
+
+            rendered = app.skill_loader.render(skill, "wetland methane")
+
+            self.assertIn("Skill bundle root:", rendered)
+            self.assertIn("scripts/search_databases.py", rendered)
+            self.assertIn("references/database_strategies.md", rendered)
 
 
 if __name__ == "__main__":

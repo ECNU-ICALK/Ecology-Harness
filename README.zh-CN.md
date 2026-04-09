@@ -12,6 +12,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 ## News
 
 - `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
+- `2026-04-09`：从 `K-Dense-AI/claude-scientific-skills` 引入了一批经过筛选的科研技能包，补充了文献综述、论文检索、地理空间分析、统计分析、科学可视化、生物信息、实验记录与 protocol 自动化等能力。
 
 ## 启动界面
 
@@ -35,7 +36,7 @@ EcologyHarness/
 │   ├── plugins/              # 内置 plugin manifest 与加载器
 │   ├── runtime/              # Agent loop、provider、session、压缩
 │   ├── sandbox/              # 文件、shell、网络 sandbox 辅助层
-│   ├── skills/               # 内置 skills，包括 ecology packs
+│   ├── skills/               # 内置 skills，包括 ecology 与 scientific packs
 │   ├── tasks/                # 用户任务与 agent 任务追踪
 │   ├── tools/                # 内置 CLI / runtime 工具
 │   ├── ui/                   # 终端界面与 REPL 展示层
@@ -66,6 +67,7 @@ EcologyHarness/
 - Markdown skill 系统
 - MCP 与 plugin 扩展骨架
 - 来自高质量上游仓库的生态技能包
+- 来自高质量上游仓库的科研通用技能包，覆盖文献、统计、地理空间、可视化、omics 与实验工作流
 - 面向农业、环境、生态场景的 MCP 目录
 - 封闭藻类系统 / 光生物反应器 skills 与实验分析型 MCP 目录
 - 标准库 `unittest` 测试集
