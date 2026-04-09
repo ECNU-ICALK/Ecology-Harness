@@ -50,6 +50,22 @@ class SkillTests(unittest.TestCase):
             self.assertTrue(any(item.slug == "scikit-bio" for item in skills))
             self.assertTrue(any(item.slug == "phylogenetics" for item in skills))
             self.assertTrue(any(item.slug == "open-notebook" for item in skills))
+            self.assertTrue(any(item.slug == "systematic-debugging" for item in skills))
+            self.assertTrue(any(item.slug == "test-driven-development" for item in skills))
+            self.assertTrue(any(item.slug == "verification-before-completion" for item in skills))
+            self.assertTrue(any(item.slug == "writing-plans" for item in skills))
+            self.assertTrue(any(item.slug == "using-git-worktrees" for item in skills))
+            self.assertTrue(any(item.slug == "humanizer" for item in skills))
+            self.assertTrue(any(item.slug == "autoresearch" for item in skills))
+            self.assertTrue(any(item.slug == "implementing-llms-litgpt" for item in skills))
+            self.assertTrue(any(item.slug == "sentencepiece" for item in skills))
+            self.assertTrue(any(item.slug == "peft-fine-tuning" for item in skills))
+            self.assertTrue(any(item.slug == "evaluating-llms-harness" for item in skills))
+            self.assertTrue(any(item.slug == "serving-llms-vllm" for item in skills))
+            self.assertTrue(any(item.slug == "mlflow" for item in skills))
+            self.assertTrue(any(item.slug == "whisper" for item in skills))
+            self.assertTrue(any(item.slug == "academic-plotting" for item in skills))
+            self.assertTrue(any(item.slug == "brainstorming-research-ideas" for item in skills))
             self.assertFalse(any(item.slug == "reference" for item in skills))
             self.assertFalse(any(item.slug == "performance-testing" for item in skills))
 
@@ -135,6 +151,57 @@ class SkillTests(unittest.TestCase):
             self.assertIn("Skill bundle root:", rendered)
             self.assertIn("scripts/search_databases.py", rendered)
             self.assertIn("references/database_strategies.md", rendered)
+
+    def test_vendored_superpowers_bundle_skill_render_preserves_bundle_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill = app.skill_loader.get("using-superpowers")
+            self.assertIsNotNone(skill)
+
+            rendered = app.skill_loader.render(skill, "")
+
+            self.assertIn("Skill bundle root:", rendered)
+            self.assertIn("references/codex-tools.md", rendered)
+
+    def test_vendored_humanizer_skill_is_loadable_as_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill = app.skill_loader.get("humanizer")
+            self.assertIsNotNone(skill)
+            self.assertIn("Remove signs of AI-generated writing", skill.description)
+            self.assertEqual(skill.tools[:4], ["Read", "Write", "Edit", "Grep"])
+
+            rendered = app.skill_loader.render(skill, "Make this sound less robotic.")
+
+            self.assertIn("Skill bundle root:", rendered)
+            self.assertIn("Remove AI Writing Patterns", rendered)
+
+    def test_vendored_ai_research_skill_is_loadable_as_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill = app.skill_loader.get("autoresearch")
+            self.assertIsNotNone(skill)
+            self.assertIn("autonomous AI research projects", skill.description)
+
+            rendered = app.skill_loader.render(skill, "")
+
+            self.assertIn("Skill bundle root:", rendered)
+            self.assertIn("research-state.yaml", rendered)
 
 
 if __name__ == "__main__":

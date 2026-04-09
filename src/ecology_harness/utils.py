@@ -20,11 +20,54 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 
     header, body = parts
     metadata: dict[str, str] = {}
-    for line in header.splitlines()[1:]:
-        if ":" not in line:
+    lines = header.splitlines()[1:]
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if not line.strip() or line.startswith(" ") or ":" not in line:
+            index += 1
             continue
+
         key, value = line.split(":", 1)
-        metadata[key.strip()] = value.strip()
+        key = key.strip()
+        value = value.strip()
+
+        if value in {"|", ">"}:
+            index += 1
+            block_lines: list[str] = []
+            while index < len(lines):
+                current = lines[index]
+                if current.startswith(" ") or current.startswith("\t"):
+                    block_lines.append(current.lstrip())
+                    index += 1
+                    continue
+                break
+            metadata[key] = (
+                "\n".join(block_lines).strip()
+                if value == "|"
+                else " ".join(item.strip() for item in block_lines).strip()
+            )
+            continue
+
+        if value == "":
+            probe = index + 1
+            list_items: list[str] = []
+            while probe < len(lines):
+                current = lines[probe]
+                stripped = current.strip()
+                if current.startswith(" ") or current.startswith("\t"):
+                    if stripped.startswith("- "):
+                        list_items.append(stripped[2:].strip())
+                    probe += 1
+                    continue
+                break
+            if list_items:
+                metadata[key] = "[%s]" % ", ".join(list_items)
+                index = probe
+                continue
+
+        metadata[key] = value
+        index += 1
     return metadata, body
 
 
