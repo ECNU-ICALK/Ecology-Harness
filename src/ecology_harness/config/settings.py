@@ -181,3 +181,7 @@ class HarnessSettings:
         ]
         roots.extend(Path(item).expanduser().resolve() for item in self.sandbox_extra_write_roots)
         return roots
+
+
+# Backward-compatible alias for external scripts that imported Settings directly.
+Settings = HarnessSettings

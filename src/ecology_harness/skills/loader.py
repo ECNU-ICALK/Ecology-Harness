@@ -23,6 +23,76 @@ from ecology_harness.utils import parse_frontmatter, slugify
 
 _SKILL_STATUS_VALUES = {"active", "deprecated", "archived"}
 
+_HUB_SOURCE_DEFAULT = "https://github.com/ECNU-ICALK/Ecology-Harness"
+_SKILL_HUB_PACKS: dict[str, dict[str, str]] = {
+    "core": {
+        "title": "Core Built-ins",
+        "description": "Project-authored core workflow skills maintained inside Ecology Harness.",
+        "trust_level": "official",
+        "audit_status": "reviewed",
+        "source_url": _HUB_SOURCE_DEFAULT,
+    },
+    "ecology": {
+        "title": "Ecology Pack",
+        "description": "Ecology, environment, agriculture, simulation, and multimodal research workflows curated for Ecology Harness.",
+        "trust_level": "official",
+        "audit_status": "reviewed",
+        "source_url": _HUB_SOURCE_DEFAULT,
+    },
+    "scientific": {
+        "title": "Scientific Skills",
+        "description": "Vendored scientific research workflow skills curated from the K-Dense scientific-skills collection.",
+        "trust_level": "trusted",
+        "audit_status": "vendored",
+        "source_url": "https://github.com/K-Dense-AI/claude-scientific-skills/tree/main/scientific-skills",
+    },
+    "superpowers": {
+        "title": "Superpowers Skills",
+        "description": "Workflow and engineering guidance vendored from obra/superpowers.",
+        "trust_level": "community",
+        "audit_status": "vendored",
+        "source_url": "https://github.com/obra/superpowers/tree/main/skills",
+    },
+    "writing": {
+        "title": "Writing Skills",
+        "description": "Writing cleanup and style-focused helpers, including humanizer.",
+        "trust_level": "community",
+        "audit_status": "vendored",
+        "source_url": "https://github.com/blader/humanizer",
+    },
+    "ai-research": {
+        "title": "AI Research Skills",
+        "description": "Large AI research workflow bundle vendored from Orchestra Research.",
+        "trust_level": "community",
+        "audit_status": "vendored",
+        "source_url": "https://github.com/Orchestra-Research/AI-Research-SKILLs/tree/main",
+    },
+    "project": {
+        "title": "Project Skills",
+        "description": "Project-local skills defined inside the current workspace.",
+        "trust_level": "local",
+        "audit_status": "workspace",
+        "source_url": "",
+    },
+    "user": {
+        "title": "User Skills",
+        "description": "User-local skills installed for this workstation profile.",
+        "trust_level": "local",
+        "audit_status": "workspace",
+        "source_url": "",
+    },
+}
+_SKILL_HUB_ORDER = {
+    "core": 0,
+    "ecology": 1,
+    "scientific": 2,
+    "superpowers": 3,
+    "writing": 4,
+    "ai-research": 5,
+    "project": 6,
+    "user": 7,
+}
+
 
 @dataclass
 class Skill:
@@ -59,6 +129,13 @@ class Skill:
     archived_at: str = ""
     archive_reason: str = ""
     superseded_by: str = ""
+    author: str = ""
+    license: str = ""
+    compatibility: list[str] = field(default_factory=list)
+    hub_pack: str = "core"
+    trust_level: str = "official"
+    upstream_url: str = ""
+    audit_status: str = "reviewed"
 
     def to_index_dict(self) -> dict[str, str]:
         return {
@@ -85,6 +162,55 @@ class Skill:
             "archived_at": self.archived_at,
             "archive_reason": self.archive_reason,
             "superseded_by": self.superseded_by,
+            "author": self.author,
+            "license": self.license,
+            "compatibility": ", ".join(self.compatibility),
+            "hub_pack": self.hub_pack,
+            "trust_level": self.trust_level,
+            "upstream_url": self.upstream_url,
+            "audit_status": self.audit_status,
+        }
+
+
+@dataclass
+class SkillHubEntry:
+    slug: str
+    title: str
+    description: str
+    trust_level: str
+    audit_status: str
+    source_url: str
+    source: str
+    root_path: str
+    skill_count: int = 0
+    active_count: int = 0
+    ready_count: int = 0
+    setup_needed_count: int = 0
+    unsupported_count: int = 0
+    top_skills: list[str] = field(default_factory=list)
+    authors: list[str] = field(default_factory=list)
+    licenses: list[str] = field(default_factory=list)
+    score: float = 0.0
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "slug": self.slug,
+            "title": self.title,
+            "description": self.description,
+            "trust_level": self.trust_level,
+            "audit_status": self.audit_status,
+            "source_url": self.source_url,
+            "source": self.source,
+            "root_path": self.root_path,
+            "skill_count": self.skill_count,
+            "active_count": self.active_count,
+            "ready_count": self.ready_count,
+            "setup_needed_count": self.setup_needed_count,
+            "unsupported_count": self.unsupported_count,
+            "top_skills": self.top_skills,
+            "authors": self.authors,
+            "licenses": self.licenses,
+            "score": round(self.score, 4),
         }
 
 
@@ -249,6 +375,16 @@ def _skill_source_priority(skill: Skill) -> tuple[int, int, float, str]:
 
 
 class SkillLoader:
+    @classmethod
+    def from_settings(cls, settings: Any) -> "SkillLoader":
+        builtin_dir = Path(__file__).resolve().parent / "builtin"
+        return cls(
+            builtin_dir=builtin_dir,
+            user_dir=settings.user_skill_dir,
+            project_dir=settings.skill_dir,
+            history_turns=getattr(settings, "skill_retrieval_history_turns", 4),
+        )
+
     def __init__(
         self,
         builtin_dir: Path,
@@ -310,6 +446,99 @@ class SkillLoader:
             if skill.slug == normalized or skill.name == slug_or_name:
                 return skill
         return None
+
+    def skill_hub(
+        self,
+        query: str = "",
+        limit: int = 12,
+        scope: str = "all",
+    ) -> dict[str, Any]:
+        normalized_scope = (scope or "all").strip().lower()
+        if normalized_scope not in {"all", "packs", "skills"}:
+            normalized_scope = "all"
+        skills = self.list_skills(include_archived=True)
+        packs = self._build_hub_entries(skills, query=query, limit=limit)
+        result: dict[str, Any] = {
+            "query": query,
+            "scope": normalized_scope,
+            "packs": [],
+            "skills": [],
+        }
+        if normalized_scope in {"all", "packs"}:
+            result["packs"] = [item.to_dict() for item in packs[:limit]]
+        if normalized_scope in {"all", "skills"}:
+            if query.strip():
+                search_report = self.search(
+                    query=query,
+                    limit=max(limit, 1),
+                    user_invocable_only=False,
+                )
+                skill_rows = []
+                for hit in search_report.hits[:limit]:
+                    payload = hit.skill.to_index_dict()
+                    payload["score"] = round(hit.score, 4)
+                    payload["matched_terms"] = ", ".join(hit.matched_terms)
+                    skill_rows.append(payload)
+                result["skills"] = skill_rows
+                result["rewrite"] = search_report.rewrite.to_dict()
+            else:
+                ordered = sorted(
+                    skills,
+                    key=lambda item: (
+                        _SKILL_HUB_ORDER.get(item.hub_pack, 100),
+                        item.hub_pack,
+                        item.name.lower(),
+                    ),
+                )
+                result["skills"] = [item.to_index_dict() for item in ordered[:limit]]
+        return result
+
+    def view(
+        self,
+        slug_or_name: str,
+        file_path: str = "",
+        max_chars: int = 6000,
+    ) -> dict[str, Any]:
+        skill = self.get(slug_or_name, include_archived=True)
+        if skill is None:
+            raise ValueError("Skill not found: %s" % slug_or_name)
+        bundle_root = self._bundle_root(skill)
+        available_files = self._list_skill_files(skill)
+        if file_path.strip():
+            resolved, relative_path = self._resolve_skill_file(skill, file_path)
+            content = resolved.read_text(encoding="utf-8")
+            truncated = len(content) > max_chars
+            if truncated:
+                content = content[:max_chars].rstrip() + "\n\n...[truncated]"
+            return {
+                "skill": skill.to_index_dict(),
+                "bundle_root": str(bundle_root),
+                "available_files": available_files,
+                "selected_file": {
+                    "relative_path": relative_path,
+                    "absolute_path": str(resolved),
+                    "kind": self._skill_file_kind(relative_path),
+                },
+                "content": content,
+                "truncated": truncated,
+            }
+
+        preview = skill.content
+        truncated = len(preview) > max_chars
+        if truncated:
+            preview = preview[:max_chars].rstrip() + "\n\n...[truncated]"
+        return {
+            "skill": skill.to_index_dict(),
+            "bundle_root": str(bundle_root),
+            "available_files": available_files,
+            "selected_file": {
+                "relative_path": skill.path.name,
+                "absolute_path": str(skill.path),
+                "kind": "main",
+            },
+            "content": preview,
+            "truncated": truncated,
+        }
 
     def search(
         self,
@@ -738,6 +967,144 @@ class SkillLoader:
             "similarity": round(similarity, 4),
         }
 
+    def _build_hub_entries(
+        self,
+        skills: list[Skill],
+        query: str = "",
+        limit: int = 12,
+    ) -> list[SkillHubEntry]:
+        grouped: dict[str, list[Skill]] = {}
+        for skill in skills:
+            grouped.setdefault(skill.hub_pack, []).append(skill)
+
+        query_tokens = tokenize_text(query)
+        entries: list[SkillHubEntry] = []
+        for pack_slug, pack_skills in grouped.items():
+            meta = _SKILL_HUB_PACKS.get(pack_slug, _SKILL_HUB_PACKS["core"])
+            ready_count = len([item for item in pack_skills if item.readiness == "ready"])
+            setup_needed_count = len([item for item in pack_skills if item.readiness == "setup-needed"])
+            unsupported_count = len([item for item in pack_skills if item.readiness == "unsupported"])
+            active_count = len([item for item in pack_skills if item.status == "active"])
+            top_skills = [item.slug for item in sorted(pack_skills, key=lambda item: item.name.lower())[:8]]
+            authors = _unique_text([item.author for item in pack_skills if item.author])[:6]
+            licenses = _unique_text([item.license for item in pack_skills if item.license])[:6]
+            entry = SkillHubEntry(
+                slug=pack_slug,
+                title=meta["title"],
+                description=meta["description"],
+                trust_level=meta["trust_level"],
+                audit_status=meta["audit_status"],
+                source_url=meta["source_url"],
+                source=pack_skills[0].source if pack_skills else pack_slug,
+                root_path=str(self._root_for_pack(pack_slug)),
+                skill_count=len(pack_skills),
+                active_count=active_count,
+                ready_count=ready_count,
+                setup_needed_count=setup_needed_count,
+                unsupported_count=unsupported_count,
+                top_skills=top_skills,
+                authors=authors,
+                licenses=licenses,
+                score=self._hub_pack_score(pack_slug, pack_skills, query_tokens),
+            )
+            entries.append(entry)
+        entries.sort(
+            key=lambda item: (
+                -item.score,
+                _SKILL_HUB_ORDER.get(item.slug, 100),
+                item.title.lower(),
+            )
+        )
+        return entries[: max(limit, 1) * 2]
+
+    def _hub_pack_score(self, pack_slug: str, skills: list[Skill], query_tokens: list[str]) -> float:
+        if not query_tokens:
+            base = 1.0 - (_SKILL_HUB_ORDER.get(pack_slug, 100) / 1000.0)
+            return base
+        meta = _SKILL_HUB_PACKS.get(pack_slug, _SKILL_HUB_PACKS["core"])
+        haystack = " ".join(
+            [
+                pack_slug,
+                meta["title"],
+                meta["description"],
+                " ".join(skill.slug for skill in skills[:20]),
+                " ".join(skill.description for skill in skills[:8]),
+            ]
+        )
+        tokens = set(tokenize_text(haystack))
+        matched = sum(1 for token in query_tokens if token in tokens)
+        exact_bonus = 0.4 if pack_slug in " ".join(query_tokens) else 0.0
+        skill_bonus = min(0.4, len([item for item in skills if any(token in _overlap_document(item).lower() for token in query_tokens)]) * 0.03)
+        return matched / max(len(query_tokens), 1) + exact_bonus + skill_bonus
+
+    def _bundle_root(self, skill: Skill) -> Path:
+        return Path(skill.bundle_root) if skill.bundle_root else skill.path.parent
+
+    def _list_skill_files(self, skill: Skill, limit: int = 120) -> list[dict[str, str]]:
+        bundle_root = self._bundle_root(skill)
+        files: list[dict[str, str]] = []
+        if skill.path.name != "SKILL.md":
+            return [
+                {
+                    "relative_path": skill.path.name,
+                    "absolute_path": str(skill.path),
+                    "kind": "main",
+                }
+            ]
+        for path in sorted(bundle_root.rglob("*")):
+            if not path.is_file():
+                continue
+            if any(part.startswith(".") for part in path.relative_to(bundle_root).parts):
+                continue
+            relative_path = str(path.relative_to(bundle_root))
+            files.append(
+                {
+                    "relative_path": relative_path,
+                    "absolute_path": str(path),
+                    "kind": self._skill_file_kind(relative_path),
+                }
+            )
+            if len(files) >= limit:
+                break
+        return files
+
+    def _resolve_skill_file(self, skill: Skill, file_path: str) -> tuple[Path, str]:
+        normalized = file_path.strip().replace("\\", "/")
+        if not normalized:
+            raise ValueError("file_path cannot be empty.")
+        bundle_root = self._bundle_root(skill)
+        available = [item["relative_path"] for item in self._list_skill_files(skill)]
+        if skill.path.name != "SKILL.md":
+            if normalized not in {skill.path.name, str(skill.path)}:
+                raise ValueError("Non-bundle skill only supports `%s`." % skill.path.name)
+            return skill.path, skill.path.name
+        resolved = (bundle_root / normalized).resolve()
+        try:
+            resolved.relative_to(bundle_root.resolve())
+        except ValueError as exc:
+            raise ValueError("file_path must stay inside the skill bundle.") from exc
+        if not resolved.exists() or not resolved.is_file():
+            suggestion = difflib.get_close_matches(normalized, available, n=1, cutoff=0.45)
+            if suggestion:
+                raise ValueError("Skill file not found: %s. Did you mean `%s`?" % (normalized, suggestion[0]))
+            raise ValueError("Skill file not found: %s" % normalized)
+        return resolved, str(resolved.relative_to(bundle_root))
+
+    def _skill_file_kind(self, relative_path: str) -> str:
+        normalized = relative_path.replace("\\", "/")
+        if "/" not in normalized:
+            return "main"
+        return normalized.split("/", 1)[0]
+
+    def _root_for_pack(self, pack_slug: str) -> Path:
+        if pack_slug == "user":
+            return self.user_dir
+        if pack_slug == "project":
+            return self.project_dir
+        if pack_slug == "core":
+            return self.builtin_dir
+        return self.builtin_dir / pack_slug
+
     def _directory_signature(self) -> tuple[str, list[tuple[str, Path]]]:
         file_entries: list[tuple[str, Path]] = []
         signature_parts: list[str] = []
@@ -838,6 +1205,22 @@ class SkillLoader:
     def _skill_from_dict(self, payload: dict[str, Any]) -> Skill:
         payload = dict(payload)
         payload["path"] = Path(str(payload.get("path", "")))
+        source = str(payload.get("source", "") or "")
+        inferred_pack = self._infer_hub_pack(str(payload.get("source", "") or ""), payload["path"])
+        pack_meta = _SKILL_HUB_PACKS.get(inferred_pack, _SKILL_HUB_PACKS["core"])
+        fallback_from_disk = None
+        needs_disk_refresh = (
+            "author" not in payload
+            or "license" not in payload
+            or "compatibility" not in payload
+            or "upstream_url" not in payload
+            or "audit_status" not in payload
+        )
+        if needs_disk_refresh and payload["path"].exists():
+            try:
+                fallback_from_disk = self._load_path(payload["path"], source)
+            except Exception:
+                fallback_from_disk = None
         payload.setdefault("triggers", [])
         payload.setdefault("tools", [])
         payload.setdefault("arguments", [])
@@ -859,6 +1242,14 @@ class SkillLoader:
         payload.setdefault("archived_at", "")
         payload.setdefault("archive_reason", "")
         payload.setdefault("superseded_by", "")
+        payload.setdefault("author", getattr(fallback_from_disk, "author", ""))
+        payload.setdefault("license", getattr(fallback_from_disk, "license", ""))
+        payload.setdefault("compatibility", list(getattr(fallback_from_disk, "compatibility", [])))
+        payload.setdefault("hub_pack", inferred_pack)
+        payload.setdefault("trust_level", pack_meta["trust_level"])
+        payload.setdefault("upstream_url", getattr(fallback_from_disk, "upstream_url", pack_meta["source_url"]))
+        payload.setdefault("audit_status", getattr(fallback_from_disk, "audit_status", pack_meta["audit_status"]))
+        payload.setdefault("bundle_root", getattr(fallback_from_disk, "bundle_root", ""))
         readiness, missing_requirements = _evaluate_readiness(
             platforms=list(payload.get("platforms", []) or []),
             requirements=list(payload.get("requirements", []) or []),
@@ -889,8 +1280,11 @@ class SkillLoader:
         }
         requirements = _parse_list(metadata.get("requirements", ""))
         platforms = _parse_list(metadata.get("platforms", ""))
+        compatibility = _parse_list(metadata.get("compatibility", ""))
         setup = metadata.get("setup", "").strip()
         setup_required = metadata.get("setup-required", "").strip().lower() in {"true", "1", "yes"}
+        hub_pack = self._infer_hub_pack(source, path)
+        pack_meta = _SKILL_HUB_PACKS.get(hub_pack, _SKILL_HUB_PACKS["core"])
         readiness, missing_requirements = _evaluate_readiness(
             platforms=platforms,
             requirements=requirements,
@@ -919,6 +1313,13 @@ class SkillLoader:
             readiness=readiness,
             missing_requirements=missing_requirements,
             bundle_root=str(path.parent) if path.name == "SKILL.md" else "",
+            author=metadata.get("author", metadata.get("metadata.skill-author", "")).strip(),
+            license=metadata.get("license", "").strip(),
+            compatibility=compatibility,
+            hub_pack=hub_pack,
+            trust_level=pack_meta["trust_level"],
+            upstream_url=pack_meta["source_url"],
+            audit_status=pack_meta["audit_status"],
         )
 
     def _filtered_skills(self, skills: list[Skill], include_archived: bool) -> list[Skill]:
@@ -982,6 +1383,24 @@ class SkillLoader:
         self._cached_signature = ""
         self._cached_runtime_signature = ""
         self._cached_skills = []
+
+    def _infer_hub_pack(self, source: str, path: Path) -> str:
+        if source == "user":
+            return "user"
+        if source == "project":
+            return "project"
+        if source != "builtin":
+            return "core"
+        try:
+            relative = path.relative_to(self.builtin_dir)
+        except ValueError:
+            return "core"
+        if not relative.parts:
+            return "core"
+        top_level = relative.parts[0]
+        if top_level in _SKILL_HUB_PACKS:
+            return top_level
+        return "core"
 
     def _archive_root_for_source(self, source: str) -> Path:
         if source == "user":

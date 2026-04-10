@@ -222,6 +222,43 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("plan", buffer.getvalue())
 
+    def test_cli_skill_hub_lists_installed_packs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "skill-hub",
+                        "literature review",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            output = buffer.getvalue()
+            self.assertIn("Skill Hub Packs", output)
+            self.assertIn("scientific", output)
+
+    def test_cli_skill_view_reads_bundle_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "skill-view",
+                        "literature-review",
+                        "scripts/search_databases.py",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            output = buffer.getvalue()
+            self.assertIn("Skill View", output)
+            self.assertIn("scripts/search_databases.py", output)
+
     def test_cli_lists_plugins(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             buffer = io.StringIO()

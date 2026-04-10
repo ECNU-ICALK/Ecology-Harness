@@ -13,11 +13,12 @@ surface, so new skills, MCP servers, and tools can keep accumulating without
 making the core messy. Contributions are very welcome, and we would love help
 from the community to keep improving and expanding the ecology stack together.
 
-Current release: `0.3.0 beta` (`0.3.0b0` package version).
+Current release: `0.3.1 beta` (`0.3.1b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## News
 
+- `2026-04-10`: released `0.3.1 beta`, adding `SkillHub` plus `SkillView(file_path)` progressive bundle inspection, patching legacy skill-snapshot compatibility, and finishing a release audit with unit tests, wheel build checks, and installed-wheel smoke tests.
 - `2026-04-10`: released `0.3.0 beta`, consolidating query-aware retrieval, self-evolution loops, profile-backed memory, trajectory export, and skill-governance controls into a more complete research release.
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
 - `2026-04-09`: upgraded skills and MCP catalogs to query-aware retrieval, using local query rewriting plus BM25 ranking so only relevant skills and MCP servers are injected into the model context.
@@ -89,6 +90,7 @@ EcologyHarness/
 - trajectory export, training-friendlier trajectory compression, replay scoring, and benchmark summary generation
 - built-in markdown skills with readiness/setup metadata and snapshot caching
 - skill governance with usage stats, lifecycle status (`active` / `deprecated` / `archived`), overlap reports, and candidate merge controls
+- skill hub browsing with trust/audit metadata plus `SkillView(file_path)` style progressive bundle inspection
 - curated ecology skill bundles from high-quality upstream repositories
 - vendored scientific research skill bundles for literature, stats, geo, omics, visualization, and lab workflows
 - workflow engineering skills from `obra/superpowers`
@@ -141,6 +143,9 @@ You can inspect them directly:
 
 ```bash
 eh skills
+eh skill-hub "literature review"
+eh skill-view literature-review
+eh skill-view literature-review scripts/search_databases.py
 eh mcp
 ```
 

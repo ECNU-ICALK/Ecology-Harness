@@ -27,6 +27,8 @@ SESSION_COMMAND_LINES = [
     "/cost       show current session activity summary",
     "/tools      list built-in tools",
     "/skills     list available skills",
+    "/skill-hub [query] browse installed skill packs and matching skills",
+    "/skill-view NAME [PATH] inspect a skill or a single file in its bundle",
     "/plugins    list installed plugins",
     "/mcp        list configured MCP servers",
     "/memories   list saved memories",
@@ -63,6 +65,8 @@ SESSION_COMMANDS = {
     "/cost",
     "/tools",
     "/skills",
+    "/skill-hub",
+    "/skill-view",
     "/plugins",
     "/mcp",
     "/memories",
@@ -112,6 +116,8 @@ POSITIONAL_ACTIONS = {
     "sandbox",
     "session",
     "tool",
+    "skill-hub",
+    "skill-view",
 }
 
 
@@ -265,6 +271,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="List available skills.",
     )
     parser.add_argument(
+        "--skill-hub",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="QUERY",
+        help="Browse installed skill packs and optionally search them with a query.",
+    )
+    parser.add_argument(
+        "--view-skill",
+        default="",
+        metavar="NAME",
+        help="Inspect a skill and list bundle files.",
+    )
+    parser.add_argument(
+        "--skill-file",
+        default="",
+        metavar="PATH",
+        help="Optional relative file inside the selected skill bundle.",
+    )
+    parser.add_argument(
         "--list-plugins",
         action="store_true",
         help="List installed plugins.",
@@ -348,6 +374,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _exec_tool(app, parser, renderer, args.exec_tool, args.params, args.json)
     if args.list_skills:
         return _list_skills(app, renderer, args.json)
+    if args.skill_hub is not None:
+        return _skill_hub(app, renderer, args.json, args.skill_hub)
+    if args.view_skill:
+        return _skill_view(app, renderer, args.json, args.view_skill, args.skill_file)
     if args.list_plugins:
         return _list_plugins(app, renderer, args.json)
     if args.list_mcp_servers:
@@ -587,6 +617,90 @@ def _list_skills(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output:
     return 0
 
 
+def _skill_hub(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    query: str = "",
+) -> int:
+    result = app.skill_loader.skill_hub(query=query)
+    if json_output:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
+    if result["packs"]:
+        rows = [
+            [
+                item["slug"],
+                item["trust_level"],
+                item["audit_status"],
+                str(item["skill_count"]),
+                item["description"],
+            ]
+            for item in result["packs"]
+        ]
+        renderer.print_table(
+            "Skill Hub Packs",
+            ["pack", "trust", "audit", "skills", "description"],
+            rows,
+        )
+    if result["skills"]:
+        rows = [
+            [
+                item["slug"],
+                item["hub_pack"],
+                item["status"],
+                item["readiness"],
+                item.get("score", ""),
+                item["description"],
+            ]
+            for item in result["skills"]
+        ]
+        renderer.print_table(
+            "Skill Hub Matches",
+            ["skill", "pack", "status", "ready", "score", "description"],
+            rows,
+        )
+    return 0
+
+
+def _skill_view(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    name: str,
+    file_path: str = "",
+) -> int:
+    try:
+        result = app.skill_loader.view(name, file_path=file_path)
+    except ValueError as exc:
+        renderer.print_notice(str(exc), level="error")
+        return 1
+    if json_output:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
+    skill = result["skill"]
+    selected = result["selected_file"]
+    renderer.section(
+        "Skill View",
+        [
+            "skill: %s" % skill["slug"],
+            "pack: %s" % skill["hub_pack"],
+            "trust: %s" % skill["trust_level"],
+            "status: %s" % skill["status"],
+            "readiness: %s" % skill["readiness"],
+            "file: %s" % selected["relative_path"],
+        ],
+    )
+    if result["available_files"]:
+        renderer.print_table(
+            "Bundle Files",
+            ["relative_path", "kind"],
+            [[item["relative_path"], item["kind"]] for item in result["available_files"][:20]],
+        )
+    renderer.section("Content", result["content"].splitlines() or ["<empty>"])
+    return 0
+
+
 def _list_plugins(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
     result = app.registry.execute(
         "PluginList",
@@ -811,6 +925,14 @@ def _handle_positional_command(
         return _list_tools(app, renderer, json_output)
     if head == "skills":
         return _list_skills(app, renderer, json_output)
+    if head == "skill-hub":
+        return _skill_hub(app, renderer, json_output, " ".join(tail))
+    if head == "skill-view":
+        if not tail:
+            parser.error("`eh skill-view` requires a skill name.")
+        name = tail[0]
+        file_path = " ".join(tail[1:]) if len(tail) > 1 else ""
+        return _skill_view(app, renderer, json_output, name, file_path)
     if head == "plugins":
         return _list_plugins(app, renderer, json_output)
     if head == "mcp":
@@ -943,6 +1065,19 @@ def _handle_repl_command(
         return {"action": "continue"}
     if normalized == "/skills":
         _list_skills(app, renderer, False)
+        return {"action": "continue"}
+    if normalized.startswith("/skill-hub"):
+        query = normalized.split(None, 1)[1] if " " in normalized else ""
+        _skill_hub(app, renderer, False, query)
+        return {"action": "continue"}
+    if normalized.startswith("/skill-view"):
+        parts = normalized.split(None, 2)
+        if len(parts) < 2:
+            renderer.print_notice("Usage: /skill-view <name> [file_path]", level="warn")
+            return {"action": "continue"}
+        name = parts[1]
+        file_path = parts[2] if len(parts) > 2 else ""
+        _skill_view(app, renderer, False, name, file_path)
         return {"action": "continue"}
     if normalized == "/plugins":
         _list_plugins(app, renderer, False)

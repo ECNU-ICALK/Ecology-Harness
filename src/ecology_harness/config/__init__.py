@@ -1,3 +1,3 @@
-from ecology_harness.config.settings import HarnessSettings
+from ecology_harness.config.settings import HarnessSettings, Settings
 
-__all__ = ["HarnessSettings"]
+__all__ = ["HarnessSettings", "Settings"]

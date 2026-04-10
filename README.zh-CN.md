@@ -6,11 +6,12 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 项目希望在保持通用 Harness 内核稳定的同时，把生态领域的扩展面做得越来越丰富，让新的 skills、MCP servers 和 tools 能持续叠加而不把核心运行时搞乱。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.3.0 beta`（包版本为 `0.3.0b0`）。
+当前发布版本是 `0.3.1 beta`（包版本为 `0.3.1b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## News
 
+- `2026-04-10`：发布 `0.3.1 beta`，新增 `SkillHub` 与 `SkillView(file_path)` 渐进式 bundle 查看能力，修补旧 skill snapshot 的兼容问题，并完成一轮交付级审计，包括单元测试、wheel/sdist 打包校验和安装后 smoke test。
 - `2026-04-10`：发布 `0.3.0 beta`，把 query-aware 检索、自进化闭环、profile 化记忆、trajectory 导出和 skill 治理控制整合成了一个更完整的研究型版本。
 - `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
 - `2026-04-09`：把 skill 和 MCP 目录升级成按查询检索注入的模式，采用本地 query 改写与 BM25 排序，只把和当前请求相关的 skills 与 MCP servers 放进模型上下文。
@@ -78,6 +79,7 @@ EcologyHarness/
 - 任务结束后的 post-run review，可提炼 memory candidate 和 skill candidate
 - 带 readiness/setup 元数据和 snapshot cache 的 Markdown skill 系统
 - 带 usage 统计、生命周期状态（`active` / `deprecated` / `archived`）、重叠检测与候选合并控制的 skill 治理层
+- 带 trust/audit 元数据的 skill hub 浏览能力，以及 `SkillView(file_path)` 风格的 bundle 渐进查看
 - trajectory 导出、面向训练资产的压缩、replay scoring 与 benchmark 汇总能力
 - MCP 与 plugin 扩展骨架
 - 来自高质量上游仓库的生态技能包
@@ -139,6 +141,9 @@ EcologyHarness/
 
 ```bash
 eh skills
+eh skill-hub "literature review"
+eh skill-view literature-review
+eh skill-view literature-review scripts/search_databases.py
 eh mcp
 ```
 

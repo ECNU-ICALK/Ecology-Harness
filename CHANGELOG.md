@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 beta - 2026-04-10
+
+- added `SkillHub` pack browsing and `SkillView(file_path)` progressive bundle inspection for large installed skill packs
+- hardened compatibility for legacy skill snapshots so newly added hub metadata is rehydrated instead of silently degrading to generic core entries
+- added public API compatibility helpers with `Settings` alias support and `SkillLoader.from_settings()` for external scripts and downstream integrations
+- completed a release audit covering unit tests, wheel/sdist builds, twine metadata validation, and installed-wheel smoke checks
+
 ## 0.3.0 beta - 2026-04-10
 
 - promoted the project to a substantially more complete beta focused on ecology-first research operations

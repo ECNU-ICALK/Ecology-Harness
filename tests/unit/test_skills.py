@@ -2,13 +2,27 @@ import tempfile
 import unittest
 from pathlib import Path
 import os
+import json
 
 from ecology_harness.app import EcologyHarnessApp
-from ecology_harness.config import HarnessSettings
+from ecology_harness.config import HarnessSettings, Settings
+from ecology_harness.skills import SkillLoader
 from ecology_harness.runtime.messages import ChatMessage
 
 
 class SkillTests(unittest.TestCase):
+    def test_public_settings_alias_and_skill_loader_factory_work(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = Settings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            loader = SkillLoader.from_settings(settings)
+
+            self.assertIsInstance(settings, HarnessSettings)
+            self.assertEqual(loader.project_dir, settings.skill_dir)
+            self.assertEqual(loader.user_dir, settings.user_skill_dir)
+            self.assertTrue((loader.builtin_dir / "plan.md").exists())
+
     def test_builtin_skills_are_available(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -301,6 +315,113 @@ class SkillTests(unittest.TestCase):
             self.assertIn("Rewritten query:", result.content)
             self.assertIn("microbial-community-metabolism-simulation", result.content)
             self.assertTrue(result.data["hits"])
+
+    def test_skill_hub_exposes_pack_metadata_and_upstream_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            result = app.registry.execute(
+                "SkillHub",
+                {"query": "systematic literature review citation workflow", "limit": 6},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            scientific = next(item for item in result.data["packs"] if item["slug"] == "scientific")
+            self.assertEqual(scientific["trust_level"], "trusted")
+            self.assertIn("K-Dense-AI/claude-scientific-skills", scientific["source_url"])
+            self.assertTrue(result.data["skills"])
+            self.assertIn("literature-review", [item["slug"] for item in result.data["skills"]])
+
+    def test_skill_view_lists_bundle_files_and_reads_specific_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            overview = app.registry.execute(
+                "SkillView",
+                {"name": "literature-review"},
+                app.settings,
+                services=app.get_services(),
+            )
+            available = [item["relative_path"] for item in overview.data["available_files"]]
+            self.assertIn("scripts/search_databases.py", available)
+            self.assertIn("references/database_strategies.md", available)
+
+            detail = app.registry.execute(
+                "SkillView",
+                {"name": "literature-review", "file_path": "scripts/search_databases.py"},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertEqual(
+                detail.data["selected_file"]["relative_path"],
+                "scripts/search_databases.py",
+            )
+            self.assertIn("search", detail.content.lower())
+
+    def test_skill_view_blocks_path_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            with self.assertRaisesRegex(Exception, "inside the skill bundle"):
+                app.registry.execute(
+                    "SkillView",
+                    {"name": "literature-review", "file_path": "../README.md"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+    def test_old_skill_snapshot_is_rehydrated_for_hub_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill_path = app.skill_loader.builtin_dir / "scientific" / "literature-review" / "SKILL.md"
+            snapshot_path = app.settings.skill_dir / ".skill-snapshot.json"
+            snapshot_path.write_text(
+                json.dumps(
+                    {
+                        "signature": app.skill_loader._directory_signature()[0],
+                        "skills": [
+                            {
+                                "slug": "literature-review",
+                                "name": "literature-review",
+                                "description": "legacy snapshot entry",
+                                "source": "builtin",
+                                "content": "legacy body",
+                                "path": str(skill_path),
+                                "triggers": ["/literature-review"],
+                                "tools": [],
+                                "arguments": [],
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            app.skill_loader._mark_cache_dirty()
+
+            skill = app.skill_loader.get("literature-review")
+            self.assertIsNotNone(skill)
+            self.assertEqual(skill.hub_pack, "scientific")
+            self.assertEqual(skill.author, "K-Dense Inc.")
+            self.assertIn("MIT", skill.license)
 
     def test_skill_readiness_and_cache_refresh_with_env_requirements(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

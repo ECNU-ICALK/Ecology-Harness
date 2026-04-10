@@ -52,17 +52,28 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
         if value == "":
             probe = index + 1
             list_items: list[str] = []
+            nested_pairs: dict[str, str] = {}
             while probe < len(lines):
                 current = lines[probe]
                 stripped = current.strip()
                 if current.startswith(" ") or current.startswith("\t"):
                     if stripped.startswith("- "):
                         list_items.append(stripped[2:].strip())
+                    elif ":" in stripped:
+                        nested_key, nested_value = stripped.split(":", 1)
+                        nested_key = nested_key.strip()
+                        nested_value = nested_value.strip()
+                        if nested_key and nested_value:
+                            nested_pairs["%s.%s" % (key, nested_key)] = nested_value
                     probe += 1
                     continue
                 break
             if list_items:
                 metadata[key] = "[%s]" % ", ".join(list_items)
+                index = probe
+                continue
+            if nested_pairs:
+                metadata.update(nested_pairs)
                 index = probe
                 continue
 

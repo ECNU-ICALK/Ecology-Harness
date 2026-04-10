@@ -66,6 +66,41 @@ def register_skill_tools(registry: ToolRegistry) -> None:
     )
     registry.register(
         ToolDefinition(
+            name="SkillHub",
+            description="Browse installed skill packs and optionally search packs and skills without loading full bundle contents.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer"},
+                    "scope": {"type": "string"},
+                },
+            },
+            handler=_skill_hub,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="SkillView",
+            description="Inspect a skill and progressively load a specific file from its bundle.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "file_path": {"type": "string"},
+                    "max_chars": {"type": "integer"},
+                },
+                "required": ["name"],
+            },
+            handler=_skill_view,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
+    registry.register(
+        ToolDefinition(
             name="SkillGovernanceReport",
             description="Summarize skill usage, stale skills, overlap candidates, and setup-needed items.",
             input_schema={
@@ -167,6 +202,61 @@ def _skill_search(params: dict, context: ToolContext) -> ToolResult:
     ]
     header = "Rewritten query: %s" % report.rewrite.rewritten_query
     return ToolResult(content=header + "\n" + "\n".join(lines), data=report.to_dict())
+
+
+def _skill_hub(params: dict, context: ToolContext) -> ToolResult:
+    loader = _loader(context)
+    result = loader.skill_hub(
+        query=str(params.get("query", "") or ""),
+        limit=max(int(params.get("limit", 10) or 10), 1),
+        scope=str(params.get("scope", "all") or "all"),
+    )
+    lines: list[str] = []
+    if result["packs"]:
+        lines.append("packs:")
+        lines.extend(
+            "- %(slug)s (%(trust_level)s, %(skill_count)s skills): %(description)s" % item
+            for item in result["packs"]
+        )
+    if result["skills"]:
+        lines.append("skills:")
+        for item in result["skills"]:
+            line = "- %(slug)s [%(hub_pack)s/%(status)s/%(readiness)s]: %(description)s" % item
+            if "score" in item:
+                line = "- %(slug)s [score=%(score)s %(hub_pack)s/%(status)s/%(readiness)s]: %(description)s" % item
+            lines.append(line)
+    if not lines:
+        lines.append("No skill hub entries found.")
+    return ToolResult(content="\n".join(lines), data=result)
+
+
+def _skill_view(params: dict, context: ToolContext) -> ToolResult:
+    loader = _loader(context)
+    max_chars = max(int(params.get("max_chars", 6000) or 6000), 256)
+    try:
+        result = loader.view(
+            params["name"],
+            file_path=str(params.get("file_path", "") or ""),
+            max_chars=max_chars,
+        )
+    except ValueError as exc:
+        raise ToolError(str(exc)) from exc
+    skill = result["skill"]
+    selected = result["selected_file"]
+    header = [
+        "skill=%s pack=%s trust=%s status=%s readiness=%s"
+        % (
+            skill["slug"],
+            skill["hub_pack"],
+            skill["trust_level"],
+            skill["status"],
+            skill["readiness"],
+        ),
+        "file=%s kind=%s" % (selected["relative_path"], selected["kind"]),
+    ]
+    if result["truncated"]:
+        header.append("content was truncated for display")
+    return ToolResult(content="\n".join(header) + "\n\n" + result["content"], data=result)
 
 
 def _skill_execute(params: dict, context: ToolContext) -> ToolResult:
