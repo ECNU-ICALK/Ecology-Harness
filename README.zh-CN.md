@@ -6,7 +6,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 项目希望在保持通用 Harness 内核稳定的同时，把生态领域的扩展面做得越来越丰富，让新的 skills、MCP servers 和 tools 能持续叠加而不把核心运行时搞乱。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.3.1 beta`（包版本为 `0.3.1b0`）。
+当前发布版本是 `0.4.1 beta`（包版本为 `0.4.1b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 阅读导航
@@ -32,6 +32,8 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
+- `2026-04-10`：发布 `0.4.1 beta`，加入了更像 OpenClaw 的 workspace bootstrap context files、轻量 heartbeat、更多 plugin 生命周期 hooks，以及对外部浏览器内容“默认不可信”的安全处理。
+- `2026-04-10`：发布 `0.4.0 beta`，新增 provider 路由与 fallback、session 标题和 SQLite 索引、checkpoint、profile、automation、最小 API server、browser/code execution 工具，以及更完整的 skill 治理能力。
 - `2026-04-10`：发布 `0.3.1 beta`，新增 `SkillHub` 与 `SkillView(file_path)` 渐进式 bundle 查看能力，修补旧 skill snapshot 的兼容问题，并完成一轮交付级审计，包括单元测试、wheel/sdist 打包校验和安装后 smoke test。
 - `2026-04-10`：发布 `0.3.0 beta`，把 query-aware 检索、自进化闭环、profile 化记忆、trajectory 导出和 skill 治理控制整合成了一个更完整的研究型版本。
 - `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
@@ -50,6 +52,7 @@ EcologyHarness/
 ├── scripts/                  # 本地安装辅助脚本
 ├── src/ecology_harness/
 │   ├── agents/               # 多智能体协同与任务状态
+│   ├── automation/           # 轻量定时任务与重复工作流元数据
 │   ├── config/               # 设置与运行时配置
 │   ├── ecology/              # 生态领域 catalog 与扩展入口
 │   ├── evaluation/           # Trajectory 导出、压缩与 benchmark 汇总
@@ -58,8 +61,10 @@ EcologyHarness/
 │   ├── memory/               # 持久记忆管理
 │   ├── permissions/          # 权限策略与安全检查
 │   ├── plugins/              # 内置 plugin manifest 与加载器
+│   ├── profiles/             # 工作模式 profile 与 profile 上下文
 │   ├── runtime/              # Agent loop、provider、session、压缩
 │   ├── sandbox/              # 文件、shell、网络 sandbox 辅助层
+│   ├── server/               # 最小 OpenAI 兼容 API 服务层
 │   ├── skills/               # 内置 skills，包括 ecology、scientific、workflow、writing 与 AI research packs
 │   ├── tasks/                # 用户任务与 agent 任务追踪
 │   ├── tools/                # 内置 CLI / runtime 工具
@@ -84,6 +89,8 @@ EcologyHarness/
 - 会话持久化、恢复与上下文压缩
 - 基于 query rewrite 和 BM25 的历史 session 检索与召回
 - 可配置 Sandbox、权限策略与审计
+- 支持自动读取 `STANDING_ORDERS.md`、`AGENTS.md`、`BOOTSTRAP.md`、`HEARTBEAT.md` 等 workspace bootstrap 上下文文件
+- 基于工作区 `HEARTBEAT.md` 的轻量 heartbeat 查看与执行能力
 - 工具注册系统与内置通用工具
 - 支持本地图片、音频、文档与视频抽帧附件的多模态输入
 - 内置文档分析工具，可处理 `pdf`、`docx`、`md`、`csv`、`json`、`html`、`ipynb`
@@ -103,6 +110,8 @@ EcologyHarness/
 - 来自 `Orchestra-Research/AI-Research-SKILLs` 的 AI 研究技能树，覆盖训练、评测、推理、MLOps、多模态与论文写作
 - 面向农业、环境、生态场景的 MCP 目录
 - 封闭藻类系统 / 光生物反应器 skills 与实验分析型 MCP 目录
+- 覆盖 session、run、compaction 和 error 阶段的更完整 plugin lifecycle hooks
+- 对 browser/web 抓取内容默认按“不可信外部输入”处理
 - 标准库 `unittest` 测试集
 
 ## 已安装 Skill Packs
@@ -563,9 +572,20 @@ eh --provider ollama --model ollama/qwen2.5-coder prompt "Inspect the workspace.
 - `Bash`
 - `WebFetch`
 - `WebSearch`
+- `BrowserFetch`
+- `BrowserAction`
+- `ExecuteCode`
 - `GetDiagnostics`
 - `NotebookEdit`
 - `SandboxStatus`
+- `SessionStats`
+- `CheckpointList`
+- `CheckpointRestore`
+- `ProfileList`
+- `ProfileSelect`
+- `AutomationList`
+- `AutomationCreate`
+- `AutomationRunDue`
 - `Agent`
 - `SendMessage`
 - `CheckAgentResult`
@@ -616,7 +636,10 @@ python3 -m unittest discover -s tests/unit -v
 src/ecology_harness/
   app.py                 # 依赖装配
   cli.py                 # CLI + REPL
-  runtime/               # agent loop, providers, prompt 组装
+  automation/            # 定时任务与重复作业
+  profiles/              # 工作模式 profile
+  runtime/               # agent loop、provider routing、checkpoint、session、prompt 组装
+  server/                # API server 入口
   tools/                 # 工具协议、注册与内置工具
   memory/                # 持久记忆
   skills/                # Markdown skill 系统

@@ -72,6 +72,8 @@ class ManagedSession:
     created_at: str
     updated_at: str
     messages: list[ChatMessage]
+    title: str = ""
+    recap: str = ""
     compaction: SessionCompactionRecord | None = None
     fork: SessionForkRecord | None = None
     version: int = SESSION_VERSION
@@ -82,6 +84,8 @@ class ManagedSession:
             "session_id": self.session_id,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "title": self.title,
+            "recap": self.recap,
             "message_count": len(self.messages),
             "messages": [item.to_dict() for item in self.messages],
         }
@@ -101,6 +105,8 @@ class ManagedSession:
             session_id=str(payload.get("session_id", create_session_id())),
             created_at=str(payload.get("created_at", current_timestamp())),
             updated_at=str(payload.get("updated_at", current_timestamp())),
+            title=str(payload.get("title", "")),
+            recap=str(payload.get("recap", "")),
             messages=messages,
             compaction=(
                 SessionCompactionRecord.from_dict(compaction_payload)
@@ -117,6 +123,8 @@ class ManagedSessionSummary:
     path: Path
     updated_at: str
     message_count: int
+    title: str = ""
+    recap: str = ""
     parent_session_id: str = ""
 
 
@@ -139,6 +147,8 @@ class SessionStore:
             created_at=now,
             updated_at=now,
             messages=[],
+            title="",
+            recap="",
             fork=fork,
         )
 
@@ -147,6 +157,8 @@ class SessionStore:
         session_id: str,
         created_at: str,
         messages: list[ChatMessage],
+        title: str = "",
+        recap: str = "",
         compaction: dict | None = None,
         fork: dict | None = None,
     ) -> ManagedSession:
@@ -155,6 +167,8 @@ class SessionStore:
             created_at=created_at or current_timestamp(),
             updated_at=current_timestamp(),
             messages=list(messages),
+            title=title,
+            recap=recap,
             compaction=(
                 SessionCompactionRecord.from_dict(compaction) if isinstance(compaction, dict) else None
             ),
@@ -193,6 +207,8 @@ class SessionStore:
                     path=path,
                     updated_at=managed.updated_at,
                     message_count=len(managed.messages),
+                    title=managed.title,
+                    recap=managed.recap,
                     parent_session_id=managed.fork.parent_session_id if managed.fork else "",
                 )
             )
@@ -205,6 +221,8 @@ class SessionStore:
                         path=self.latest_path(),
                         updated_at=managed.updated_at,
                         message_count=len(managed.messages),
+                        title=managed.title,
+                        recap=managed.recap,
                         parent_session_id=managed.fork.parent_session_id if managed.fork else "",
                     )
                 )
@@ -212,6 +230,26 @@ class SessionStore:
                 pass
         sessions.sort(key=lambda item: (item.updated_at, item.session_id), reverse=True)
         return sessions
+
+    def stats(self) -> dict[str, object]:
+        sessions = self.list_sessions()
+        total_messages = 0
+        lineage_counts: dict[str, int] = {}
+        newest = sessions[0] if sessions else None
+        for summary in sessions:
+            total_messages += int(summary.message_count)
+            lineage_id = summary.parent_session_id or summary.session_id
+            lineage_counts[lineage_id] = lineage_counts.get(lineage_id, 0) + 1
+        hottest_lineage = ""
+        if lineage_counts:
+            hottest_lineage = sorted(lineage_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        return {
+            "session_count": len(sessions),
+            "message_count": total_messages,
+            "newest_session_id": newest.session_id if newest else "",
+            "newest_title": newest.title if newest else "",
+            "hottest_lineage": hottest_lineage,
+        }
 
     def _resolve_path(self, reference: str) -> Path:
         normalized = (reference or LATEST_SESSION_REFERENCE).strip()

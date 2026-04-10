@@ -7,6 +7,7 @@ from typing import Any
 
 from ecology_harness.runtime.compaction import summarize_messages
 from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.runtime.session_index import SessionIndex
 from ecology_harness.runtime.session_store import ManagedSession, SessionStore
 from ecology_harness.skills.retrieval import SkillQueryRewrite, SkillQueryRewriter, tokenize_text
 
@@ -116,6 +117,7 @@ class SessionSearchHit:
     updated_at: str
     message_count: int
     excerpt: str
+    title: str = ""
     matched_terms: list[str] = field(default_factory=list)
     exact_match: bool = False
     parent_session_id: str = ""
@@ -130,6 +132,7 @@ class SessionSearchHit:
             "updated_at": self.updated_at,
             "message_count": self.message_count,
             "excerpt": self.excerpt,
+            "title": self.title,
             "matched_terms": self.matched_terms,
             "exact_match": self.exact_match,
             "parent_session_id": self.parent_session_id,
@@ -170,10 +173,12 @@ class SessionSearchEngine:
         store: SessionStore,
         history_turns: int = 4,
         max_messages: int = 18,
+        session_index: SessionIndex | None = None,
     ) -> None:
         self.store = store
         self.history_turns = history_turns
         self.max_messages = max_messages
+        self.session_index = session_index
 
     def search(
         self,
@@ -187,6 +192,44 @@ class SessionSearchEngine:
         sessions = self._load_sessions(exclude_session_id=exclude_session_id)
         if not sessions:
             return SessionSearchReport(rewrite=rewrite, hits=[], total_sessions=0)
+        if self.session_index is not None:
+            indexed_hits = self.session_index.search(
+                rewrite.rewritten_query,
+                limit=max(int(limit), 1),
+                exclude_session_id=exclude_session_id,
+            )
+            if indexed_hits:
+                return SessionSearchReport(
+                    rewrite=rewrite,
+                    hits=[
+                        SessionSearchHit(
+                            session_id=item.session_id,
+                            score=item.score,
+                            created_at=item.created_at,
+                            updated_at=item.updated_at,
+                            message_count=item.message_count,
+                            excerpt=item.recap or (item.matches[0].excerpt if item.matches else ""),
+                            title=item.title,
+                            matched_terms=[],
+                            exact_match=False,
+                            parent_session_id=item.parent_session_id,
+                            lineage_id=item.parent_session_id or item.session_id,
+                            message_matches=[
+                                SessionMessageMatch(
+                                    message_index=match.message_index,
+                                    role=match.role,
+                                    score=match.score,
+                                    excerpt=match.excerpt,
+                                    matched_terms=match.matched_terms,
+                                )
+                                for match in item.matches
+                            ],
+                        )
+                        for item in indexed_hits
+                    ],
+                    total_sessions=len(sessions),
+                    fallback_used=False,
+                )
         hits = _SessionRecallRetriever(
             sessions,
             max_messages=self.max_messages,
@@ -225,6 +268,7 @@ class SessionSearchEngine:
                     updated_at=session.updated_at,
                     message_count=len(session.messages),
                     excerpt=_session_preview(session.messages, max_messages=self.max_messages),
+                    title=session.title,
                     matched_terms=[],
                     exact_match=False,
                     parent_session_id=session.fork.parent_session_id if session.fork else "",
@@ -390,6 +434,7 @@ class _SessionRecallRetriever:
                     updated_at=session.updated_at,
                     message_count=len(session.messages),
                     excerpt=summary,
+                    title=session.title,
                     matched_terms=list(dict.fromkeys(session_terms.get(session_index, [])))[:10],
                     exact_match=exact_match,
                     parent_session_id=session.fork.parent_session_id if session.fork else "",

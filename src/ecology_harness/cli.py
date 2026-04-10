@@ -13,6 +13,7 @@ from ecology_harness.config import HarnessSettings
 from ecology_harness.runtime.attachments import inspect_attachment
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.runtime.providers import ProviderError, list_provider_specs
+from ecology_harness.server import run_api_server
 from ecology_harness.tools import ToolError
 from ecology_harness.ui import ConsoleRenderer, create_repl_reader
 
@@ -31,6 +32,10 @@ SESSION_COMMAND_LINES = [
     "/skill-view NAME [PATH] inspect a skill or a single file in its bundle",
     "/plugins    list installed plugins",
     "/mcp        list configured MCP servers",
+    "/profiles   list available work-style profiles",
+    "/heartbeat  show workspace heartbeat status or run `/heartbeat run`",
+    "/automations list recurring automation jobs",
+    "/checkpoints list recent run checkpoints",
     "/memories   list saved memories",
     "/tasks      list tracked tasks",
     "/providers  list configured provider backends",
@@ -69,6 +74,10 @@ SESSION_COMMANDS = {
     "/skill-view",
     "/plugins",
     "/mcp",
+    "/profiles",
+    "/heartbeat",
+    "/automations",
+    "/checkpoints",
     "/memories",
     "/tasks",
     "/providers",
@@ -110,6 +119,10 @@ POSITIONAL_ACTIONS = {
     "skills",
     "plugins",
     "mcp",
+    "profiles",
+    "heartbeat",
+    "automations",
+    "checkpoints",
     "memories",
     "tasks",
     "providers",
@@ -118,6 +131,7 @@ POSITIONAL_ACTIONS = {
     "tool",
     "skill-hub",
     "skill-view",
+    "serve",
 }
 
 
@@ -227,6 +241,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=0,
         help="Maximum seconds to wait for a model provider response. Use 0 to disable the timeout.",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host for `eh serve`.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="Port for `eh serve`.",
     )
     parser.add_argument(
         "-p",
@@ -404,6 +429,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser,
         renderer,
         args.command_args,
+        host=args.host,
+        port=args.port,
         json_output=args.json,
         quiet=args.quiet,
         conversation=resumed_conversation,
@@ -756,6 +783,101 @@ def _list_mcp_servers(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_ou
     return 0
 
 
+def _list_profiles(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
+    result = app.registry.execute(
+        "ProfileList",
+        {},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    rows = [
+        [item["name"], "yes" if item["name"] == result.data["active_profile"] else "no", item["description"]]
+        for item in result.data["profiles"]
+    ]
+    renderer.print_table("Profiles", ["name", "active", "description"], rows)
+    return 0
+
+
+def _heartbeat_status(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    run: bool = False,
+    force: bool = False,
+) -> int:
+    tool_name = "HeartbeatRun" if run else "HeartbeatStatus"
+    params = {"force": force} if run else {}
+    result = app.registry.execute(
+        tool_name,
+        params,
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    if run:
+        renderer.section(
+            "Heartbeat",
+            [
+                result.content,
+                "next_run_at: %s" % result.data.get("next_run_at", ""),
+                "path: %s" % result.data.get("path", ""),
+            ],
+        )
+        return 0
+    renderer.section(
+        "Heartbeat",
+        [
+            "enabled: %s" % result.data.get("enabled", False),
+            "due: %s" % result.data.get("due", False),
+            "last_run_at: %s" % result.data.get("last_run_at", ""),
+            "next_run_at: %s" % result.data.get("next_run_at", ""),
+            "path: %s" % result.data.get("path", ""),
+        ],
+    )
+    return 0
+
+
+def _list_automations(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
+    result = app.registry.execute(
+        "AutomationList",
+        {},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    rows = [
+        [item["job_id"], item["name"], item["schedule"], item["next_run_at"]]
+        for item in result.data["jobs"]
+    ]
+    renderer.print_table("Automations", ["id", "name", "schedule", "next_run_at"], rows)
+    return 0
+
+
+def _list_checkpoints(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
+    result = app.registry.execute(
+        "CheckpointList",
+        {},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    rows = [
+        [item["checkpoint_id"], item["session_id"], item["stage"], item["summary"]]
+        for item in result.data["checkpoints"]
+    ]
+    renderer.print_table("Checkpoints", ["id", "session", "stage", "summary"], rows)
+    return 0
+
+
 def _list_memories(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
     items = [item.to_index_dict() for item in app.memory_manager.list_items()]
     if json_output:
@@ -854,6 +976,8 @@ def _handle_positional_command(
     parser: argparse.ArgumentParser,
     renderer: ConsoleRenderer,
     command_args: list[str],
+    host: str,
+    port: int,
     json_output: bool,
     quiet: bool,
     conversation: list[ChatMessage] | None,
@@ -937,6 +1061,16 @@ def _handle_positional_command(
         return _list_plugins(app, renderer, json_output)
     if head == "mcp":
         return _list_mcp_servers(app, renderer, json_output)
+    if head == "profiles":
+        return _list_profiles(app, renderer, json_output)
+    if head == "heartbeat":
+        run = bool(tail and tail[0] == "run")
+        force = bool(run and len(tail) > 1 and tail[1] == "--force")
+        return _heartbeat_status(app, renderer, json_output, run=run, force=force)
+    if head == "automations":
+        return _list_automations(app, renderer, json_output)
+    if head == "checkpoints":
+        return _list_checkpoints(app, renderer, json_output)
     if head == "memories":
         return _list_memories(app, renderer, json_output)
     if head == "tasks":
@@ -947,11 +1081,13 @@ def _handle_positional_command(
         return _sandbox_status(app, renderer, json_output)
     if head == "session":
         if json_output:
+            stats = app.session_stats()
             payload = {
                 "turn_count": _conversation_turn_count(conversation),
                 "conversation_messages": len(conversation or []),
                 "latest_session": str(app.latest_session_path()),
                 "exists": app.latest_session_path().exists(),
+                "stats": stats,
             }
             print(json.dumps(payload, indent=2, ensure_ascii=False))
             return 0
@@ -967,6 +1103,10 @@ def _handle_positional_command(
         tool_name = tail[0]
         raw_params = " ".join(tail[1:]) if len(tail) > 1 else "{}"
         return _exec_tool(app, parser, renderer, tool_name, raw_params, json_output)
+    if head == "serve":
+        renderer.print_notice("Starting API server on %s:%s" % (host, port))
+        run_api_server(app, host=host, port=port)
+        return 0
 
     if head in POSITIONAL_ACTIONS:
         parser.error("Unsupported positional command: %s" % head)
@@ -1084,6 +1224,21 @@ def _handle_repl_command(
         return {"action": "continue"}
     if normalized == "/mcp":
         _list_mcp_servers(app, renderer, False)
+        return {"action": "continue"}
+    if normalized == "/profiles":
+        _list_profiles(app, renderer, False)
+        return {"action": "continue"}
+    if normalized.startswith("/heartbeat"):
+        parts = normalized.split()
+        run = len(parts) > 1 and parts[1] == "run"
+        force = len(parts) > 2 and parts[2] == "--force"
+        _heartbeat_status(app, renderer, False, run=run, force=force)
+        return {"action": "continue"}
+    if normalized == "/automations":
+        _list_automations(app, renderer, False)
+        return {"action": "continue"}
+    if normalized == "/checkpoints":
+        _list_checkpoints(app, renderer, False)
         return {"action": "continue"}
     if normalized == "/memories":
         _list_memories(app, renderer, False)

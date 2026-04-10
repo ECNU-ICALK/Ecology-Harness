@@ -21,8 +21,11 @@ from ecology_harness.permissions import PermissionPolicy
 from ecology_harness.plugins import PluginManager
 from ecology_harness.runtime import AgentLoop
 from ecology_harness.runtime import ChatMessage
+from ecology_harness.runtime.checkpoints import CheckpointManager
 from ecology_harness.runtime.prompt_builder import PromptBuilder
 from ecology_harness.runtime.providers import ProviderError, create_provider
+from ecology_harness.runtime.provider_router import resolve_slot_settings
+from ecology_harness.runtime.session_index import SessionIndex
 from ecology_harness.runtime.session_search import SessionSearchEngine
 from ecology_harness.runtime.session_store import SessionForkRecord, SessionStore
 from ecology_harness.sandbox import SandboxPolicy
@@ -30,6 +33,8 @@ from ecology_harness.skills import SkillLoader, execute_skill
 from ecology_harness.tasks import TaskStore
 from ecology_harness.tools import ToolRegistry
 from ecology_harness.tools.builtin import register_builtin_tools
+from ecology_harness.profiles import ProfileManager
+from ecology_harness.automation import AutomationManager
 
 
 class EcologyHarnessApp:
@@ -49,10 +54,14 @@ class EcologyHarnessApp:
         self.mcp_registry: McpServerRegistry | None = None
         self.sandbox: SandboxPolicy | None = None
         self.session_store: SessionStore | None = None
+        self.session_index: SessionIndex | None = None
         self.session_search_engine: SessionSearchEngine | None = None
         self.review_manager: ReviewManager | None = None
         self.trajectory_store: TrajectoryStore | None = None
         self.benchmark_runner: BenchmarkRunner | None = None
+        self.checkpoint_manager: CheckpointManager | None = None
+        self.profile_manager: ProfileManager | None = None
+        self.automation_manager: AutomationManager | None = None
         self._active_session_id = ""
         self._active_session_created_at = ""
         self._active_fork: SessionForkRecord | None = None
@@ -99,11 +108,14 @@ class EcologyHarnessApp:
         self.subagent_manager = SubAgentManager(self)
         self.sandbox = SandboxPolicy(self.settings)
         self.session_store = SessionStore(self.settings.session_dir)
+        self.session_index = SessionIndex(self.settings.session_index_path)
         self.session_search_engine = SessionSearchEngine(
             self.session_store,
             history_turns=self.settings.session_retrieval_history_turns,
             max_messages=self.settings.session_search_max_messages,
+            session_index=self.session_index,
         )
+        self._rehydrate_session_index()
         self.review_manager = ReviewManager(
             review_dir=self.settings.review_dir,
             candidate_dir=self.settings.review_candidate_dir,
@@ -113,6 +125,10 @@ class EcologyHarnessApp:
             self.trajectory_store,
             output_dir=self.settings.benchmark_dir,
         )
+        self.checkpoint_manager = CheckpointManager(self.settings.checkpoint_dir)
+        self.profile_manager = ProfileManager(self.settings.profile_dir, active_profile=self.settings.active_profile)
+        self.settings.active_profile = self.profile_manager.get_active().name
+        self.automation_manager = AutomationManager(self.settings.automation_dir)
         project_profile = MarkdownProfileProvider(
             name="project-profile",
             path=self.settings.profile_dir / "project-profile.md",
@@ -178,8 +194,13 @@ class EcologyHarnessApp:
             conversation=conversation,
             limit=active_settings.memory_provider_prompt_top_k,
         )
-        if provider_context:
-            memory_context = "%s\n\n%s" % (memory_context, provider_context) if memory_context else provider_context
+        profile_context = self.profile_manager.build_context() if self.profile_manager is not None else ""
+        if profile_context:
+            provider_context = (
+                "%s\n\n%s" % (provider_context, profile_context)
+                if provider_context
+                else profile_context
+            )
         session_report = self.session_search_engine.select_for_prompt(  # type: ignore[union-attr]
             query=prompt_text,
             conversation=conversation,
@@ -198,6 +219,11 @@ class EcologyHarnessApp:
             mcp_retrieval=mcp_report.to_prompt_dict(),
             session_index=[item.to_index_dict() for item in session_report.hits],
             session_retrieval=session_report.to_prompt_dict(),
+            active_profile=(self.profile_manager.get_active().to_dict() if self.profile_manager is not None else None),
+            context_pressure={
+                "warn_ratio": active_settings.context_pressure_warn_ratio,
+                "critical_ratio": active_settings.context_pressure_critical_ratio,
+            },
             runtime_mode=self.runtime_mode,
         )
 
@@ -255,64 +281,110 @@ class EcologyHarnessApp:
     ):
         self._ensure_initialized()
         active_settings = settings or self.settings
-        skill = self.skill_loader.find_by_trigger(prompt)  # type: ignore[union-attr]
-        if skill is not None:
-            trigger = prompt.strip().split(" ", 1)[0]
-            args = prompt.strip()[len(trigger) :].strip()
-            self.skill_loader.record_usage(  # type: ignore[union-attr]
-                skill,
-                query=prompt,
-                mode="trigger",
-                session_id=self._active_session_id,
-            )
-            result = execute_skill(
-                self,
-                skill,
-                args,
-                depth=0,
-                event_handler=event_handler,
-                conversation=conversation,
-                attachment_paths=attachment_paths,
-            )
-            if getattr(result, "messages", None):
-                compactions = getattr(result, "compactions", [])
-                self.save_session(
-                    result.messages,
-                    compaction=compactions[-1] if compactions else None,
+        self.run_plugin_hooks(
+            "PreRun",
+            {
+                "prompt": prompt,
+                "provider": provider_name or active_settings.provider,
+                "session_id": self._active_session_id,
+                "attachment_paths": list(attachment_paths or []),
+                "runtime_mode": self.runtime_mode,
+            },
+            settings=active_settings,
+        )
+        try:
+            skill = self.skill_loader.find_by_trigger(prompt)  # type: ignore[union-attr]
+            if skill is not None:
+                trigger = prompt.strip().split(" ", 1)[0]
+                args = prompt.strip()[len(trigger) :].strip()
+                self.skill_loader.record_usage(  # type: ignore[union-attr]
+                    skill,
+                    query=prompt,
+                    mode="trigger",
+                    session_id=self._active_session_id,
                 )
-                self._post_run_artifacts(
-                    prompt=prompt,
-                    result=result,
+                result = execute_skill(
+                    self,
+                    skill,
+                    args,
+                    depth=0,
+                    event_handler=event_handler,
+                    conversation=conversation,
                     attachment_paths=attachment_paths,
                 )
-            return result
-        runner = self.create_agent_loop(
-            provider_name,
-            allowed_tools=allowed_tools,
-            settings=active_settings,
-        )
-        result = runner.run(
-            prompt=prompt,
-            settings=active_settings,
-            system_prompt=self.build_system_prompt(
+                if getattr(result, "messages", None):
+                    compactions = getattr(result, "compactions", [])
+                    self.save_session(
+                        result.messages,
+                        compaction=compactions[-1] if compactions else None,
+                    )
+                    self._post_run_artifacts(
+                        prompt=prompt,
+                        result=result,
+                        attachment_paths=attachment_paths,
+                    )
+                self.run_plugin_hooks(
+                    "PostRun",
+                    {
+                        "prompt": prompt,
+                        "final_text": getattr(result, "final_text", ""),
+                        "steps": getattr(result, "steps", 0),
+                        "tool_count": len(getattr(result, "tool_invocations", [])),
+                        "session_id": self._active_session_id,
+                    },
+                    settings=active_settings,
+                )
+                return result
+            runner = self.create_agent_loop(
+                provider_name,
+                allowed_tools=allowed_tools,
                 settings=active_settings,
-                prompt_text=prompt,
+            )
+            result = runner.run(
+                prompt=prompt,
+                settings=active_settings,
+                system_prompt=self.build_system_prompt(
+                    settings=active_settings,
+                    prompt_text=prompt,
+                    conversation=conversation,
+                ),
                 conversation=conversation,
-            ),
-            conversation=conversation,
-            attachment_paths=attachment_paths,
-            event_handler=event_handler,
-        )
-        self.save_session(
-            result.messages,
-            compaction=result.compactions[-1] if result.compactions else None,
-        )
-        self._post_run_artifacts(
-            prompt=prompt,
-            result=result,
-            attachment_paths=attachment_paths,
-        )
-        return result
+                attachment_paths=attachment_paths,
+                event_handler=event_handler,
+            )
+            self.save_session(
+                result.messages,
+                compaction=result.compactions[-1] if result.compactions else None,
+            )
+            self._post_run_artifacts(
+                prompt=prompt,
+                result=result,
+                attachment_paths=attachment_paths,
+            )
+            self.run_plugin_hooks(
+                "PostRun",
+                {
+                    "prompt": prompt,
+                    "final_text": result.final_text,
+                    "steps": result.steps,
+                    "tool_count": len(result.tool_invocations),
+                    "session_id": self._active_session_id,
+                },
+                settings=active_settings,
+            )
+            return result
+        except Exception as exc:
+            self.run_plugin_hooks(
+                "OnError",
+                {
+                    "stage": "run_prompt",
+                    "prompt": prompt,
+                    "session_id": self._active_session_id,
+                    "error": str(exc),
+                },
+                settings=active_settings,
+            )
+            raise
 
     def get_services(self, **extra):
         self._ensure_initialized()
@@ -329,9 +401,13 @@ class EcologyHarnessApp:
             "tool_registry": self.registry,
             "session_store": self.session_store,
             "session_search_engine": self.session_search_engine,
+            "session_index": self.session_index,
             "review_manager": self.review_manager,
             "trajectory_store": self.trajectory_store,
             "benchmark_runner": self.benchmark_runner,
+            "checkpoint_manager": self.checkpoint_manager,
+            "profile_manager": self.profile_manager,
+            "automation_manager": self.automation_manager,
         }
         services.update(extra)
         return services
@@ -349,13 +425,19 @@ class EcologyHarnessApp:
         self._ensure_initialized()
         if not self._active_session_id or not self._active_session_created_at:
             self.start_new_session()
-        self.session_store.save(  # type: ignore[union-attr]
+        title = self._derive_session_title(messages)
+        recap = self._derive_session_recap(messages, compaction=compaction)
+        managed = self.session_store.save(  # type: ignore[union-attr]
             session_id=self._active_session_id,
             created_at=self._active_session_created_at,
             messages=messages,
+            title=title,
+            recap=recap,
             compaction=compaction,
             fork=self._active_fork.to_dict() if self._active_fork is not None else None,
         )
+        if self.session_index is not None:
+            self.session_index.index_session(managed)
 
     def load_session(self, name: str = "latest") -> list[ChatMessage]:
         self._ensure_initialized()
@@ -363,6 +445,15 @@ class EcologyHarnessApp:
         self._active_session_id = managed.session_id
         self._active_session_created_at = managed.created_at
         self._active_fork = managed.fork
+        self.run_plugin_hooks(
+            "SessionResume",
+            {
+                "session_id": managed.session_id,
+                "created_at": managed.created_at,
+                "title": managed.title,
+                "message_count": len(managed.messages),
+            },
+        )
         return managed.messages
 
     def latest_session_path(self) -> Path:
@@ -372,6 +463,13 @@ class EcologyHarnessApp:
     def list_sessions(self):
         self._ensure_initialized()
         return self.session_store.list_sessions()  # type: ignore[union-attr]
+
+    def session_stats(self) -> dict[str, object]:
+        self._ensure_initialized()
+        store_stats = self.session_store.stats()  # type: ignore[union-attr]
+        if self.session_index is not None:
+            store_stats["index"] = self.session_index.stats()
+        return store_stats
 
     def search_sessions(
         self,
@@ -409,10 +507,62 @@ class EcologyHarnessApp:
         self._active_session_id = managed.session_id
         self._active_session_created_at = managed.created_at
         self._active_fork = fork
+        self.run_plugin_hooks(
+            "SessionStart",
+            {
+                "session_id": managed.session_id,
+                "created_at": managed.created_at,
+                "fork": fork.to_dict() if fork is not None else None,
+            },
+        )
+
+    def run_plugin_hooks(
+        self,
+        event_name: str,
+        payload: dict,
+        settings: HarnessSettings | None = None,
+    ) -> list[dict]:
+        if self.plugin_manager is None:
+            return []
+        active_settings = settings or self.settings
+        return self.plugin_manager.run_hooks(
+            event_name,
+            payload,
+            workspace_root=active_settings.workspace_root,
+            timeout_sec=active_settings.command_timeout_sec,
+        )
 
     def _ensure_initialized(self) -> None:
         if not self._initialized:
             raise RuntimeError("EcologyHarnessApp must be initialized before use.")
+
+    def _rehydrate_session_index(self) -> None:
+        if self.session_store is None or self.session_index is None:
+            return
+        for summary in self.session_store.list_sessions():
+            try:
+                managed = self.session_store.load(summary.session_id)
+            except Exception:
+                continue
+            changed = False
+            if not managed.title:
+                managed.title = self._derive_session_title(managed.messages)
+                changed = True
+            if not managed.recap:
+                compaction = managed.compaction.to_dict() if managed.compaction is not None else None
+                managed.recap = self._derive_session_recap(managed.messages, compaction=compaction)
+                changed = True
+            if changed:
+                payload = json.dumps(managed.to_dict(), indent=2, ensure_ascii=False)
+                self.session_store.session_path(managed.session_id).write_text(payload, encoding="utf-8")
+                if self.session_store.latest_path().exists():
+                    try:
+                        latest = self.session_store.load("latest")
+                    except Exception:
+                        latest = None
+                    if latest is not None and latest.session_id == managed.session_id:
+                        self.session_store.latest_path().write_text(payload, encoding="utf-8")
+            self.session_index.index_session(managed)
 
     def _post_run_artifacts(
         self,
@@ -512,8 +662,9 @@ class EcologyHarnessApp:
             review_settings.model = configured_model
 
         def _review(payload: dict) -> dict | str | None:
+            slot_settings = resolve_slot_settings(review_settings, "review")
             try:
-                provider = create_provider(review_settings.provider, settings=review_settings)
+                provider = create_provider(slot_settings.provider, settings=slot_settings)
             except (ProviderError, Exception):
                 return None
             system_message = ChatMessage(
@@ -525,9 +676,46 @@ class EcologyHarnessApp:
                 content=json.dumps(payload, ensure_ascii=False, indent=2),
             )
             try:
-                response = provider.complete([system_message, user_message], [], review_settings)
+                response = provider.complete([system_message, user_message], [], slot_settings)
             except Exception:
                 return None
             return response.content
 
         return _review
+
+    def _derive_session_title(self, messages: list[ChatMessage]) -> str:
+        for message in messages:
+            if message.role != "user":
+                continue
+            text = message.summary_text(max_document_chars=180).strip().replace("\n", " ")
+            if not text:
+                continue
+            if len(text) > 72:
+                return text[:69].rstrip() + "..."
+            return text
+        return "Untitled session"
+
+    def _derive_session_recap(self, messages: list[ChatMessage], compaction: dict | None = None) -> str:
+        assistant = ""
+        user = ""
+        for message in reversed(messages):
+            text = message.summary_text(max_document_chars=220).strip().replace("\n", " ")
+            if not text:
+                continue
+            if not assistant and message.role == "assistant":
+                assistant = text
+            elif not user and message.role == "user":
+                user = text
+            if assistant and user:
+                break
+        parts = []
+        if user:
+            parts.append("Latest ask: %s" % user)
+        if assistant:
+            parts.append("Latest outcome: %s" % assistant)
+        if compaction and compaction.get("compressed_summary"):
+            parts.append("Continuation: %s" % str(compaction["compressed_summary"]).strip()[:180])
+        recap = " | ".join(parts).strip()
+        if len(recap) > 320:
+            recap = recap[:317].rstrip() + "..."
+        return recap

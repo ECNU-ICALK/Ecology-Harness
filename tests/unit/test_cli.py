@@ -300,6 +300,25 @@ class CliTests(unittest.TestCase):
             self.assertIn("pubchem", output)
             self.assertIn("cataloged", output)
 
+    def test_cli_heartbeat_reports_workspace_status(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "HEARTBEAT.md").write_text("Check monitoring backlog.\n", encoding="utf-8")
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "heartbeat",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            output = buffer.getvalue()
+            self.assertIn("Heartbeat", output)
+            self.assertIn("enabled: True", output)
+
     def test_repl_supports_status_and_reset_commands(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             buffer = io.StringIO()

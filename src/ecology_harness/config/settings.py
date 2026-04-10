@@ -35,9 +35,15 @@ class HarnessSettings:
     video_frame_sample_count: int = 6
     command_timeout_sec: int = 20
     provider_timeout_sec: int = 0
+    provider_fallbacks: tuple[str, ...] = ()
+    provider_pool_strategy: str = "fill-first"
+    provider_retry_attempts: int = 1
+    provider_retry_backoff_ms: int = 150
     max_agent_loops: int = 0
     max_context_tokens: int = 128_000
     preserve_last_n_turns: int = 6
+    context_pressure_warn_ratio: float = 0.7
+    context_pressure_critical_ratio: float = 0.88
     skill_prompt_top_k: int = 8
     skill_search_default_k: int = 8
     skill_retrieval_history_turns: int = 4
@@ -58,6 +64,7 @@ class HarnessSettings:
     memory_provider_prompt_top_k: int = 3
     memory_provider_search_default_k: int = 5
     trajectory_export_enabled: bool = True
+    checkpoints_enabled: bool = True
     subagent_max_depth: int = 2
     subagent_max_concurrent: int = 4
     memory_index_max_lines: int = 200
@@ -70,6 +77,15 @@ class HarnessSettings:
     sandbox_fail_closed: bool = False
     sandbox_extra_read_roots: tuple[str, ...] = ()
     sandbox_extra_write_roots: tuple[str, ...] = ()
+    execute_code_max_tool_calls: int = 6
+    execute_code_max_output_chars: int = 12_000
+    browser_timeout_sec: int = 20
+    browser_user_agent: str = "EcologyHarness/0.4.1"
+    workspace_bootstrap_max_files: int = 6
+    workspace_bootstrap_max_file_chars: int = 2_400
+    workspace_bootstrap_max_total_chars: int = 8_000
+    heartbeat_interval_minutes: int = 60
+    active_profile: str = "default"
     denied_bash_patterns: tuple[str, ...] = (
         "rm -rf /",
         "shutdown",
@@ -114,6 +130,9 @@ class HarnessSettings:
         self.trajectory_dir.mkdir(parents=True, exist_ok=True)
         self.benchmark_dir.mkdir(parents=True, exist_ok=True)
         self.profile_dir.mkdir(parents=True, exist_ok=True)
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self.automation_dir.mkdir(parents=True, exist_ok=True)
+        self.skill_quarantine_dir.mkdir(parents=True, exist_ok=True)
 
     def resolve_api_key(self) -> str:
         if self.api_key:
@@ -163,6 +182,22 @@ class HarnessSettings:
     @property
     def profile_dir(self) -> Path:
         return self.state_dir / "profiles"
+
+    @property
+    def checkpoint_dir(self) -> Path:
+        return self.state_dir / "checkpoints"
+
+    @property
+    def session_index_path(self) -> Path:
+        return self.session_dir / "session-index.sqlite3"
+
+    @property
+    def automation_dir(self) -> Path:
+        return self.state_dir / "automation"
+
+    @property
+    def skill_quarantine_dir(self) -> Path:
+        return self.skill_dir / ".skill-quarantine"
 
     def resolved_sandbox_read_roots(self) -> list[Path]:
         roots = [

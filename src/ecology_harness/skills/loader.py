@@ -7,7 +7,9 @@ import json
 import os
 from pathlib import Path
 import platform
+import subprocess
 import shutil
+import tempfile
 from typing import Any
 
 from ecology_harness.runtime.messages import ChatMessage
@@ -923,6 +925,144 @@ class SkillLoader:
             "source": skill.source,
         }
 
+    def quarantine_skill(self, slug_or_name: str, reason: str) -> dict[str, Any]:
+        skill = self.get(slug_or_name, include_archived=True)
+        if skill is None:
+            raise ValueError("Skill not found: %s" % slug_or_name)
+        if skill.source not in {"project", "user"}:
+            raise ValueError("Only project or user skills can be quarantined.")
+        governance = self._load_governance()
+        record = governance.setdefault("skills", {}).setdefault(skill.slug, {})
+        original_path = skill.path
+        source_root = self._bundle_root(skill) if skill.path.name == "SKILL.md" else skill.path
+        quarantine_root = self._quarantine_root_for_source(skill.source)
+        quarantine_root.mkdir(parents=True, exist_ok=True)
+        stamp = _utcnow().replace(":", "").replace("-", "")
+        target = quarantine_root / ("%s-%s" % (skill.slug, stamp))
+        if source_root.is_file():
+            target = target.with_suffix(source_root.suffix or ".md")
+        shutil.move(str(source_root), str(target))
+        record["source"] = skill.source
+        record["path"] = str(original_path)
+        record["original_path"] = str(source_root)
+        record["quarantined"] = True
+        record["quarantined_at"] = _utcnow()
+        record["quarantine_reason"] = reason.strip()
+        record["quarantined_path"] = str(target)
+        record["audit_status"] = "quarantined"
+        self._write_governance(governance)
+        self._mark_cache_dirty()
+        return {
+            "slug": skill.slug,
+            "source": skill.source,
+            "quarantined_at": record["quarantined_at"],
+            "quarantine_reason": record["quarantine_reason"],
+            "quarantined_path": record["quarantined_path"],
+        }
+
+    def approve_quarantined_skill(self, slug: str) -> dict[str, Any]:
+        governance = self._load_governance()
+        record = governance.setdefault("skills", {}).get(slugify(slug))
+        if not record or not record.get("quarantined"):
+            raise ValueError("Quarantined skill not found: %s" % slug)
+        quarantined_path = Path(str(record.get("quarantined_path", "") or ""))
+        original_path = Path(str(record.get("original_path", "") or ""))
+        if not quarantined_path.exists():
+            raise ValueError("Quarantined path no longer exists for skill: %s" % slug)
+        original_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(quarantined_path), str(original_path))
+        record["quarantined"] = False
+        record["approved_at"] = _utcnow()
+        record["audit_status"] = "approved"
+        self._write_governance(governance)
+        self._mark_cache_dirty()
+        approved = self.get(slug, include_archived=True)
+        return approved.to_index_dict() if approved is not None else {"slug": slug, "approved_at": record["approved_at"]}
+
+    def audit_skill_hub(
+        self,
+        slug_or_pack: str = "",
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        target = (slug_or_pack or "").strip()
+        skills = self.list_skills(include_archived=True)
+        selected = skills
+        if target:
+            normalized = slugify(target)
+            selected = [
+                item for item in skills if item.slug == normalized or item.hub_pack == normalized or item.name == target
+            ]
+        issues: list[dict[str, Any]] = []
+        for skill in selected:
+            if not skill.description.strip():
+                issues.append({"slug": skill.slug, "level": "warn", "issue": "missing description"})
+            if skill.readiness == "unsupported":
+                issues.append({"slug": skill.slug, "level": "warn", "issue": "unsupported on current platform"})
+            if skill.readiness == "setup-needed":
+                issues.append(
+                    {
+                        "slug": skill.slug,
+                        "level": "info",
+                        "issue": "setup needed: %s" % ", ".join(skill.missing_requirements),
+                    }
+                )
+            if skill.trust_level in {"community", "trusted"} and not skill.upstream_url:
+                issues.append({"slug": skill.slug, "level": "warn", "issue": "missing upstream_url"})
+            if len(skill.content.strip()) < 120:
+                issues.append({"slug": skill.slug, "level": "info", "issue": "very short skill content"})
+        issues.sort(key=lambda item: (item["level"], item["slug"], item["issue"]))
+        return {
+            "target": target,
+            "skill_count": len(selected),
+            "issues": issues[:limit],
+        }
+
+    def install_repo_skills(
+        self,
+        repo_url: str,
+        scope: str = "user",
+        subdir: str = "",
+    ) -> dict[str, Any]:
+        normalized_scope = (scope or "user").strip().lower()
+        if normalized_scope not in {"user", "project"}:
+            raise ValueError("scope must be user or project")
+        destination_root = self.user_dir if normalized_scope == "user" else self.project_dir
+        repo_slug = slugify(repo_url.rstrip("/").split("/")[-1].replace(".git", "")) or "imported-skills"
+        imported: list[dict[str, str]] = []
+        with tempfile.TemporaryDirectory() as tmpdir:
+            clone_root = Path(tmpdir) / "repo"
+            subprocess.run(
+                ["git", "clone", "--depth", "1", repo_url, str(clone_root)],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            scan_root = clone_root / subdir if subdir else clone_root
+            if not scan_root.exists():
+                raise ValueError("subdir does not exist in repo: %s" % subdir)
+            for skill_md in scan_root.rglob("SKILL.md"):
+                source_root = skill_md.parent
+                target_root = destination_root / ("%s-%s" % (repo_slug, slugify(source_root.name)))
+                if target_root.exists():
+                    shutil.rmtree(target_root)
+                shutil.copytree(source_root, target_root)
+                imported.append({"name": source_root.name, "path": str(target_root)})
+        governance = self._load_governance()
+        for item in imported:
+            slug = slugify(item["name"])
+            record = governance.setdefault("skills", {}).setdefault(slug, {})
+            record["source"] = normalized_scope
+            record["path"] = str(Path(item["path"]) / "SKILL.md")
+            record["upstream_url"] = repo_url
+            record["audit_status"] = "imported"
+        self._write_governance(governance)
+        self._mark_cache_dirty()
+        return {
+            "repo_url": repo_url,
+            "scope": normalized_scope,
+            "imported": imported,
+        }
+
     def merge_candidate(
         self,
         title: str,
@@ -1112,6 +1252,10 @@ class SkillLoader:
             ("user", self.user_dir / ".archive"),
             ("project", self.project_dir / ".archive"),
         }
+        quarantine_roots = {
+            ("user", self.user_dir / ".skill-quarantine"),
+            ("project", self.project_dir / ".skill-quarantine"),
+        }
         for source, root in (
             ("builtin", self.builtin_dir),
             ("user", self.user_dir),
@@ -1120,8 +1264,11 @@ class SkillLoader:
             if not root.exists():
                 continue
             excluded_root = dict(archive_roots).get(source)
+            quarantine_root = dict(quarantine_roots).get(source)
             for path in sorted(root.rglob("*.md")):
                 if excluded_root is not None and self._is_relative_to(path, excluded_root):
+                    continue
+                if quarantine_root is not None and self._is_relative_to(path, quarantine_root):
                     continue
                 try:
                     stat = path.stat()
@@ -1348,6 +1495,10 @@ class SkillLoader:
         skill.archived_at = str(record.get("archived_at", "") or "")
         skill.archive_reason = str(record.get("archive_reason", "") or "")
         skill.superseded_by = str(record.get("superseded_by", "") or "")
+        if record.get("upstream_url"):
+            skill.upstream_url = str(record.get("upstream_url", "") or "")
+        if record.get("audit_status"):
+            skill.audit_status = str(record.get("audit_status", "") or "")
         return skill
 
     def _runtime_signature(self, skills: list[Skill]) -> str:
@@ -1406,6 +1557,11 @@ class SkillLoader:
         if source == "user":
             return self.user_dir / ".archive"
         return self.project_dir / ".archive"
+
+    def _quarantine_root_for_source(self, source: str) -> Path:
+        if source == "user":
+            return self.user_dir / ".skill-quarantine"
+        return self.project_dir / ".skill-quarantine"
 
     def _best_merge_target(self, candidate_slug: str, candidate_content: str) -> tuple[Skill | None, float]:
         candidate_skill = Skill(

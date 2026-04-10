@@ -224,6 +224,8 @@ class ConsoleRenderer:
                 "runtime_mode: %s" % getattr(app, "runtime_mode", "default"),
                 "max_agent_loops: %s" % _loop_limit_text(settings.max_agent_loops),
                 "max_context_tokens: %s" % settings.max_context_tokens,
+                "context_pressure_warn_ratio: %s" % settings.context_pressure_warn_ratio,
+                "context_pressure_critical_ratio: %s" % settings.context_pressure_critical_ratio,
                 "max_attachment_bytes: %s" % settings.max_attachment_bytes,
                 "max_document_chars: %s" % settings.max_document_chars,
                 "video_frame_sample_count: %s" % settings.video_frame_sample_count,
@@ -231,10 +233,13 @@ class ConsoleRenderer:
                 self._style("Execution", "accent"),
                 "command_timeout_sec: %s" % settings.command_timeout_sec,
                 "provider_timeout_sec: %s" % settings.provider_timeout_sec,
+                "provider_fallbacks: %s" % (", ".join(settings.provider_fallbacks) or "-"),
+                "provider_pool_strategy: %s" % settings.provider_pool_strategy,
                 "sandbox: %s" % self.sandbox_text(settings),
                 "",
                 self._style("State", "accent"),
                 "session_dir: %s" % settings.session_dir,
+                "checkpoint_dir: %s" % settings.checkpoint_dir,
                 "memory_dir: %s" % settings.memory_dir,
                 "skill_dir: %s" % settings.skill_dir,
                 "plugin_dir: %s" % settings.plugin_dir,
@@ -260,13 +265,19 @@ class ConsoleRenderer:
     def print_session_panel(self, app, conversation_messages: int, turn_count: int) -> None:
         latest_path = app.latest_session_path()
         exists = latest_path.exists()
-        session_count = len(app.list_sessions()) if hasattr(app, "list_sessions") else 0
+        sessions = app.list_sessions() if hasattr(app, "list_sessions") else []
+        session_count = len(sessions)
+        latest = sessions[0] if sessions else None
+        stats = app.session_stats() if hasattr(app, "session_stats") else {}
         lines = [
             "current_turns: %s" % turn_count,
             "conversation_messages: %s" % conversation_messages,
             "latest_session: %s" % latest_path,
             "latest_session_exists: %s" % _bool_text(exists),
             "stored_sessions: %s" % session_count,
+            "latest_title: %s" % (getattr(latest, "title", "") or "-"),
+            "latest_recap: %s" % (getattr(latest, "recap", "") or "-"),
+            "indexed_messages: %s" % (((stats.get("index") or {}).get("indexed_message_count")) if isinstance(stats, dict) else "-"),
             "resume_hint: eh --resume latest",
         ]
         if exists:
@@ -306,6 +317,13 @@ class ConsoleRenderer:
     def format_trace_event(self, kind: str, payload: dict[str, Any]) -> str:
         if kind == "run_started":
             return "%s working..." % self._style("ℹ", "info")
+        if kind == "context_pressure":
+            return "  %scontext pressure %s%% (%s/%s tokens)" % (
+                self._style("⚠ ", "warn"),
+                int(float(payload.get("pressure_ratio", 0.0)) * 100),
+                payload.get("token_estimate", 0),
+                payload.get("max_context_tokens", 0),
+            )
         if kind == "step_started":
             return ""
         if kind == "assistant_message":

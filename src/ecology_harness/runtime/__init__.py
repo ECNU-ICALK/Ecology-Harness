@@ -1,4 +1,5 @@
 from ecology_harness.runtime.agent_loop import AgentLoop, AgentRunResult
+from ecology_harness.runtime.checkpoints import CheckpointManager, CheckpointRecord
 from ecology_harness.runtime.compaction import (
     CompactionConfig,
     CompactionResult,
@@ -28,6 +29,8 @@ from ecology_harness.runtime.providers import (
     list_provider_specs,
     resolve_provider,
 )
+from ecology_harness.runtime.provider_router import ProviderRouteAttempt, RoutedProvider, resolve_slot_settings
+from ecology_harness.runtime.session_index import SessionIndex
 from ecology_harness.runtime.session_search import (
     SessionSearchEngine,
     SessionSearchHit,
@@ -41,6 +44,8 @@ __all__ = [
     "AnthropicProvider",
     "BaseProvider",
     "ChatMessage",
+    "CheckpointManager",
+    "CheckpointRecord",
     "CompactionConfig",
     "CompactionResult",
     "compact_messages",
@@ -59,8 +64,12 @@ __all__ = [
     "OpenAICompatibleProvider",
     "PROVIDERS",
     "ProviderError",
+    "ProviderRouteAttempt",
     "ProviderSpec",
     "resolve_provider",
+    "resolve_slot_settings",
+    "RoutedProvider",
+    "SessionIndex",
     "snip_old_tool_results",
     "summarize_messages",
     "SummaryCompressionBudget",

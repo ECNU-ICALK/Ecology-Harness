@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 from ecology_harness.config import HarnessSettings
 from ecology_harness.runtime.attachments import build_user_message
-from ecology_harness.runtime.compaction import CompactionResult, maybe_compact_messages
+from ecology_harness.runtime.compaction import CompactionResult, estimate_tokens, maybe_compact_messages
 from ecology_harness.runtime.events import Event
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.runtime.providers import BaseProvider
@@ -86,6 +86,15 @@ class AgentLoop:
                 "step_started",
                 step=step,
             )
+            checkpoint_manager = getattr(self.app, "checkpoint_manager", None)
+            if checkpoint_manager is not None and active_settings.checkpoints_enabled:
+                checkpoint_manager.create(
+                    session_id=getattr(self.app, "_active_session_id", ""),
+                    stage="pre_step",
+                    messages=messages,
+                    metadata={"step": step, "depth": depth},
+                    summary="Before provider step %s" % step,
+                )
             memory_provider_manager = getattr(self.app, "memory_provider_manager", None)
             if memory_provider_manager is not None:
                 memory_provider_manager.on_pre_compact(messages)
@@ -109,17 +118,64 @@ class AgentLoop:
                     token_estimate_after=compaction_result.token_estimate_after,
                     compressed_summary=compaction_result.compressed_summary,
                 )
+                self.app.run_plugin_hooks(
+                    "OnCompaction",
+                    {
+                        "step": step,
+                        "depth": depth,
+                        "session_id": getattr(self.app, "_active_session_id", ""),
+                        "removed_message_count": compaction_result.removed_message_count,
+                        "token_estimate_before": compaction_result.token_estimate_before,
+                        "token_estimate_after": compaction_result.token_estimate_after,
+                    },
+                    settings=active_settings,
+                )
             available_tools = self.app.select_available_tools(
                 prompt_text=prompt,
                 conversation=messages,
                 allowed_tools=self.allowed_tools,
                 settings=active_settings,
             )
-            response = self.provider.complete(
-                messages,
-                available_tools,
-                active_settings,
+            token_estimate = estimate_tokens(messages)
+            pressure_ratio = (
+                float(token_estimate) / float(active_settings.max_context_tokens)
+                if active_settings.max_context_tokens
+                else 0.0
             )
+            if pressure_ratio >= active_settings.context_pressure_warn_ratio:
+                _emit_event(
+                    emitted_events,
+                    event_handler,
+                    "context_pressure",
+                    step=step,
+                    token_estimate=token_estimate,
+                    max_context_tokens=active_settings.max_context_tokens,
+                    pressure_ratio=round(pressure_ratio, 4),
+                    level=(
+                        "critical"
+                        if pressure_ratio >= active_settings.context_pressure_critical_ratio
+                        else "warn"
+                    ),
+                )
+            try:
+                response = self.provider.complete(
+                    messages,
+                    available_tools,
+                    active_settings,
+                )
+            except Exception as exc:
+                self.app.run_plugin_hooks(
+                    "OnError",
+                    {
+                        "stage": "provider_complete",
+                        "step": step,
+                        "depth": depth,
+                        "session_id": getattr(self.app, "_active_session_id", ""),
+                        "error": str(exc),
+                    },
+                    settings=active_settings,
+                )
+                raise
             messages.append(
                 ChatMessage(
                     role="assistant",
@@ -145,6 +201,14 @@ class AgentLoop:
                     step=step,
                     final_text=final_text,
                 )
+                if checkpoint_manager is not None and active_settings.checkpoints_enabled:
+                    checkpoint_manager.create(
+                        session_id=getattr(self.app, "_active_session_id", ""),
+                        stage="completed",
+                        messages=messages,
+                        metadata={"step": step, "depth": depth},
+                        summary=final_text[:220],
+                    )
                 return AgentRunResult(
                     final_text=final_text,
                     messages=messages,
@@ -163,6 +227,14 @@ class AgentLoop:
                     tool=tool_call.name,
                     arguments=tool_call.arguments,
                 )
+                if checkpoint_manager is not None and active_settings.checkpoints_enabled:
+                    checkpoint_manager.create(
+                        session_id=getattr(self.app, "_active_session_id", ""),
+                        stage="pre_tool",
+                        messages=messages,
+                        metadata={"step": step, "depth": depth, "tool": tool_call.name},
+                        summary="Before tool %s" % tool_call.name,
+                    )
                 plugin_manager = getattr(self.app, "plugin_manager", None)
                 if plugin_manager is not None:
                     plugin_manager.run_hooks(
@@ -240,6 +312,19 @@ class AgentLoop:
                         )
                         tool_output = result.content
                     except ToolError as exc:
+                        self.app.run_plugin_hooks(
+                            "OnError",
+                            {
+                                "stage": "tool_execute",
+                                "tool": tool_call.name,
+                                "arguments": tool_call.arguments,
+                                "step": step,
+                                "depth": depth,
+                                "session_id": getattr(self.app, "_active_session_id", ""),
+                                "error": str(exc),
+                            },
+                            settings=active_settings,
+                        )
                         tool_output = "Tool error from %s: %s" % (tool_call.name, exc)
 
                 tool_invocations.append(
@@ -292,6 +377,14 @@ class AgentLoop:
                         content=tool_output,
                     )
                 )
+                if checkpoint_manager is not None and active_settings.checkpoints_enabled:
+                    checkpoint_manager.create(
+                        session_id=getattr(self.app, "_active_session_id", ""),
+                        stage="post_tool",
+                        messages=messages,
+                        metadata={"step": step, "depth": depth, "tool": tool_call.name},
+                        summary="After tool %s" % tool_call.name,
+                    )
 
         final_text = (
             "Agent reached max_agent_loops=%s before producing a final answer. "

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.1 beta - 2026-04-10
+
+- added OpenClaw-style workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, `HEARTBEAT.md`, and related operator files so long-lived local guidance is injected without bloating the core prompt
+- added lightweight heartbeat inspection and execution so a workspace can keep periodic maintenance instructions in `HEARTBEAT.md` and run them on demand without inventing a second automation stack
+- expanded plugin lifecycle hooks to cover `SessionStart`, `SessionResume`, `PreRun`, `PostRun`, `OnCompaction`, and `OnError`, turning plugins into a more useful runtime event surface
+- marked browser-fetched content as untrusted external input and tightened prompt guidance so web pages and browser output are treated as analyzable data rather than hidden instructions
+- fixed duplicate profile/provider context injection while preserving active profile guidance in the prompt
+
+## 0.4.0 beta - 2026-04-10
+
+- added provider routing with fallback chains, retry handling, auxiliary model slots, and simple credential-pool strategies so long-running ecology workflows are more resilient to rate limits and flaky upstream providers
+- added session titles, recaps, SQLite-backed session indexing, and stronger session recall fallback behavior for long-lived research threads
+- added checkpoint capture/restore, profile management, lightweight automation scheduling, a minimal OpenAI-compatible API server surface, browser fetch/action tools, and constrained Python code execution hooks
+- expanded skill governance with quarantine/approval flows, repo-based skill import, and hub auditing while keeping query-aware skill and MCP retrieval as the default selection path
+- completed a broader compatibility and packaging audit covering the full unit test suite plus fresh sdist/wheel builds
+
 ## 0.3.1 beta - 2026-04-10
 
 - added `SkillHub` pack browsing and `SkillView(file_path)` progressive bundle inspection for large installed skill packs

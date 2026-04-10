@@ -13,7 +13,7 @@ surface, so new skills, MCP servers, and tools can keep accumulating without
 making the core messy. Contributions are very welcome, and we would love help
 from the community to keep improving and expanding the ecology stack together.
 
-Current release: `0.3.1 beta` (`0.3.1b0` package version).
+Current release: `0.4.1 beta` (`0.4.1b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## Contents
@@ -38,6 +38,8 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-04-10`: released `0.4.1 beta`, adding OpenClaw-inspired workspace bootstrap context files, lightweight heartbeat support, richer plugin lifecycle hooks, and safer handling of external browser content.
+- `2026-04-10`: released `0.4.0 beta`, adding provider routing and fallback, session titles and SQLite-backed indexing, checkpoints, profiles, automation jobs, a minimal API server, browser/code-execution tools, and stronger skill governance.
 - `2026-04-10`: released `0.3.1 beta`, adding `SkillHub` plus `SkillView(file_path)` progressive bundle inspection, patching legacy skill-snapshot compatibility, and finishing a release audit with unit tests, wheel build checks, and installed-wheel smoke tests.
 - `2026-04-10`: released `0.3.0 beta`, consolidating query-aware retrieval, self-evolution loops, profile-backed memory, trajectory export, and skill-governance controls into a more complete research release.
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
@@ -56,6 +58,7 @@ EcologyHarness/
 ├── scripts/                  # Local install helpers
 ├── src/ecology_harness/
 │   ├── agents/               # Multi-agent coordination and task state
+│   ├── automation/           # Lightweight scheduled jobs and recurring task metadata
 │   ├── config/               # Settings and runtime configuration
 │   ├── ecology/              # Ecology catalogs and domain extension surface
 │   ├── evaluation/           # Trajectory export, compression, and benchmark summaries
@@ -64,8 +67,10 @@ EcologyHarness/
 │   ├── memory/               # Persistent memory management
 │   ├── permissions/          # Access policy and safety checks
 │   ├── plugins/              # Bundled plugin manifests and loaders
+│   ├── profiles/             # Work-style profiles and profile context assembly
 │   ├── runtime/              # Agent loop, providers, sessions, compaction
 │   ├── sandbox/              # File, shell, and network sandbox helpers
+│   ├── server/               # Minimal OpenAI-compatible API surface
 │   ├── skills/               # Built-in skills, including ecology, scientific, workflow, writing, and AI research packs
 │   ├── tasks/                # User and agent task tracking
 │   ├── tools/                # Built-in CLI/runtime tools
@@ -91,6 +96,8 @@ EcologyHarness/
 - query-aware historical session recall with rewritten queries and BM25 ranking
 - context compaction with continuation summaries for long conversations
 - configurable sandbox policy for file, shell, and network boundaries
+- workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, `HEARTBEAT.md`, and related operator files
+- lightweight heartbeat inspection and execution driven by workspace `HEARTBEAT.md`
 - tool registry with typed metadata and validation
 - built-in file, shell, web, memory, skill, task, and subagent tools
 - multimodal prompt attachments for local images, audio, documents, and sampled video frames
@@ -111,6 +118,8 @@ EcologyHarness/
 - broad AI research skill bundles for model training, evaluation, serving, multimodal work, MLOps, and paper writing
 - curated agriculture/environment/ecology MCP server catalog
 - closed-algae-system and photobioreactor skills plus lab-analysis MCP catalog entries
+- richer plugin lifecycle hooks across session, run, compaction, and error phases
+- safer browser/web handling that marks external content as untrusted input by default
 - permission policy for read-only and workspace-write modes
 - unit test suite built on the standard library
 
@@ -747,9 +756,20 @@ eh \
 - `Bash`
 - `WebFetch`
 - `WebSearch`
+- `BrowserFetch`
+- `BrowserAction`
+- `ExecuteCode`
 - `GetDiagnostics`
 - `NotebookEdit`
 - `SandboxStatus`
+- `SessionStats`
+- `CheckpointList`
+- `CheckpointRestore`
+- `ProfileList`
+- `ProfileSelect`
+- `AutomationList`
+- `AutomationCreate`
+- `AutomationRunDue`
 - `Agent`
 - `SendMessage`
 - `CheckAgentResult`
@@ -829,17 +849,25 @@ python3 -m ecology_harness sandbox
 - Memory:
   user-level and project-level memory scopes, per-memory markdown files, automatic `MEMORY.md` regeneration, manifest scanning, freshness warnings, and prompt-aware relevance ranking.
 - Sessions and compaction:
-  managed session snapshots with resume support, compaction metadata, continuation summaries, and compressed long-context bridges.
+  managed session snapshots with resume support, session titles, recaps, SQLite-backed indexing, compaction metadata, continuation summaries, and compressed long-context bridges.
+- Provider routing:
+  retry-aware provider fallback chains, simple credential-pool strategies, and separate routing slots for main, review, compression, and recall workloads.
 - Agents:
   built-in specialized agent types (`coder`, `reviewer`, `researcher`, `tester`, `planner`, `coordinator`, `general-purpose`), dependency-aware coordination, follow-up messaging, structured delegation briefs, and optional git worktree isolation.
 - Skills:
   markdown skills with triggers, argument substitution, tool restrictions, and inline or forked execution contexts.
+- Skill governance:
+  readiness/setup metadata, cache snapshots, usage telemetry, overlap detection, quarantine/approval controls, and progressive hub/file inspection.
 - Default skills:
   `commit`, `test`, `fix`, `implement`, `simplify`, `explain`, `plan`, `review`, `debug`, `summarize`.
 - Tasks:
   sequential task IDs, structured status, owner, metadata, and `blocks` / `blocked_by` dependency edges.
 - Context:
-  system prompt assembly includes environment info, git context, `CLAUDE.md`, available skills/agents, and durable memory context.
+  system prompt assembly includes environment info, git context, `CLAUDE.md`, query-retrieved skills/MCP servers, active profiles, session recall, and durable memory context.
+- Checkpoints and automation:
+  lightweight run checkpoints, restore support, and simple recurring automation jobs for repeatable research tasks.
+- API and execution surface:
+  a minimal OpenAI-compatible API server, browser fetch/action helpers, and constrained Python code execution for controlled programmatic workflows.
 - Sandbox:
   internal sandbox policy guards workspace file access, shell execution roots, and optional network access; macOS `sandbox-exec` backend can be requested when available.
 
@@ -859,7 +887,10 @@ python3 -m unittest discover -s tests/unit -v
 src/ecology_harness/
   app.py                 # dependency wiring
   cli.py                 # CLI + REPL
-  runtime/               # agent loop, providers, prompt assembly
+  automation/            # recurring jobs
+  profiles/              # profile management
+  runtime/               # agent loop, provider routing, checkpoints, sessions, prompt assembly
+  server/                # API server entrypoints
   tools/                 # tool contracts, registry, built-ins
   memory/                # persistent memory store
   skills/                # markdown skill loading

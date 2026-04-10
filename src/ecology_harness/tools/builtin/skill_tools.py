@@ -151,6 +151,71 @@ def register_skill_tools(registry: ToolRegistry) -> None:
             concurrent_safe=False,
         )
     )
+    registry.register(
+        ToolDefinition(
+            name="SkillHubAudit",
+            description="Audit a skill or skill pack for missing metadata, readiness issues, and provenance gaps.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string"},
+                    "limit": {"type": "integer"},
+                },
+            },
+            handler=_skill_hub_audit,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="SkillQuarantine",
+            description="Quarantine a project or user skill so it is removed from active retrieval until approved.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["name", "reason"],
+            },
+            handler=_skill_quarantine,
+            read_only=False,
+            concurrent_safe=False,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="SkillApprove",
+            description="Restore a quarantined skill into the active user or project skill directory.",
+            input_schema={
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+                "required": ["name"],
+            },
+            handler=_skill_approve,
+            read_only=False,
+            concurrent_safe=False,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="SkillInstallRepo",
+            description="Clone a remote repository and import bundled SKILL.md directories into user or project skills.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "repo_url": {"type": "string"},
+                    "scope": {"type": "string"},
+                    "subdir": {"type": "string"},
+                },
+                "required": ["repo_url"],
+            },
+            handler=_skill_install_repo,
+            read_only=False,
+            concurrent_safe=False,
+        )
+    )
 
 
 def _loader(context: ToolContext):
@@ -344,4 +409,41 @@ def _skill_archive(params: dict, context: ToolContext) -> ToolResult:
     return ToolResult(
         content="Archived skill %s." % updated["slug"],
         data=updated,
+    )
+
+
+def _skill_hub_audit(params: dict, context: ToolContext) -> ToolResult:
+    report = _loader(context).audit_skill_hub(
+        slug_or_pack=str(params.get("target", "") or ""),
+        limit=max(int(params.get("limit", 20) or 20), 1),
+    )
+    lines = [
+        "%(slug)s\t%(level)s\t%(issue)s" % item
+        for item in report["issues"]
+    ] or ["No issues found."]
+    return ToolResult(content="\n".join(lines), data=report)
+
+
+def _skill_quarantine(params: dict, context: ToolContext) -> ToolResult:
+    updated = _loader(context).quarantine_skill(params["name"], params["reason"])
+    return ToolResult(content="Quarantined skill %s." % updated["slug"], data=updated)
+
+
+def _skill_approve(params: dict, context: ToolContext) -> ToolResult:
+    updated = _loader(context).approve_quarantined_skill(params["name"])
+    return ToolResult(content="Approved skill %s." % updated["slug"], data=updated)
+
+
+def _skill_install_repo(params: dict, context: ToolContext) -> ToolResult:
+    try:
+        result = _loader(context).install_repo_skills(
+            params["repo_url"],
+            scope=str(params.get("scope", "user") or "user"),
+            subdir=str(params.get("subdir", "") or ""),
+        )
+    except Exception as exc:
+        raise ToolError(str(exc)) from exc
+    return ToolResult(
+        content="Imported %s skill bundles from %s." % (len(result["imported"]), result["repo_url"]),
+        data=result,
     )

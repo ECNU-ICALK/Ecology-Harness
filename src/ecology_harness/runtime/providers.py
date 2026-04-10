@@ -13,6 +13,7 @@ import uuid
 from ecology_harness.config import HarnessSettings
 from ecology_harness.runtime.attachments import audio_format_for_openai, encode_file_base64
 from ecology_harness.runtime.messages import ChatMessage, MessagePart, ModelResponse, ToolCall
+from ecology_harness.runtime.provider_router import RoutedProvider
 from ecology_harness.tools import ToolDefinition, ToolError
 
 
@@ -494,6 +495,14 @@ def resolve_base_url(settings: HarnessSettings, spec: ProviderSpec) -> str:
 
 def create_provider(name: str, settings: HarnessSettings | None = None) -> BaseProvider:
     if settings is not None:
+        if _routing_needed(settings):
+            return RoutedProvider(settings=settings, factory=_create_direct_provider, explicit=name)
+        return _create_direct_provider(name, settings)
+    return _create_direct_provider(name, settings)
+
+
+def _create_direct_provider(name: str, settings: HarnessSettings | None = None) -> BaseProvider:
+    if settings is not None:
         spec, provider_name, _model_name = resolve_provider(settings, explicit=name)
     else:
         provider_name = (name or "mock").strip().lower()
@@ -510,6 +519,26 @@ def create_provider(name: str, settings: HarnessSettings | None = None) -> BaseP
     if spec.protocol == "ollama":
         return OllamaProvider()
     return OpenAICompatibleProvider()
+
+
+def _routing_needed(settings: HarnessSettings) -> bool:
+    if getattr(settings, "provider_fallbacks", ()):
+        return True
+    if int(getattr(settings, "provider_retry_attempts", 1) or 1) > 1:
+        return True
+    if settings.api_key and "," in settings.api_key:
+        return True
+    api_key_env = (settings.api_key_env or "").strip()
+    if api_key_env:
+        for candidate in (
+            api_key_env,
+            api_key_env + "S" if not api_key_env.endswith("S") else api_key_env,
+            api_key_env.replace("_KEY", "_KEYS") if api_key_env.endswith("_KEY") else api_key_env,
+        ):
+            raw = os.environ.get(candidate, "")
+            if raw and ("," in raw or "\n" in raw):
+                return True
+    return False
 
 
 def list_provider_specs() -> list[ProviderSpec]:
