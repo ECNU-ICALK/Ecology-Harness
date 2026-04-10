@@ -85,21 +85,25 @@ class RoutedProvider:
             key_pool = _resolve_key_pool(candidate)
             if not key_pool:
                 key_pool = [candidate.api_key]
-            ordered_keys = _ordered_keys(candidate.provider, key_pool, candidate.provider_pool_strategy)
+            ordered_keys = _ordered_key_slots(
+                candidate.provider,
+                key_pool,
+                candidate.provider_pool_strategy,
+            )
             max_attempts = max(int(candidate.provider_retry_attempts or 1), 1)
             for attempt_number in range(max_attempts):
-                for key_index, api_key in enumerate(ordered_keys):
+                for key_slot, api_key in ordered_keys:
                     local_settings = replace(candidate, api_key=api_key)
                     provider = self.factory(local_settings.provider, local_settings)
                     try:
                         response = provider.complete(messages, tools, local_settings)
-                        mark_key_use(local_settings.provider, key_index)
+                        mark_key_use(local_settings.provider, key_slot)
                         attempts.append(
                             ProviderRouteAttempt(
                                 provider=local_settings.provider,
                                 model=local_settings.model,
                                 attempt=attempt_number + 1,
-                                key_slot=key_index,
+                                key_slot=key_slot,
                                 success=True,
                             )
                         )
@@ -115,7 +119,7 @@ class RoutedProvider:
                                 provider=local_settings.provider,
                                 model=local_settings.model,
                                 attempt=attempt_number + 1,
-                                key_slot=key_index,
+                                key_slot=key_slot,
                                 error=str(exc),
                                 success=False,
                             )
@@ -171,19 +175,22 @@ def _resolve_key_pool(settings: HarnessSettings) -> list[str]:
     return [settings.api_key] if settings.api_key else []
 
 
-def _ordered_keys(provider_name: str, keys: list[str], strategy: str) -> list[str]:
+def _ordered_key_slots(provider_name: str, keys: list[str], strategy: str) -> list[tuple[int, str]]:
     if not keys:
         return []
     normalized = (strategy or "fill-first").strip().lower()
     if normalized == "least-used":
         indexed = sorted(range(len(keys)), key=lambda idx: (_POOL_CURSOR["%s:%s" % (provider_name, idx)], idx))
-        return [keys[idx] for idx in indexed]
+        return [(idx, keys[idx]) for idx in indexed]
     if normalized == "round-robin":
         cursor_key = "rr:%s" % provider_name
         start = _POOL_CURSOR[cursor_key] % len(keys)
         _POOL_CURSOR[cursor_key] = start + 1
-        return [keys[(start + offset) % len(keys)] for offset in range(len(keys))]
-    return keys
+        return [
+            ((start + offset) % len(keys), keys[(start + offset) % len(keys)])
+            for offset in range(len(keys))
+        ]
+    return list(enumerate(keys))
 
 
 def mark_key_use(provider_name: str, key_slot: int) -> None:

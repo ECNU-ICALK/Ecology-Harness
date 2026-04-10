@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
+from ecology_harness.utils import atomic_write_text
+
 
 @dataclass(frozen=True)
 class ProfileDefinition:
@@ -75,7 +77,8 @@ class ProfileManager:
         if normalized not in self._profiles:
             raise ValueError("Unknown profile: %s" % name)
         self._active_name = normalized
-        self._state_path.write_text(
+        atomic_write_text(
+            self._state_path,
             json.dumps({"active_profile": self._active_name}, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )

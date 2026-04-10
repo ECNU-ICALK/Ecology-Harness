@@ -8,6 +8,7 @@ from typing import Any
 import uuid
 
 from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.utils import append_text_line, atomic_write_text
 
 
 @dataclass
@@ -91,9 +92,12 @@ class TrajectoryStore:
             task_slice=task_slice,
         )
         payload = json.dumps(record.to_dict(), ensure_ascii=False, indent=2)
-        self.record_path(record.trajectory_id).write_text(payload, encoding="utf-8")
-        with self.index_path().open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record.to_dict(), ensure_ascii=False) + "\n")
+        atomic_write_text(self.record_path(record.trajectory_id), payload, encoding="utf-8")
+        append_text_line(
+            self.index_path(),
+            json.dumps(record.to_dict(), ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
         return record
 
     def list_records(self) -> list[TrajectoryRecord]:

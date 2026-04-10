@@ -11,6 +11,16 @@ class ToolRegistry:
         self._tools: dict[str, ToolDefinition] = {}
 
     def register(self, tool: ToolDefinition) -> None:
+        existing = self._tools.get(tool.name)
+        if existing is not None:
+            raise ValueError(
+                "Tool `%s` is already registered (existing source=%s, new source=%s)."
+                % (
+                    tool.name,
+                    existing.source or "builtin",
+                    tool.source or "builtin",
+                )
+            )
         self._tools[tool.name] = tool
 
     def get(self, name: str) -> ToolDefinition | None:

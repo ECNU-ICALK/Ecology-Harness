@@ -12,7 +12,7 @@ from ecology_harness.memory.scan import (
     scan_memory_dir,
 )
 from ecology_harness.memory.types import MEMORY_SYSTEM_PROMPT
-from ecology_harness.utils import dump_frontmatter, parse_frontmatter, slugify
+from ecology_harness.utils import atomic_write_text, dump_frontmatter, parse_frontmatter, slugify
 
 
 INDEX_FILENAME = "MEMORY.md"
@@ -90,7 +90,7 @@ class MemoryManager:
             "updated_at": item.updated_at,
         }
         path = self._path_for(slug, scope)
-        path.write_text(dump_frontmatter(metadata, content), encoding="utf-8")
+        atomic_write_text(path, dump_frontmatter(metadata, content), encoding="utf-8")
         item.file_path = str(path)
         self._rewrite_index(scope)
         return item
@@ -299,7 +299,8 @@ class MemoryManager:
             % (item.name, item.slug, item.memory_type, item.scope, item.description)
             for item in entries
         ]
-        index_path.write_text(
+        atomic_write_text(
+            index_path,
             ("\n".join(lines) + ("\n" if lines else "")),
             encoding="utf-8",
         )

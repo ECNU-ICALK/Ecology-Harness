@@ -110,6 +110,23 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertTrue(sessions[0].title)
             self.assertTrue(sessions[0].recap)
 
+    def test_session_save_survives_indexing_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("index safety\n", encoding="utf-8")
+            app = self._make_app(root)
+            app.initialize()
+
+            with patch.object(app.session_index, "index_session", side_effect=RuntimeError("index offline")):
+                app.run_prompt('/tool Read {"path":"README.md"}')
+
+            latest = app.latest_session_path()
+            self.assertTrue(latest.exists())
+            payload = json.loads(latest.read_text(encoding="utf-8"))
+            self.assertTrue(payload["messages"])
+            audit_lines = app.settings.audit_log_file.read_text(encoding="utf-8").strip().splitlines()
+            self.assertTrue(any("session_index_error" in line for line in audit_lines))
+
     def test_checkpoints_can_be_listed_and_restored(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -185,6 +202,34 @@ class PlatformFeatureTests(unittest.TestCase):
             due = app.registry.execute("AutomationRunDue", {}, app.settings, services=app.get_services())
             self.assertIn(job_id, due.content)
 
+    def test_automation_run_due_isolates_failures_and_records_status(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            first = app.automation_manager.create_job("Broken job", "bad", schedule="daily")
+            second = app.automation_manager.create_job("Healthy job", "good", schedule="daily")
+
+            payload = json.loads(app.automation_manager.path.read_text(encoding="utf-8"))
+            for item in payload:
+                item["next_run_at"] = "2000-01-01T00:00:00Z"
+            app.automation_manager.path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+            def _runner(job):
+                if job.job_id == first.job_id:
+                    raise RuntimeError("boom")
+                return {"final_text": "ok"}
+
+            results = app.automation_manager.run_due(_runner)
+
+            self.assertEqual(len(results), 2)
+            self.assertEqual(results[0]["status"], "failed")
+            self.assertEqual(results[1]["status"], "succeeded")
+            stored = {item["job_id"]: item for item in json.loads(app.automation_manager.path.read_text(encoding="utf-8"))}
+            self.assertEqual(stored[first.job_id]["last_status"], "failed")
+            self.assertIn("boom", stored[first.job_id]["last_error"])
+            self.assertEqual(stored[second.job_id]["last_status"], "succeeded")
+
     def test_heartbeat_status_and_run_use_workspace_heartbeat_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -218,6 +263,50 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertIn("Wetland Page", result.content)
             self.assertIn("https://example.com/a", result.content)
             self.assertEqual(result.data["trust_level"], "untrusted-external")
+
+    def test_remote_mcp_probe_reports_reachable_stdio_server(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            project_mcp_dir = app.settings.mcp_dir
+            project_mcp_dir.mkdir(parents=True, exist_ok=True)
+            (project_mcp_dir / "remote-probe.json").write_text(
+                json.dumps(
+                    {
+                        "servers": [
+                            {
+                                "name": "probe-stdio",
+                                "transport": "stdio",
+                                "description": "Probe candidate",
+                                "default_enabled": True,
+                                "command": "python3",
+                                "tools": [{"name": "ping", "description": "Ping", "input_schema": {"type": "object", "properties": {}}}],
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            app.initialize()
+
+            result = app.registry.execute(
+                "ProbeMcpServerTool",
+                {"server": "probe-stdio"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertEqual(result.data["status"], "reachable")
+            listed = app.registry.execute(
+                "ListMcpServersTool",
+                {"probe": True},
+                app.settings,
+                services=app.get_services(),
+            )
+            rows = {item["server_name"]: item for item in listed.data["servers"]}
+            self.assertEqual(rows["probe-stdio"]["status"], "reachable")
 
     def test_prompt_builder_injects_workspace_bootstrap_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

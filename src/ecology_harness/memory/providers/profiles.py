@@ -6,7 +6,7 @@ from pathlib import Path
 from ecology_harness.memory.providers.base import MemoryProviderHit
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.skills.retrieval import tokenize_text
-from ecology_harness.utils import dump_frontmatter, parse_frontmatter
+from ecology_harness.utils import atomic_write_text, dump_frontmatter, parse_frontmatter
 
 
 @dataclass
@@ -117,4 +117,8 @@ class MarkdownProfileProvider:
             "description": description or self.description,
             "provider": self.name,
         }
-        self.path.write_text(dump_frontmatter(metadata, content.strip()), encoding="utf-8")
+        atomic_write_text(
+            self.path,
+            dump_frontmatter(metadata, content.strip()),
+            encoding="utf-8",
+        )

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
 import re
+import tempfile
 
 
 def slugify(value: str) -> str:
@@ -89,3 +92,38 @@ def dump_frontmatter(metadata: dict[str, str], body: str) -> str:
     lines.append("---")
     lines.append(body)
     return "\n".join(lines)
+
+
+def atomic_write_text(path: str | Path, text: str, *, encoding: str = "utf-8") -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            delete=False,
+            dir=str(target.parent),
+            prefix=target.name + ".",
+            suffix=".tmp",
+            encoding=encoding,
+        ) as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temporary_path = Path(handle.name)
+        os.replace(temporary_path, target)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
+
+
+def append_text_line(path: str | Path, line: str, *, encoding: str = "utf-8") -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding=encoding) as handle:
+        handle.write(line)
+        handle.flush()
+        os.fsync(handle.fileno())

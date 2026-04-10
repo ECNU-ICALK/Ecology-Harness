@@ -20,7 +20,8 @@ from ecology_harness.skills.retrieval import (
     SkillSearchReport,
     tokenize_text,
 )
-from ecology_harness.utils import parse_frontmatter, slugify
+from ecology_harness.skills.state_store import SkillStateStore
+from ecology_harness.utils import atomic_write_text, parse_frontmatter, slugify
 
 
 _SKILL_STATUS_VALUES = {"active", "deprecated", "archived"}
@@ -400,6 +401,7 @@ class SkillLoader:
         self.history_turns = history_turns
         self.user_dir.mkdir(parents=True, exist_ok=True)
         self.project_dir.mkdir(parents=True, exist_ok=True)
+        self.state_store = SkillStateStore(self.project_dir)
         self._cached_signature = ""
         self._cached_skills: list[Skill] = []
         self._cached_runtime_signature = ""
@@ -1088,7 +1090,8 @@ class SkillLoader:
         merged_body = self._merge_skill_body(existing_body, candidate_body)
         from ecology_harness.utils import dump_frontmatter
 
-        target.path.write_text(
+        atomic_write_text(
+            target.path,
             dump_frontmatter(merged_meta, merged_body),
             encoding="utf-8",
         )
@@ -1286,49 +1289,26 @@ class SkillLoader:
         return "\n".join(signature_parts), file_entries
 
     def _snapshot_path(self) -> Path:
-        return self.project_dir / ".skill-snapshot.json"
+        return self.state_store.snapshot_path
 
     def _governance_path(self) -> Path:
-        return self.project_dir / ".skill-governance.json"
+        return self.state_store.governance_path
 
     def _load_snapshot(self) -> dict[str, Any] | None:
-        path = self._snapshot_path()
-        if not path.exists():
-            return None
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return None
+        return self.state_store.load_snapshot()
 
     def _write_snapshot(self, signature: str, skills: list[Skill]) -> None:
         payload = {
             "signature": signature,
             "skills": [self._skill_to_dict(item) for item in skills],
         }
-        self._snapshot_path().write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        self.state_store.write_snapshot(payload)
 
     def _load_governance(self) -> dict[str, Any]:
-        path = self._governance_path()
-        if not path.exists():
-            return {"version": 1, "skills": {}}
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return {"version": 1, "skills": {}}
-        payload.setdefault("version", 1)
-        payload.setdefault("skills", {})
-        return payload
+        return self.state_store.load_governance()
 
     def _write_governance(self, payload: dict[str, Any]) -> None:
-        payload.setdefault("version", 1)
-        payload.setdefault("skills", {})
-        self._governance_path().write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        self.state_store.write_governance(payload)
 
     def _governance_signature(self, governance: dict[str, Any]) -> str:
         return json.dumps(governance, ensure_ascii=False, sort_keys=True)

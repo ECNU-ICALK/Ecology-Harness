@@ -7,6 +7,7 @@ from pathlib import Path
 import uuid
 
 from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.utils import atomic_write_text
 
 
 SESSION_VERSION = 1
@@ -174,10 +175,14 @@ class SessionStore:
             ),
             fork=SessionForkRecord.from_dict(fork) if isinstance(fork, dict) else None,
         )
-        payload = json.dumps(managed.to_dict(), indent=2, ensure_ascii=False)
-        self.latest_path().write_text(payload, encoding="utf-8")
-        self.session_path(session_id).write_text(payload, encoding="utf-8")
+        self.write_managed(managed, update_latest=True)
         return managed
+
+    def write_managed(self, managed: ManagedSession, *, update_latest: bool = False) -> None:
+        payload = json.dumps(managed.to_dict(), indent=2, ensure_ascii=False)
+        atomic_write_text(self.session_path(managed.session_id), payload, encoding="utf-8")
+        if update_latest:
+            atomic_write_text(self.latest_path(), payload, encoding="utf-8")
 
     def load(self, reference: str = LATEST_SESSION_REFERENCE) -> ManagedSession:
         path = self._resolve_path(reference)

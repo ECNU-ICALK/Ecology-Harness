@@ -9,7 +9,7 @@ from typing import Any, Callable
 import uuid
 
 from ecology_harness.runtime.messages import ChatMessage
-from ecology_harness.utils import dump_frontmatter, parse_frontmatter, slugify
+from ecology_harness.utils import atomic_write_text, dump_frontmatter, parse_frontmatter, slugify
 
 
 REVIEW_SYSTEM_PROMPT = """You are the Ecology Harness review agent.
@@ -236,7 +236,7 @@ class ReviewManager:
         target = (target_dir / ("%s.md" % slug)).resolve()
         if target.parent != target_dir:
             raise ValueError("Skill candidate resolved outside the auto skill directory.")
-        target.write_text(validated.content, encoding="utf-8")
+        atomic_write_text(target, validated.content, encoding="utf-8")
         candidate.status = "applied"
         candidate.metadata["path"] = str(target)
         self._save_candidate(candidate)
@@ -244,13 +244,21 @@ class ReviewManager:
 
     def _save_report(self, report: ReviewReport) -> None:
         payload = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
-        (self.review_dir / ("review-%s.json" % report.review_id)).write_text(payload, encoding="utf-8")
+        atomic_write_text(
+            self.review_dir / ("review-%s.json" % report.review_id),
+            payload,
+            encoding="utf-8",
+        )
         for candidate in report.candidates:
             self._save_candidate(candidate)
 
     def _save_candidate(self, candidate: ReviewCandidate) -> None:
         payload = json.dumps(candidate.to_dict(), indent=2, ensure_ascii=False)
-        (self.candidate_dir / ("%s.json" % candidate.candidate_id)).write_text(payload, encoding="utf-8")
+        atomic_write_text(
+            self.candidate_dir / ("%s.json" % candidate.candidate_id),
+            payload,
+            encoding="utf-8",
+        )
 
 
 def _normalize_prompt(prompt: str) -> str:

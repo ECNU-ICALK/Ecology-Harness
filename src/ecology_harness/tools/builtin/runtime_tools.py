@@ -356,7 +356,7 @@ def _automation_run_due(params: dict, context: ToolContext) -> ToolResult:
 
     results = manager.run_due(_runner)
     lines = [
-        "%(job_id)s\t%(name)s\tnext=%(next_run_at)s" % item
+        "%(job_id)s\t%(name)s\t%(status)s\tnext=%(next_run_at)s" % item
         for item in results
     ] or ["No automation jobs were due."]
     return ToolResult(content="\n".join(lines), data={"results": results})
@@ -378,7 +378,10 @@ def _heartbeat_status(params: dict, context: ToolContext) -> ToolResult:
         "due: %s" % status.get("due", False),
         "last_run_at: %s" % status.get("last_run_at", ""),
         "next_run_at: %s" % status.get("next_run_at", ""),
+        "last_status: %s" % status.get("last_status", ""),
     ]
+    if status.get("last_error"):
+        lines.append("last_error: %s" % status.get("last_error", ""))
     return ToolResult(content="\n".join(lines), data=status)
 
 
@@ -401,6 +404,8 @@ def _heartbeat_run(params: dict, context: ToolContext) -> ToolResult:
     )
     if result.get("skipped"):
         message = "Heartbeat skipped: %s" % result.get("reason", "unknown")
+    elif result.get("status") == "failed":
+        message = "Heartbeat failed: %s" % result.get("error", "unknown error")
     else:
         message = "Heartbeat ran at %s." % result.get("ran_at", "")
         if result.get("noop"):

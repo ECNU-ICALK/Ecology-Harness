@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
+import shutil
 from typing import Any
+from urllib import error, request
 
 from ecology_harness.claw_compat import CLAW_SKILL_SPECS, list_claw_tools, search_claw_tools
 from ecology_harness.mcp.retrieval import McpBM25Retriever, McpSearchHit, McpSearchReport
@@ -156,10 +158,15 @@ class McpServerRegistry:
                     seen[server.name] = server
         return sorted(seen.values(), key=lambda item: item.name.lower())
 
-    def list_server_states(self) -> list[McpServerState]:
+    def list_server_states(
+        self,
+        *,
+        probe_remote: bool = False,
+        timeout_sec: int = 3,
+    ) -> list[McpServerState]:
         states = []
         for server in self.list_servers():
-            states.append(self._state_for_server(server))
+            states.append(self._state_for_server(server, probe_remote=probe_remote, timeout_sec=timeout_sec))
         return states
 
     def get_server(self, name: str) -> McpServerConfig | None:
@@ -168,6 +175,13 @@ class McpServerRegistry:
             if server.name.lower() == needle:
                 return server
         return None
+
+    def probe_server(self, name: str, timeout_sec: int = 3) -> dict[str, Any]:
+        server = self.get_server(name)
+        if server is None:
+            raise ToolError("Unknown MCP server: %s" % name)
+        state = self._state_for_server(server, probe_remote=True, timeout_sec=timeout_sec)
+        return state.to_dict()
 
     def list_tools(self, server_name: str = "") -> list[dict[str, Any]]:
         servers = self.list_servers()
@@ -287,9 +301,15 @@ class McpServerRegistry:
             if resource.uri != uri:
                 continue
             if server.transport != "inprocess":
+                state = self._state_for_server(server, probe_remote=True)
                 raise ToolError(
-                    "MCP server `%s` is configured with transport `%s`, which is not implemented in this build."
-                    % (server.name, server.transport)
+                    "MCP server `%s` is configured with transport `%s`; direct resource execution is not implemented in this build. Current status=%s%s"
+                    % (
+                        server.name,
+                        server.transport,
+                        state.status,
+                        (", detail=%s" % state.error_message) if state.error_message else "",
+                    )
                 )
             return self._read_inprocess_resource(server, resource, services or {})
         raise ToolError("MCP resource not found: %s" % uri)
@@ -308,9 +328,15 @@ class McpServerRegistry:
             if tool.name != tool_name:
                 continue
             if server.transport != "inprocess":
+                state = self._state_for_server(server, probe_remote=True)
                 raise ToolError(
-                    "MCP server `%s` uses transport `%s`; remote MCP execution is not implemented yet."
-                    % (server.name, server.transport)
+                    "MCP server `%s` uses transport `%s`; direct remote tool execution is not implemented yet. Current status=%s%s"
+                    % (
+                        server.name,
+                        server.transport,
+                        state.status,
+                        (", detail=%s" % state.error_message) if state.error_message else "",
+                    )
                 )
             return self._call_inprocess_tool(server, tool, params, services or {})
         raise ToolError("Unknown MCP tool `%s` on server `%s`." % (tool_name, server_name))
@@ -339,12 +365,21 @@ class McpServerRegistry:
 
         return _handler
 
-    def _state_for_server(self, server: McpServerConfig) -> McpServerState:
+    def _state_for_server(
+        self,
+        server: McpServerConfig,
+        *,
+        probe_remote: bool = False,
+        timeout_sec: int = 3,
+    ) -> McpServerState:
         enabled = bool(server.default_enabled)
         if server.transport == "inprocess" and enabled:
             status = "connected"
         elif server.transport == "inprocess":
             status = "installed"
+        elif probe_remote and enabled:
+            probe = self._probe_remote_server(server, timeout_sec=timeout_sec)
+            status = probe["status"]
         elif enabled:
             status = "configured"
         else:
@@ -358,7 +393,36 @@ class McpServerRegistry:
             tool_count=len(server.tools),
             resource_count=len(server.resources),
             auth=server.auth,
+            error_message=probe["error_message"] if probe_remote and enabled and server.transport != "inprocess" else "",
         )
+
+    def _probe_remote_server(self, server: McpServerConfig, timeout_sec: int = 3) -> dict[str, str]:
+        transport = (server.transport or "").strip().lower()
+        if transport == "stdio":
+            command = server.command.strip()
+            if not command:
+                return {"status": "missing-command", "error_message": "No stdio command configured."}
+            executable = shutil.which(command) if not Path(command).is_absolute() else command
+            if executable and (not Path(command).is_absolute() or Path(command).exists()):
+                return {"status": "reachable", "error_message": ""}
+            return {"status": "unreachable", "error_message": "Command not found: %s" % command}
+        if transport in {"http", "sse"}:
+            if not server.url.strip():
+                return {"status": "missing-url", "error_message": "No URL configured."}
+            req = request.Request(server.url, headers=server.headers or {}, method="GET")
+            try:
+                with request.urlopen(req, timeout=timeout_sec) as response:
+                    code = getattr(response, "status", 200) or 200
+                return {"status": "reachable", "error_message": "HTTP %s" % code if code >= 300 else ""}
+            except error.HTTPError as exc:
+                if exc.code in {401, 403}:
+                    return {"status": "auth-required", "error_message": "HTTP %s" % exc.code}
+                if 400 <= exc.code < 500:
+                    return {"status": "reachable", "error_message": "HTTP %s" % exc.code}
+                return {"status": "unreachable", "error_message": "HTTP %s" % exc.code}
+            except Exception as exc:
+                return {"status": "unreachable", "error_message": str(exc)}
+        return {"status": "configured", "error_message": ""}
 
     def _load_config_file(self, config_path: Path, source: str) -> list[McpServerConfig]:
         raw = json.loads(config_path.read_text(encoding="utf-8"))

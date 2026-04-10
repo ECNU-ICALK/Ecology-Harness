@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import time
 import uuid
+
+from ecology_harness.utils import atomic_write_text
 
 
 def _utcnow() -> datetime:
@@ -31,6 +34,10 @@ class AutomationJob:
     last_run_at: str = ""
     enabled: bool = True
     notes: str = ""
+    run_count: int = 0
+    last_status: str = ""
+    last_error: str = ""
+    last_duration_ms: int = 0
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -43,6 +50,10 @@ class AutomationJob:
             "last_run_at": self.last_run_at,
             "enabled": self.enabled,
             "notes": self.notes,
+            "run_count": self.run_count,
+            "last_status": self.last_status,
+            "last_error": self.last_error,
+            "last_duration_ms": self.last_duration_ms,
         }
 
     @classmethod
@@ -57,6 +68,10 @@ class AutomationJob:
             last_run_at=str(payload.get("last_run_at", "")),
             enabled=bool(payload.get("enabled", True)),
             notes=str(payload.get("notes", "")),
+            run_count=int(payload.get("run_count", 0) or 0),
+            last_status=str(payload.get("last_status", "")),
+            last_error=str(payload.get("last_error", "")),
+            last_duration_ms=int(payload.get("last_duration_ms", 0) or 0),
         )
 
 
@@ -101,9 +116,22 @@ class AutomationManager:
                 continue
             if _parse_dt(job.next_run_at) > now:
                 continue
-            output = runner(job)
+            started = time.monotonic()
+            try:
+                output = runner(job)
+                error = ""
+                status = "succeeded"
+            except Exception as exc:
+                output = None
+                error = str(exc)
+                status = "failed"
+            duration_ms = int((time.monotonic() - started) * 1000)
             job.last_run_at = _dt_to_text(now)
             job.next_run_at = _dt_to_text(self._next_run(now, job.schedule))
+            job.run_count += 1
+            job.last_status = status
+            job.last_error = error
+            job.last_duration_ms = duration_ms
             item.update(job.to_dict())
             results.append(
                 {
@@ -111,6 +139,9 @@ class AutomationManager:
                     "name": job.name,
                     "ran_at": job.last_run_at,
                     "next_run_at": job.next_run_at,
+                    "status": status,
+                    "error": error,
+                    "duration_ms": duration_ms,
                     "output": output,
                 }
             )
@@ -153,6 +184,8 @@ class AutomationManager:
             "due": due,
             "last_result": str(state.get("last_result", "") or ""),
             "noop": bool(state.get("noop", False)),
+            "last_error": str(state.get("last_error", "") or ""),
+            "last_status": str(state.get("last_status", "") or ""),
         }
 
     def run_heartbeat(
@@ -193,7 +226,15 @@ class AutomationManager:
             "or follow-up work is due. If there is nothing meaningful to do, reply with HEARTBEAT_OK only.\n\n"
             + raw_prompt
         )
-        output = runner(prompt)
+        started = time.monotonic()
+        try:
+            output = runner(prompt)
+            error = ""
+            status = "succeeded"
+        except Exception as exc:
+            output = None
+            error = str(exc)
+            status = "failed"
         if isinstance(output, dict):
             final_text = str(output.get("final_text", "") or "")
         else:
@@ -208,17 +249,23 @@ class AutomationManager:
                 "last_result": cleaned_text,
                 "noop": noop,
                 "path": str(path),
+                "last_error": error,
+                "last_status": status,
+                "last_duration_ms": int((time.monotonic() - started) * 1000),
             }
         )
         self._write_heartbeat_state(state)
         return {
-            "ran": True,
+            "ran": status == "succeeded",
             "skipped": False,
             "path": str(path),
             "ran_at": state["last_run_at"],
             "next_run_at": next_run_at,
             "noop": noop,
             "final_text": cleaned_text,
+            "status": status,
+            "error": error,
+            "duration_ms": state["last_duration_ms"],
         }
 
     def _next_run(self, current: datetime, schedule: str) -> datetime:
@@ -235,12 +282,19 @@ class AutomationManager:
 
     def _read(self) -> list[dict]:
         try:
-            return list(json.loads(self.path.read_text(encoding="utf-8")))
+            payload = json.loads(self.path.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                return [item for item in payload if isinstance(item, dict)]
         except Exception:
-            return []
+            pass
+        return []
 
     def _write(self, payload: list[dict]) -> None:
-        self.path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        atomic_write_text(
+            self.path,
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
     def _read_heartbeat_state(self) -> dict[str, object]:
         try:
@@ -252,7 +306,8 @@ class AutomationManager:
         return {}
 
     def _write_heartbeat_state(self, payload: dict[str, object]) -> None:
-        self.heartbeat_state_path.write_text(
+        atomic_write_text(
+            self.heartbeat_state_path,
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )

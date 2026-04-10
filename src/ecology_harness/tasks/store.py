@@ -7,6 +7,8 @@ from pathlib import Path
 import threading
 from typing import Any
 
+from ecology_harness.utils import atomic_write_text
+
 
 VALID_STATUSES = {"pending", "blocked", "in_progress", "completed", "cancelled", "failed"}
 
@@ -200,4 +202,8 @@ class TaskStore:
 
     def _save(self, items: list[TaskRecord]) -> None:
         payload = {"tasks": [item.to_dict() for item in items]}
-        self.path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_text(
+            self.path,
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )

@@ -9,8 +9,32 @@ def register_mcp_tools(registry: ToolRegistry) -> None:
         ToolDefinition(
             name="ListMcpServersTool",
             description="List configured MCP servers and their connection state.",
-            input_schema={"type": "object", "properties": {}},
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "probe": {"type": "boolean"},
+                    "timeout_sec": {"type": "integer"},
+                },
+            },
             handler=_list_mcp_servers,
+            read_only=True,
+            concurrent_safe=True,
+            source="mcp",
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="ProbeMcpServerTool",
+            description="Probe one MCP server to see whether its configured transport looks reachable.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "server": {"type": "string"},
+                    "timeout_sec": {"type": "integer"},
+                },
+                "required": ["server"],
+            },
+            handler=_probe_mcp_server,
             read_only=True,
             concurrent_safe=True,
             source="mcp",
@@ -125,8 +149,9 @@ def _manager(context: ToolContext):
 
 
 def _list_mcp_servers(params: dict, context: ToolContext) -> ToolResult:
-    del params
-    states = [item.to_dict() for item in _manager(context).list_server_states()]
+    probe = bool(params.get("probe", False))
+    timeout_sec = max(int(params.get("timeout_sec", 3) or 3), 1)
+    states = [item.to_dict() for item in _manager(context).list_server_states(probe_remote=probe, timeout_sec=timeout_sec)]
     if not states:
         return ToolResult(content="No MCP servers configured.", data={"servers": []})
     lines = [
@@ -135,6 +160,15 @@ def _list_mcp_servers(params: dict, context: ToolContext) -> ToolResult:
         for item in states
     ]
     return ToolResult(content="\n".join(lines), data={"servers": states})
+
+
+def _probe_mcp_server(params: dict, context: ToolContext) -> ToolResult:
+    timeout_sec = max(int(params.get("timeout_sec", 3) or 3), 1)
+    state = _manager(context).probe_server(params["server"], timeout_sec=timeout_sec)
+    content = "%(server_name)s\t%(transport)s\t%(status)s" % state
+    if state.get("error_message"):
+        content += "\t" + str(state["error_message"])
+    return ToolResult(content=content, data=state)
 
 
 def _list_mcp_tools(params: dict, context: ToolContext) -> ToolResult:

@@ -54,6 +54,22 @@ class ToolRegistryTests(unittest.TestCase):
             with self.assertRaises(ToolError):
                 registry.execute("Echo", {}, settings)
 
+    def test_registry_rejects_duplicate_tool_names(self) -> None:
+        registry = ToolRegistry()
+        tool = ToolDefinition(
+            name="Echo",
+            description="Echo a value.",
+            input_schema={"type": "object", "properties": {}},
+            handler=lambda _params, _ctx: ToolResult(content="ok"),
+        )
+
+        registry.register(tool)
+
+        with self.assertRaises(ValueError) as exc:
+            registry.register(tool)
+
+        self.assertIn("already registered", str(exc.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

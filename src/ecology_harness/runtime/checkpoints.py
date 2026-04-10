@@ -7,6 +7,7 @@ from pathlib import Path
 import uuid
 
 from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.utils import atomic_write_text
 
 
 def _utcnow() -> str:
@@ -70,7 +71,8 @@ class CheckpointManager:
             metadata=dict(metadata or {}),
             messages=list(messages),
         )
-        self.path_for(checkpoint.checkpoint_id).write_text(
+        atomic_write_text(
+            self.path_for(checkpoint.checkpoint_id),
             json.dumps(checkpoint.to_dict(), indent=2, ensure_ascii=False),
             encoding="utf-8",
         )

@@ -5,6 +5,7 @@ from pathlib import Path
 import json
 
 from ecology_harness.evaluation.trajectory_export import TrajectoryRecord, TrajectoryStore
+from ecology_harness.utils import atomic_write_text
 
 
 @dataclass
@@ -171,7 +172,8 @@ class BenchmarkRunner:
         summary = self.summarize()
         scores = self.replay()
         path = self.output_dir / ("%s.json" % name)
-        path.write_text(
+        atomic_write_text(
+            path,
             json.dumps(
                 {
                     "summary": summary.to_dict(),

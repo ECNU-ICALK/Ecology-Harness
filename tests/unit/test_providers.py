@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from ecology_harness.config import HarnessSettings
-from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.runtime.messages import ChatMessage, ModelResponse
 from ecology_harness.runtime.providers import (
     PROVIDERS,
     AnthropicProvider,
@@ -47,6 +47,17 @@ class _CaptureUrlopen:
         del req
         self.seen_timeout = timeout
         return _FakeResponse(self.payload)
+
+
+class _KeyEchoProvider:
+    def __init__(self, provider_name: str, api_key: str) -> None:
+        self.provider_name = provider_name
+        self.api_key = api_key
+        self.name = provider_name
+
+    def complete(self, messages, tools, settings):
+        del messages, tools
+        return ModelResponse(content=self.api_key, raw={"provider": settings.provider})
 
 
 class ProviderTests(unittest.TestCase):
@@ -148,6 +159,25 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(spec.name, "openrouter")
         self.assertEqual(provider_name, "openrouter")
         self.assertEqual(model_name, "openai/gpt-4.1-mini")
+
+    def test_provider_router_round_robin_reports_actual_key_slot(self) -> None:
+        from ecology_harness.runtime.provider_router import RoutedProvider
+
+        settings = HarnessSettings.from_workspace(".")
+        settings.provider = "openai"
+        settings.api_key = "alpha,beta"
+        settings.provider_pool_strategy = "round-robin"
+        router = RoutedProvider(
+            settings=settings,
+            factory=lambda name, current: _KeyEchoProvider(name, current.api_key),
+        )
+
+        first = router.complete([ChatMessage(role="user", content="hello")], [], settings)
+        second = router.complete([ChatMessage(role="user", content="hello again")], [], settings)
+
+        self.assertEqual(first.content, "alpha")
+        self.assertEqual(second.content, "beta")
+        self.assertEqual(router.last_attempts[0].key_slot, 1)
 
     def test_openai_compatible_provider_parses_tool_calls(self) -> None:
         settings = HarnessSettings.from_workspace(".")

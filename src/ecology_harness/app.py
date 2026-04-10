@@ -26,6 +26,7 @@ from ecology_harness.runtime.prompt_builder import PromptBuilder
 from ecology_harness.runtime.providers import ProviderError, create_provider
 from ecology_harness.runtime.provider_router import resolve_slot_settings
 from ecology_harness.runtime.session_index import SessionIndex
+from ecology_harness.runtime.session_metadata import derive_session_recap, derive_session_title
 from ecology_harness.runtime.session_search import SessionSearchEngine
 from ecology_harness.runtime.session_store import SessionForkRecord, SessionStore
 from ecology_harness.sandbox import SandboxPolicy
@@ -425,8 +426,8 @@ class EcologyHarnessApp:
         self._ensure_initialized()
         if not self._active_session_id or not self._active_session_created_at:
             self.start_new_session()
-        title = self._derive_session_title(messages)
-        recap = self._derive_session_recap(messages, compaction=compaction)
+        title = derive_session_title(messages)
+        recap = derive_session_recap(messages, compaction=compaction)
         managed = self.session_store.save(  # type: ignore[union-attr]
             session_id=self._active_session_id,
             created_at=self._active_session_created_at,
@@ -436,8 +437,7 @@ class EcologyHarnessApp:
             compaction=compaction,
             fork=self._active_fork.to_dict() if self._active_fork is not None else None,
         )
-        if self.session_index is not None:
-            self.session_index.index_session(managed)
+        self._safe_index_session(managed, stage="save-session")
 
     def load_session(self, name: str = "latest") -> list[ChatMessage]:
         self._ensure_initialized()
@@ -546,23 +546,23 @@ class EcologyHarnessApp:
                 continue
             changed = False
             if not managed.title:
-                managed.title = self._derive_session_title(managed.messages)
+                managed.title = derive_session_title(managed.messages)
                 changed = True
             if not managed.recap:
                 compaction = managed.compaction.to_dict() if managed.compaction is not None else None
-                managed.recap = self._derive_session_recap(managed.messages, compaction=compaction)
+                managed.recap = derive_session_recap(managed.messages, compaction=compaction)
                 changed = True
             if changed:
-                payload = json.dumps(managed.to_dict(), indent=2, ensure_ascii=False)
-                self.session_store.session_path(managed.session_id).write_text(payload, encoding="utf-8")
+                update_latest = False
                 if self.session_store.latest_path().exists():
                     try:
                         latest = self.session_store.load("latest")
                     except Exception:
                         latest = None
                     if latest is not None and latest.session_id == managed.session_id:
-                        self.session_store.latest_path().write_text(payload, encoding="utf-8")
-            self.session_index.index_session(managed)
+                        update_latest = True
+                self.session_store.write_managed(managed, update_latest=update_latest)
+            self._safe_index_session(managed, stage="rehydrate-session-index")
 
     def _post_run_artifacts(
         self,
@@ -647,6 +647,21 @@ class EcologyHarnessApp:
 
         _run_review()
 
+    def _safe_index_session(self, managed, *, stage: str) -> None:
+        if self.session_index is None:
+            return
+        try:
+            self.session_index.index_session(managed)
+        except Exception as exc:
+            self.audit(
+                "session_index_error",
+                {
+                    "stage": stage,
+                    "session_id": getattr(managed, "session_id", ""),
+                    "error": str(exc),
+                },
+            )
+
     def _create_review_reviewer(self):
         if not self.settings.evolution_enabled:
             return None
@@ -682,40 +697,3 @@ class EcologyHarnessApp:
             return response.content
 
         return _review
-
-    def _derive_session_title(self, messages: list[ChatMessage]) -> str:
-        for message in messages:
-            if message.role != "user":
-                continue
-            text = message.summary_text(max_document_chars=180).strip().replace("\n", " ")
-            if not text:
-                continue
-            if len(text) > 72:
-                return text[:69].rstrip() + "..."
-            return text
-        return "Untitled session"
-
-    def _derive_session_recap(self, messages: list[ChatMessage], compaction: dict | None = None) -> str:
-        assistant = ""
-        user = ""
-        for message in reversed(messages):
-            text = message.summary_text(max_document_chars=220).strip().replace("\n", " ")
-            if not text:
-                continue
-            if not assistant and message.role == "assistant":
-                assistant = text
-            elif not user and message.role == "user":
-                user = text
-            if assistant and user:
-                break
-        parts = []
-        if user:
-            parts.append("Latest ask: %s" % user)
-        if assistant:
-            parts.append("Latest outcome: %s" % assistant)
-        if compaction and compaction.get("compressed_summary"):
-            parts.append("Continuation: %s" % str(compaction["compressed_summary"]).strip()[:180])
-        recap = " | ".join(parts).strip()
-        if len(recap) > 320:
-            recap = recap[:317].rstrip() + "..."
-        return recap
