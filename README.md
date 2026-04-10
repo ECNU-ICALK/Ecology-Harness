@@ -21,13 +21,6 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 - `2026-04-10`: released `0.3.1 beta`, adding `SkillHub` plus `SkillView(file_path)` progressive bundle inspection, patching legacy skill-snapshot compatibility, and finishing a release audit with unit tests, wheel build checks, and installed-wheel smoke tests.
 - `2026-04-10`: released `0.3.0 beta`, consolidating query-aware retrieval, self-evolution loops, profile-backed memory, trajectory export, and skill-governance controls into a more complete research release.
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
-- `2026-04-09`: upgraded skills and MCP catalogs to query-aware retrieval, using local query rewriting plus BM25 ranking so only relevant skills and MCP servers are injected into the model context.
-- `2026-04-09`: imported a curated scientific research skill set from `K-Dense-AI/claude-scientific-skills`, adding upstream bundles for literature review, paper lookup, geospatial analysis, statistics, visualization, bioinformatics, lab notebooks, and protocol automation.
-- `2026-04-09`: added three more builtin skill packs: workflow skills from `obra/superpowers`, writing cleanup with `blader/humanizer`, and a large AI research stack from `Orchestra-Research/AI-Research-SKILLs`.
-- `2026-04-10`: added the first complete self-evolution loop: query-aware historical session recall, post-run review that distills memory/skill candidates, provider-backed project and research profiles, plus trajectory export, compression, and benchmark summaries.
-- `2026-04-10`: upgraded self-evolution toward a more Hermes-style loop with message-level session recall, fenced memory/profile/session context injection, and a review pipeline that can use a dedicated model reviewer before falling back to heuristic candidate generation.
-- `2026-04-10`: completed the next self-evolution pass with memory-provider lifecycle hooks, skill readiness/setup metadata plus snapshot caching, safer auto-skill application, and replay-style scoring for exported trajectories.
-- `2026-04-10`: strengthened skill maintenance and governance with usage tracking, retrieval telemetry, overlap detection, deprecate/archive controls, and review-candidate merge behavior so reusable workflows do not sprawl unchecked.
 
 ## Startup Preview
 

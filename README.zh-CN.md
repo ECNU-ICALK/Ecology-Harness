@@ -14,13 +14,6 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 - `2026-04-10`：发布 `0.3.1 beta`，新增 `SkillHub` 与 `SkillView(file_path)` 渐进式 bundle 查看能力，修补旧 skill snapshot 的兼容问题，并完成一轮交付级审计，包括单元测试、wheel/sdist 打包校验和安装后 smoke test。
 - `2026-04-10`：发布 `0.3.0 beta`，把 query-aware 检索、自进化闭环、profile 化记忆、trajectory 导出和 skill 治理控制整合成了一个更完整的研究型版本。
 - `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
-- `2026-04-09`：把 skill 和 MCP 目录升级成按查询检索注入的模式，采用本地 query 改写与 BM25 排序，只把和当前请求相关的 skills 与 MCP servers 放进模型上下文。
-- `2026-04-09`：从 `K-Dense-AI/claude-scientific-skills` 引入了一批经过筛选的科研技能包，补充了文献综述、论文检索、地理空间分析、统计分析、科学可视化、生物信息、实验记录与 protocol 自动化等能力。
-- `2026-04-09`：继续补充了三类内置技能包：来自 `obra/superpowers` 的 workflow 工程技能、来自 `blader/humanizer` 的写作去 AI 腔技能，以及来自 `Orchestra-Research/AI-Research-SKILLs` 的大规模 AI 研究技能树。
-- `2026-04-10`：补上了第一版完整的“自进化闭环”：按查询召回历史 session、在任务结束后自动生成 memory/skill candidate、接入 project/research profile provider，并新增 trajectory 导出、压缩和 benchmark summary。
-- `2026-04-10`：继续把自进化链路往 Hermes 风格收紧：升级成消息级 session recall、为 memory/profile/session 注入增加边界标签，并把 post-run review 提升成“模型复盘优先、启发式兜底”的双层机制。
-- `2026-04-10`：完成下一轮自进化增强：补上 memory provider lifecycle hooks、skill readiness/setup 元数据与 snapshot cache、更安全的 auto-skill apply，以及面向训练资产的 trajectory replay scoring。
-- `2026-04-10`：继续加强 skill 的维护和治理：新增 usage 统计、检索遥测、重叠检测、废弃/归档控制，以及 review candidate 优先合并到已有 skill 的机制，避免工作流不断重复堆积。
 
 ## 启动界面
 
