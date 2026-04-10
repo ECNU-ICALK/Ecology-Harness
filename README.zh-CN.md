@@ -9,6 +9,27 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 当前发布版本是 `0.3.1 beta`（包版本为 `0.3.1b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
+## 阅读导航
+
+- [News](#news)
+- [启动界面](#启动界面)
+- [目录结构](#目录结构)
+- [项目包含的能力](#项目包含的能力)
+- [已安装 Skill Packs](#已安装-skill-packs)
+- [Ecology Pack](#ecology-pack)
+- [Ecology 基础工具层](#ecology-基础工具层)
+- [多模态与文档分析](#多模态与文档分析)
+- [快速开始](#快速开始)
+- [运行示例](#运行示例)
+- [REPL 常用命令](#repl-常用命令)
+- [记忆、会话与压缩](#记忆会话与压缩)
+- [多智能体与协同](#多智能体与协同)
+- [模型来源](#模型来源)
+- [内置工具](#内置工具)
+- [测试](#测试)
+- [项目结构](#项目结构)
+- [下一步方向](#下一步方向)
+
 ## News
 
 - `2026-04-10`：发布 `0.3.1 beta`，新增 `SkillHub` 与 `SkillView(file_path)` 渐进式 bundle 查看能力，修补旧 skill snapshot 的兼容问题，并完成一轮交付级审计，包括单元测试、wheel/sdist 打包校验和安装后 smoke test。

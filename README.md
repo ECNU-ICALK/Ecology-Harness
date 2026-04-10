@@ -16,6 +16,26 @@ from the community to keep improving and expanding the ecology stack together.
 Current release: `0.3.1 beta` (`0.3.1b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
+## Contents
+
+- [News](#news)
+- [Startup Preview](#startup-preview)
+- [Project Structure](#project-structure)
+- [What Is Included](#what-is-included)
+- [Installed Skill Packs](#installed-skill-packs)
+- [Ecology Pack](#ecology-pack)
+- [Ecology Basic Tools](#ecology-basic-tools)
+- [Multimodal and Document Analysis](#multimodal-and-document-analysis)
+- [Quick Start](#quick-start)
+- [Examples](#examples)
+- [Provider Usage](#provider-usage)
+- [Built-in Tools](#built-in-tools)
+- [CLI Examples](#cli-examples)
+- [Core Runtime Features](#core-runtime-features)
+- [Tests](#tests)
+- [Project Layout](#project-layout)
+- [Next Direction](#next-direction)
+
 ## News
 
 - `2026-04-10`: released `0.3.1 beta`, adding `SkillHub` plus `SkillView(file_path)` progressive bundle inspection, patching legacy skill-snapshot compatibility, and finishing a release audit with unit tests, wheel build checks, and installed-wheel smoke tests.
