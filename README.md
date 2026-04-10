@@ -13,15 +13,20 @@ surface, so new skills, MCP servers, and tools can keep accumulating without
 making the core messy. Contributions are very welcome, and we would love help
 from the community to keep improving and expanding the ecology stack together.
 
-Current release: `0.2.0 beta` (`0.2.0b0` package version).
+Current release: `0.3.0 beta` (`0.3.0b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## News
 
+- `2026-04-10`: released `0.3.0 beta`, consolidating query-aware retrieval, self-evolution loops, profile-backed memory, trajectory export, and skill-governance controls into a more complete research release.
 - `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
 - `2026-04-09`: upgraded skills and MCP catalogs to query-aware retrieval, using local query rewriting plus BM25 ranking so only relevant skills and MCP servers are injected into the model context.
 - `2026-04-09`: imported a curated scientific research skill set from `K-Dense-AI/claude-scientific-skills`, adding upstream bundles for literature review, paper lookup, geospatial analysis, statistics, visualization, bioinformatics, lab notebooks, and protocol automation.
 - `2026-04-09`: added three more builtin skill packs: workflow skills from `obra/superpowers`, writing cleanup with `blader/humanizer`, and a large AI research stack from `Orchestra-Research/AI-Research-SKILLs`.
+- `2026-04-10`: added the first complete self-evolution loop: query-aware historical session recall, post-run review that distills memory/skill candidates, provider-backed project and research profiles, plus trajectory export, compression, and benchmark summaries.
+- `2026-04-10`: upgraded self-evolution toward a more Hermes-style loop with message-level session recall, fenced memory/profile/session context injection, and a review pipeline that can use a dedicated model reviewer before falling back to heuristic candidate generation.
+- `2026-04-10`: completed the next self-evolution pass with memory-provider lifecycle hooks, skill readiness/setup metadata plus snapshot caching, safer auto-skill application, and replay-style scoring for exported trajectories.
+- `2026-04-10`: strengthened skill maintenance and governance with usage tracking, retrieval telemetry, overlap detection, deprecate/archive controls, and review-candidate merge behavior so reusable workflows do not sprawl unchecked.
 
 ## Startup Preview
 
@@ -39,6 +44,8 @@ EcologyHarness/
 │   ├── agents/               # Multi-agent coordination and task state
 │   ├── config/               # Settings and runtime configuration
 │   ├── ecology/              # Ecology catalogs and domain extension surface
+│   ├── evaluation/           # Trajectory export, compression, and benchmark summaries
+│   ├── evolution/            # Post-run review and self-improvement candidate generation
 │   ├── mcp/                  # MCP registry, catalogs, and bridge logic
 │   ├── memory/               # Persistent memory management
 │   ├── permissions/          # Access policy and safety checks
@@ -67,6 +74,7 @@ EcologyHarness/
 - unified provider layer for local and remote model backends
 - built-in support for `mock`, `anthropic`, `openai`, `openrouter`, `gemini`, `kimi`, `qwen`, `zhipu`, `deepseek`, `ollama`, `lmstudio`, and `custom`
 - managed session persistence with resume support and compaction metadata
+- query-aware historical session recall with rewritten queries and BM25 ranking
 - context compaction with continuation summaries for long conversations
 - configurable sandbox policy for file, shell, and network boundaries
 - tool registry with typed metadata and validation
@@ -74,9 +82,13 @@ EcologyHarness/
 - multimodal prompt attachments for local images, audio, documents, and sampled video frames
 - document-analysis tools for `pdf`, `docx`, `md`, `csv`, `json`, `html`, and `ipynb`
 - dual-scope persistent memory with relevance ranking and auto-generated `MEMORY.md` indexes
+- provider-backed memory layering for builtin memory, project profile, and research profile context
 - specialized agent types, background subagents, dependency-aware coordination, and internal agent task tracking
+- post-run review that distills reusable memory and skill candidates from successful runs
 - task tracking with status, owner, metadata, and dependency edges
-- built-in markdown skills
+- trajectory export, training-friendlier trajectory compression, replay scoring, and benchmark summary generation
+- built-in markdown skills with readiness/setup metadata and snapshot caching
+- skill governance with usage stats, lifecycle status (`active` / `deprecated` / `archived`), overlap reports, and candidate merge controls
 - curated ecology skill bundles from high-quality upstream repositories
 - vendored scientific research skill bundles for literature, stats, geo, omics, visualization, and lab workflows
 - workflow engineering skills from `obra/superpowers`

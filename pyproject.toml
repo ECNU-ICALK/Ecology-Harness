@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecology-harness"
-version = "0.2.0b0"
+version = "0.3.0b0"
 description = "An ecology-first agent harness for ecological analysis, simulation, tools, and MCP-driven research workflows."
 readme = "README.md"
 requires-python = ">=3.9"

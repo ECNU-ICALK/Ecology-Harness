@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 beta - 2026-04-10
+
+- promoted the project to a substantially more complete beta focused on ecology-first research operations
+- added query-aware skill and MCP retrieval with rewritten queries, BM25 ranking, and top-k context injection
+- added historical session recall, fenced memory/profile/session context injection, and post-run review for memory and skill candidate generation
+- added provider-backed memory lifecycle hooks, project/research profile layers, and trajectory export, compression, replay scoring, and benchmark summaries
+- strengthened skill governance with readiness/setup metadata, snapshot caching, usage telemetry, overlap reporting, lifecycle controls, and candidate merge behavior
+- expanded bundled ecology, scientific, workflow, writing, and AI research skill packs and refreshed release documentation
+
 ## 0.2.0 beta - 2026-04-06
 
 - promoted Ecology Harness to a publishable beta package

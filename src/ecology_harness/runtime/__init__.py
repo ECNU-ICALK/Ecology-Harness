@@ -28,6 +28,12 @@ from ecology_harness.runtime.providers import (
     list_provider_specs,
     resolve_provider,
 )
+from ecology_harness.runtime.session_search import (
+    SessionSearchEngine,
+    SessionSearchHit,
+    SessionMessageMatch,
+    SessionSearchReport,
+)
 
 __all__ = [
     "AgentLoop",
@@ -61,4 +67,8 @@ __all__ = [
     "SummaryCompressionResult",
     "ToolCall",
     "ToolExecutionEvent",
+    "SessionSearchEngine",
+    "SessionSearchHit",
+    "SessionMessageMatch",
+    "SessionSearchReport",
 ]

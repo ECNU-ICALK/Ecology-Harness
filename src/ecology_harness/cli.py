@@ -572,8 +572,18 @@ def _list_skills(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output:
     if json_output:
         print(json.dumps(skills, indent=2, ensure_ascii=False))
         return 0
-    rows = [[item["slug"], item["source"], item["description"]] for item in skills]
-    renderer.print_table("Skills", ["slug", "source", "description"], rows)
+    rows = [
+        [
+            item["slug"],
+            item["status"],
+            item["readiness"],
+            item["usage_count"],
+            item["source"],
+            item["description"],
+        ]
+        for item in skills
+    ]
+    renderer.print_table("Skills", ["slug", "status", "ready", "used", "source", "description"], rows)
     return 0
 
 

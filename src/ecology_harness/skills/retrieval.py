@@ -25,6 +25,13 @@ class SkillRecord(Protocol):
     model: str
     context: str
     user_invocable: bool
+    category: str
+    requirements: list[str]
+    platforms: list[str]
+    readiness: str
+    status: str
+    usage_count: int
+    retrieval_count: int
 
 
 _EN_STOPWORDS = {
@@ -362,6 +369,16 @@ def _build_document_text(skill: SkillRecord) -> str:
         tokens.extend(skill.arguments)
     if skill.tools:
         tokens.extend(skill.tools)
+    if getattr(skill, "category", ""):
+        tokens.extend([getattr(skill, "category")] * 2)
+    if getattr(skill, "requirements", None):
+        tokens.extend(getattr(skill, "requirements"))
+    if getattr(skill, "platforms", None):
+        tokens.extend(getattr(skill, "platforms"))
+    if getattr(skill, "readiness", ""):
+        tokens.append(getattr(skill, "readiness"))
+    if getattr(skill, "status", ""):
+        tokens.append(getattr(skill, "status"))
     excerpt = _skill_excerpt(skill.content)
     if excerpt:
         tokens.append(excerpt)
@@ -587,6 +604,26 @@ class SkillBM25Retriever:
             matched_terms = [term for term in query_tokens if term in self.term_freqs[idx]]
             if matched_terms:
                 score += min(len(matched_terms), 6) * 0.15
+            readiness = getattr(skill, "readiness", "ready")
+            if readiness == "ready":
+                score += 0.2
+            elif readiness == "setup-needed":
+                score -= 0.05
+            elif readiness == "unsupported":
+                score -= 0.4
+            status = getattr(skill, "status", "active")
+            if status == "deprecated":
+                score -= 0.35
+            elif status == "archived":
+                continue
+            usage_count = int(getattr(skill, "usage_count", 0) or 0)
+            retrieval_count = int(getattr(skill, "retrieval_count", 0) or 0)
+            if usage_count:
+                score += min(math.log1p(usage_count) * 0.06, 0.3)
+            elif status == "active" and getattr(skill, "source", "") != "builtin":
+                score -= 0.03
+            if retrieval_count and not usage_count:
+                score += min(math.log1p(retrieval_count) * 0.02, 0.08)
             if score <= 0:
                 continue
             hits.append(

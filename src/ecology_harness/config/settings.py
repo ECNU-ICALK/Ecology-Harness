@@ -44,6 +44,20 @@ class HarnessSettings:
     mcp_prompt_top_k: int = 6
     mcp_search_default_k: int = 6
     mcp_retrieval_history_turns: int = 4
+    session_prompt_top_k: int = 3
+    session_search_default_k: int = 5
+    session_retrieval_history_turns: int = 4
+    session_search_max_messages: int = 18
+    evolution_enabled: bool = True
+    evolution_review_mode: str = "sync"
+    evolution_review_provider: str = ""
+    evolution_review_model: str = ""
+    evolution_review_min_tool_calls: int = 3
+    evolution_auto_memory_apply: bool = False
+    evolution_auto_skill_apply: bool = False
+    memory_provider_prompt_top_k: int = 3
+    memory_provider_search_default_k: int = 5
+    trajectory_export_enabled: bool = True
     subagent_max_depth: int = 2
     subagent_max_concurrent: int = 4
     memory_index_max_lines: int = 200
@@ -94,6 +108,12 @@ class HarnessSettings:
         self.mcp_dir.mkdir(parents=True, exist_ok=True)
         self.agent_dir.mkdir(parents=True, exist_ok=True)
         self.session_dir.mkdir(parents=True, exist_ok=True)
+        self.evolution_dir.mkdir(parents=True, exist_ok=True)
+        self.review_dir.mkdir(parents=True, exist_ok=True)
+        self.review_candidate_dir.mkdir(parents=True, exist_ok=True)
+        self.trajectory_dir.mkdir(parents=True, exist_ok=True)
+        self.benchmark_dir.mkdir(parents=True, exist_ok=True)
+        self.profile_dir.mkdir(parents=True, exist_ok=True)
 
     def resolve_api_key(self) -> str:
         if self.api_key:
@@ -119,6 +139,30 @@ class HarnessSettings:
     @property
     def user_agent_dir(self) -> Path:
         return self.user_state_dir / "agents"
+
+    @property
+    def evolution_dir(self) -> Path:
+        return self.state_dir / "evolution"
+
+    @property
+    def review_dir(self) -> Path:
+        return self.evolution_dir / "reviews"
+
+    @property
+    def review_candidate_dir(self) -> Path:
+        return self.evolution_dir / "candidates"
+
+    @property
+    def trajectory_dir(self) -> Path:
+        return self.state_dir / "evaluation" / "trajectories"
+
+    @property
+    def benchmark_dir(self) -> Path:
+        return self.state_dir / "evaluation" / "benchmarks"
+
+    @property
+    def profile_dir(self) -> Path:
+        return self.state_dir / "profiles"
 
     def resolved_sandbox_read_roots(self) -> list[Path]:
         roots = [

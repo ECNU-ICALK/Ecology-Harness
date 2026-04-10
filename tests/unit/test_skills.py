@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+import os
 
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
@@ -300,6 +301,197 @@ class SkillTests(unittest.TestCase):
             self.assertIn("Rewritten query:", result.content)
             self.assertIn("microbial-community-metabolism-simulation", result.content)
             self.assertTrue(result.data["hits"])
+
+    def test_skill_readiness_and_cache_refresh_with_env_requirements(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            custom_skill = app.settings.skill_dir / "needs-env.md"
+            custom_skill.write_text(
+                "---\n"
+                "name: needs-env\n"
+                "description: Requires a token before use.\n"
+                "slug: needs-env\n"
+                "requirements: [env:ECOLOGY_HARNESS_TEST_TOKEN]\n"
+                "setup-required: true\n"
+                "context: inline\n"
+                "---\n"
+                "Use after setup is complete.\n",
+                encoding="utf-8",
+            )
+
+            previous = os.environ.pop("ECOLOGY_HARNESS_TEST_TOKEN", None)
+            try:
+                skill = app.skill_loader.get("needs-env")
+                self.assertIsNotNone(skill)
+                self.assertEqual(skill.readiness, "setup-needed")
+                self.assertIn("env:ECOLOGY_HARNESS_TEST_TOKEN", skill.missing_requirements)
+
+                os.environ["ECOLOGY_HARNESS_TEST_TOKEN"] = "ready"
+                custom_skill.write_text(
+                    "---\n"
+                    "name: needs-env\n"
+                    "description: Requires a token before use.\n"
+                    "slug: needs-env\n"
+                    "requirements: [env:ECOLOGY_HARNESS_TEST_TOKEN]\n"
+                    "context: inline\n"
+                    "---\n"
+                    "Use after setup is complete.\n",
+                    encoding="utf-8",
+                )
+                refreshed = app.skill_loader.get("needs-env")
+                self.assertIsNotNone(refreshed)
+                self.assertEqual(refreshed.readiness, "ready")
+            finally:
+                if previous is None:
+                    os.environ.pop("ECOLOGY_HARNESS_TEST_TOKEN", None)
+                else:
+                    os.environ["ECOLOGY_HARNESS_TEST_TOKEN"] = previous
+
+    def test_skill_usage_governance_archive_and_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            duplicate_one = app.settings.skill_dir / "wetland-one.md"
+            duplicate_one.write_text(
+                "---\n"
+                "name: wetland-one\n"
+                "description: Analyze wetland methane and water-table coupling.\n"
+                "slug: wetland-one\n"
+                "triggers: [/wetland-one]\n"
+                "context: inline\n"
+                "---\n"
+                "Use methane flux, water table, and hydrology observations to interpret wetland dynamics.\n",
+                encoding="utf-8",
+            )
+            duplicate_two = app.settings.skill_dir / "wetland-two.md"
+            duplicate_two.write_text(
+                "---\n"
+                "name: wetland-two\n"
+                "description: Interpret wetland methane flux with water-table observations.\n"
+                "slug: wetland-two\n"
+                "triggers: [/wetland-two]\n"
+                "context: inline\n"
+                "---\n"
+                "Use water-table, methane flux, and hydrology measurements to interpret wetland behavior.\n",
+                encoding="utf-8",
+            )
+
+            app.registry.execute(
+                "SkillDeprecate",
+                {
+                    "name": "wetland-two",
+                    "reason": "Overlap with wetland-one",
+                    "superseded_by": "wetland-one",
+                },
+                app.settings,
+                services=app.get_services(),
+            )
+            deprecated = app.skill_loader.get("wetland-two")
+            self.assertIsNotNone(deprecated)
+            self.assertEqual(deprecated.status, "deprecated")
+
+            app.registry.execute(
+                "SkillArchive",
+                {"name": "wetland-two", "reason": "Retire duplicate workflow"},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertIsNone(app.skill_loader.get("wetland-two"))
+
+            app.skill_loader.record_usage(
+                "wetland-one",
+                query="wetland methane water table",
+                mode="test",
+                session_id="sess-governance",
+            )
+            used = app.skill_loader.get("wetland-one")
+            self.assertIsNotNone(used)
+            self.assertGreaterEqual(used.usage_count, 1)
+
+            governance = app.registry.execute(
+                "SkillGovernanceReport",
+                {"limit": 10, "stale_days": 0, "overlap_threshold": 0.45},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertIn("archived", governance.content)
+            self.assertTrue(governance.data["archived"])
+            archived_slugs = [item["slug"] for item in governance.data["archived"]]
+            self.assertIn("wetland-two", archived_slugs)
+
+    def test_review_candidate_merges_into_existing_project_skill(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            existing = app.settings.skill_dir / "wetland-methane-workflow.md"
+            existing.write_text(
+                "---\n"
+                "name: wetland-methane-workflow\n"
+                "description: Analyze wetland methane and water-table coupling.\n"
+                "slug: wetland-methane-workflow\n"
+                "triggers: [/wetland-methane-workflow]\n"
+                "allowed-tools: [Read, Grep]\n"
+                "context: inline\n"
+                "---\n"
+                "## When to use\n"
+                "Use this skill for methane-water table interpretation tasks.\n",
+                encoding="utf-8",
+            )
+
+            report = app.review_manager.review_run(
+                session_id="sess-merge",
+                prompt="分析湿地甲烷与水位关系",
+                messages=[
+                    ChatMessage(role="user", content="请分析湿地甲烷与水位关系"),
+                    ChatMessage(role="assistant", content="已完成分析并形成可复用流程。"),
+                ],
+                tool_invocations=[{"tool": "Read", "arguments": {"path": "README.md"}}],
+                final_text="甲烷通量与水位上升相关。",
+                min_tool_calls=1,
+                reviewer=lambda payload: {
+                    "summary": "Found a reusable wetland workflow.",
+                    "skill_candidates": [
+                        {
+                            "title": "Wetland methane workflow",
+                            "description": "Use for methane-water table interpretation tasks.",
+                            "when_to_use": "When comparing methane flux and water table observations.",
+                            "steps": [
+                                "Review methane and water table observations.",
+                                "Summarize the coupling between them.",
+                            ],
+                            "allowed_tools": ["Read", "Grep"],
+                            "trigger": "/wetland-methane-workflow",
+                            "expected_outcome": "A concise interpretation of methane-water table coupling.",
+                        }
+                    ],
+                },
+            )
+            self.assertIsNotNone(report)
+            candidate = next(item for item in report.candidates if item.candidate_type == "skill")
+
+            result = app.registry.execute(
+                "ReviewApplySkill",
+                {"candidate_id": candidate.candidate_id},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertEqual(result.data["action"], "merged")
+            merged_text = existing.read_text(encoding="utf-8")
+            self.assertIn("Additional guidance from review", merged_text)
 
 
 if __name__ == "__main__":

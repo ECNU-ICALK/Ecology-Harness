@@ -1,19 +1,29 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 import json
 from pathlib import Path
 
 from ecology_harness.agents import SubAgentManager
 from ecology_harness.config import HarnessSettings
+from ecology_harness.evaluation import BenchmarkRunner, TrajectoryStore
+from ecology_harness.evolution import ReviewManager
+from ecology_harness.evolution.review import REVIEW_SYSTEM_PROMPT
 from ecology_harness.memory import MemoryManager
+from ecology_harness.memory.providers import (
+    BuiltinMemoryProvider,
+    MarkdownProfileProvider,
+    MemoryProviderManager,
+)
 from ecology_harness.mcp import McpServerRegistry
 from ecology_harness.permissions import PermissionPolicy
 from ecology_harness.plugins import PluginManager
 from ecology_harness.runtime import AgentLoop
 from ecology_harness.runtime import ChatMessage
 from ecology_harness.runtime.prompt_builder import PromptBuilder
-from ecology_harness.runtime.providers import create_provider
+from ecology_harness.runtime.providers import ProviderError, create_provider
+from ecology_harness.runtime.session_search import SessionSearchEngine
 from ecology_harness.runtime.session_store import SessionForkRecord, SessionStore
 from ecology_harness.sandbox import SandboxPolicy
 from ecology_harness.skills import SkillLoader, execute_skill
@@ -29,6 +39,7 @@ class EcologyHarnessApp:
         self.settings = settings
         self.registry = ToolRegistry()
         self.memory_manager: MemoryManager | None = None
+        self.memory_provider_manager: MemoryProviderManager | None = None
         self.skill_loader: SkillLoader | None = None
         self.plugin_manager: PluginManager | None = None
         self.task_store: TaskStore | None = None
@@ -38,6 +49,10 @@ class EcologyHarnessApp:
         self.mcp_registry: McpServerRegistry | None = None
         self.sandbox: SandboxPolicy | None = None
         self.session_store: SessionStore | None = None
+        self.session_search_engine: SessionSearchEngine | None = None
+        self.review_manager: ReviewManager | None = None
+        self.trajectory_store: TrajectoryStore | None = None
+        self.benchmark_runner: BenchmarkRunner | None = None
         self._active_session_id = ""
         self._active_session_created_at = ""
         self._active_fork: SessionForkRecord | None = None
@@ -84,6 +99,40 @@ class EcologyHarnessApp:
         self.subagent_manager = SubAgentManager(self)
         self.sandbox = SandboxPolicy(self.settings)
         self.session_store = SessionStore(self.settings.session_dir)
+        self.session_search_engine = SessionSearchEngine(
+            self.session_store,
+            history_turns=self.settings.session_retrieval_history_turns,
+            max_messages=self.settings.session_search_max_messages,
+        )
+        self.review_manager = ReviewManager(
+            review_dir=self.settings.review_dir,
+            candidate_dir=self.settings.review_candidate_dir,
+        )
+        self.trajectory_store = TrajectoryStore(self.settings.trajectory_dir)
+        self.benchmark_runner = BenchmarkRunner(
+            self.trajectory_store,
+            output_dir=self.settings.benchmark_dir,
+        )
+        project_profile = MarkdownProfileProvider(
+            name="project-profile",
+            path=self.settings.profile_dir / "project-profile.md",
+            title="Project Profile",
+            description="Stable background about the active ecological project, study system, or workspace.",
+        )
+        research_profile = MarkdownProfileProvider(
+            name="research-profile",
+            path=self.settings.user_state_dir / "profiles" / "research-profile.md",
+            title="Research Profile",
+            description="Long-lived user research preferences, modeling habits, and favored data sources.",
+        )
+        self.memory_provider_manager = MemoryProviderManager(
+            providers=[
+                BuiltinMemoryProvider(self.memory_manager),
+                project_profile,
+                research_profile,
+            ],
+            history_turns=self.settings.skill_retrieval_history_turns,
+        )
         register_builtin_tools(self.registry)
         self.mcp_registry.register_dynamic_tools(self.registry)
         self._initialized = True
@@ -120,15 +169,35 @@ class EcologyHarnessApp:
             conversation=conversation,
             include_guidance=True,
         )
+        self.memory_provider_manager.queue_prefetch(  # type: ignore[union-attr]
+            query=prompt_text,
+            conversation=conversation,
+        )
+        provider_context = self.memory_provider_manager.build_context(  # type: ignore[union-attr]
+            query=prompt_text,
+            conversation=conversation,
+            limit=active_settings.memory_provider_prompt_top_k,
+        )
+        if provider_context:
+            memory_context = "%s\n\n%s" % (memory_context, provider_context) if memory_context else provider_context
+        session_report = self.session_search_engine.select_for_prompt(  # type: ignore[union-attr]
+            query=prompt_text,
+            conversation=conversation,
+            limit=active_settings.session_prompt_top_k,
+            exclude_session_id=self._active_session_id,
+        )
         return self.prompt_builder.build(
             active_settings,
             memory_context=memory_context,
+            provider_context=provider_context,
             skill_index=skill_index,
             skill_retrieval=skill_report.to_prompt_dict(),
             agent_index=agent_index,
             plugin_index=plugin_index,
             mcp_index=mcp_index,
             mcp_retrieval=mcp_report.to_prompt_dict(),
+            session_index=[item.to_index_dict() for item in session_report.hits],
+            session_retrieval=session_report.to_prompt_dict(),
             runtime_mode=self.runtime_mode,
         )
 
@@ -190,6 +259,12 @@ class EcologyHarnessApp:
         if skill is not None:
             trigger = prompt.strip().split(" ", 1)[0]
             args = prompt.strip()[len(trigger) :].strip()
+            self.skill_loader.record_usage(  # type: ignore[union-attr]
+                skill,
+                query=prompt,
+                mode="trigger",
+                session_id=self._active_session_id,
+            )
             result = execute_skill(
                 self,
                 skill,
@@ -204,6 +279,11 @@ class EcologyHarnessApp:
                 self.save_session(
                     result.messages,
                     compaction=compactions[-1] if compactions else None,
+                )
+                self._post_run_artifacts(
+                    prompt=prompt,
+                    result=result,
+                    attachment_paths=attachment_paths,
                 )
             return result
         runner = self.create_agent_loop(
@@ -227,6 +307,11 @@ class EcologyHarnessApp:
             result.messages,
             compaction=result.compactions[-1] if result.compactions else None,
         )
+        self._post_run_artifacts(
+            prompt=prompt,
+            result=result,
+            attachment_paths=attachment_paths,
+        )
         return result
 
     def get_services(self, **extra):
@@ -234,6 +319,7 @@ class EcologyHarnessApp:
         services = {
             "app": self,
             "memory_manager": self.memory_manager,
+            "memory_provider_manager": self.memory_provider_manager,
             "skill_loader": self.skill_loader,
             "plugin_manager": self.plugin_manager,
             "task_store": self.task_store,
@@ -241,6 +327,11 @@ class EcologyHarnessApp:
             "mcp_registry": self.mcp_registry,
             "sandbox": self.sandbox,
             "tool_registry": self.registry,
+            "session_store": self.session_store,
+            "session_search_engine": self.session_search_engine,
+            "review_manager": self.review_manager,
+            "trajectory_store": self.trajectory_store,
+            "benchmark_runner": self.benchmark_runner,
         }
         services.update(extra)
         return services
@@ -282,6 +373,25 @@ class EcologyHarnessApp:
         self._ensure_initialized()
         return self.session_store.list_sessions()  # type: ignore[union-attr]
 
+    def search_sessions(
+        self,
+        query: str,
+        conversation: list[ChatMessage] | None = None,
+        limit: int | None = None,
+    ):
+        self._ensure_initialized()
+        effective_limit = limit if limit is not None else self.settings.session_search_default_k
+        return self.session_search_engine.search(  # type: ignore[union-attr]
+            query=query,
+            conversation=conversation,
+            limit=effective_limit,
+            exclude_session_id=self._active_session_id,
+        )
+
+    def list_reviews(self):
+        self._ensure_initialized()
+        return self.review_manager.list_reports()  # type: ignore[union-attr]
+
     def start_new_session(
         self,
         fork_from_session_id: str = "",
@@ -303,3 +413,121 @@ class EcologyHarnessApp:
     def _ensure_initialized(self) -> None:
         if not self._initialized:
             raise RuntimeError("EcologyHarnessApp must be initialized before use.")
+
+    def _post_run_artifacts(
+        self,
+        prompt: str,
+        result,
+        attachment_paths: list[str] | None = None,
+    ) -> None:
+        self._ensure_initialized()
+        if self.settings.trajectory_export_enabled and self.trajectory_store is not None:
+            self.trajectory_store.save(
+                session_id=self._active_session_id,
+                prompt=prompt,
+                final_text=getattr(result, "final_text", ""),
+                messages=list(getattr(result, "messages", [])),
+                tool_invocations=list(getattr(result, "tool_invocations", [])),
+                events=list(getattr(result, "events", [])),
+                compactions=list(getattr(result, "compactions", [])),
+                attachments=list(attachment_paths or []),
+                metadata={"steps": getattr(result, "steps", 0)},
+            )
+
+        if (
+            not self.settings.evolution_enabled
+            or self.review_manager is None
+            or self.settings.evolution_review_mode == "off"
+        ):
+            if self.memory_provider_manager is not None:
+                self.memory_provider_manager.sync_turn(list(getattr(result, "messages", [])))
+            return
+
+        def _run_review() -> None:
+            report = self.review_manager.review_run(
+                session_id=self._active_session_id,
+                prompt=prompt,
+                messages=list(getattr(result, "messages", [])),
+                tool_invocations=list(getattr(result, "tool_invocations", [])),
+                final_text=getattr(result, "final_text", ""),
+                min_tool_calls=self.settings.evolution_review_min_tool_calls,
+                reviewer=self._create_review_reviewer(),
+            )
+            if report is None:
+                return
+
+            if self.settings.evolution_auto_memory_apply:
+                for candidate in report.candidates:
+                    if candidate.candidate_type != "memory":
+                        continue
+                    try:
+                        self.review_manager.apply_memory_candidate(
+                            candidate.candidate_id,
+                            self.memory_manager,
+                        )
+                    except Exception:
+                        pass
+
+            if self.settings.evolution_auto_skill_apply:
+                for candidate in report.candidates:
+                    if candidate.candidate_type != "skill":
+                        continue
+                    try:
+                        self.review_manager.apply_skill_candidate(
+                            candidate.candidate_id,
+                            self.skill_loader,
+                            self.settings.skill_dir,
+                        )
+                    except Exception:
+                        pass
+
+            if self.memory_provider_manager is not None:
+                self.memory_provider_manager.sync_turn(list(getattr(result, "messages", [])))
+
+        if self.settings.evolution_review_mode == "async":
+            import threading
+
+            thread = threading.Thread(
+                target=_run_review,
+                name="ecology-harness-review",
+                daemon=True,
+            )
+            thread.start()
+            return
+
+        _run_review()
+
+    def _create_review_reviewer(self):
+        if not self.settings.evolution_enabled:
+            return None
+        configured_provider = (self.settings.evolution_review_provider or "").strip()
+        configured_model = (self.settings.evolution_review_model or "").strip()
+        if configured_provider == "off":
+            return None
+
+        review_settings = replace(self.settings)
+        if configured_provider:
+            review_settings.provider = configured_provider
+        if configured_model:
+            review_settings.model = configured_model
+
+        def _review(payload: dict) -> dict | str | None:
+            try:
+                provider = create_provider(review_settings.provider, settings=review_settings)
+            except (ProviderError, Exception):
+                return None
+            system_message = ChatMessage(
+                role="system",
+                content=REVIEW_SYSTEM_PROMPT,
+            )
+            user_message = ChatMessage(
+                role="user",
+                content=json.dumps(payload, ensure_ascii=False, indent=2),
+            )
+            try:
+                response = provider.complete([system_message, user_message], [], review_settings)
+            except Exception:
+                return None
+            return response.content
+
+        return _review

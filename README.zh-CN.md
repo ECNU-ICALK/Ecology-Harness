@@ -6,15 +6,20 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 项目希望在保持通用 Harness 内核稳定的同时，把生态领域的扩展面做得越来越丰富，让新的 skills、MCP servers 和 tools 能持续叠加而不把核心运行时搞乱。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.2.0 beta`（包版本为 `0.2.0b0`）。
+当前发布版本是 `0.3.0 beta`（包版本为 `0.3.0b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## News
 
+- `2026-04-10`：发布 `0.3.0 beta`，把 query-aware 检索、自进化闭环、profile 化记忆、trajectory 导出和 skill 治理控制整合成了一个更完整的研究型版本。
 - `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
 - `2026-04-09`：把 skill 和 MCP 目录升级成按查询检索注入的模式，采用本地 query 改写与 BM25 排序，只把和当前请求相关的 skills 与 MCP servers 放进模型上下文。
 - `2026-04-09`：从 `K-Dense-AI/claude-scientific-skills` 引入了一批经过筛选的科研技能包，补充了文献综述、论文检索、地理空间分析、统计分析、科学可视化、生物信息、实验记录与 protocol 自动化等能力。
 - `2026-04-09`：继续补充了三类内置技能包：来自 `obra/superpowers` 的 workflow 工程技能、来自 `blader/humanizer` 的写作去 AI 腔技能，以及来自 `Orchestra-Research/AI-Research-SKILLs` 的大规模 AI 研究技能树。
+- `2026-04-10`：补上了第一版完整的“自进化闭环”：按查询召回历史 session、在任务结束后自动生成 memory/skill candidate、接入 project/research profile provider，并新增 trajectory 导出、压缩和 benchmark summary。
+- `2026-04-10`：继续把自进化链路往 Hermes 风格收紧：升级成消息级 session recall、为 memory/profile/session 注入增加边界标签，并把 post-run review 提升成“模型复盘优先、启发式兜底”的双层机制。
+- `2026-04-10`：完成下一轮自进化增强：补上 memory provider lifecycle hooks、skill readiness/setup 元数据与 snapshot cache、更安全的 auto-skill apply，以及面向训练资产的 trajectory replay scoring。
+- `2026-04-10`：继续加强 skill 的维护和治理：新增 usage 统计、检索遥测、重叠检测、废弃/归档控制，以及 review candidate 优先合并到已有 skill 的机制，避免工作流不断重复堆积。
 
 ## 启动界面
 
@@ -32,6 +37,8 @@ EcologyHarness/
 │   ├── agents/               # 多智能体协同与任务状态
 │   ├── config/               # 设置与运行时配置
 │   ├── ecology/              # 生态领域 catalog 与扩展入口
+│   ├── evaluation/           # Trajectory 导出、压缩与 benchmark 汇总
+│   ├── evolution/            # 任务后复盘与自进化 candidate 生成
 │   ├── mcp/                  # MCP 注册、目录和桥接逻辑
 │   ├── memory/               # 持久记忆管理
 │   ├── permissions/          # 权限策略与安全检查
@@ -60,13 +67,18 @@ EcologyHarness/
 - 统一的模型 provider 抽象层，兼容本地与远端后端
 - 内置支持 `mock`、`anthropic`、`openai`、`openrouter`、`gemini`、`kimi`、`qwen`、`zhipu`、`deepseek`、`ollama`、`lmstudio`、`custom`
 - 会话持久化、恢复与上下文压缩
+- 基于 query rewrite 和 BM25 的历史 session 检索与召回
 - 可配置 Sandbox、权限策略与审计
 - 工具注册系统与内置通用工具
 - 支持本地图片、音频、文档与视频抽帧附件的多模态输入
 - 内置文档分析工具，可处理 `pdf`、`docx`、`md`、`csv`、`json`、`html`、`ipynb`
 - 双 scope 记忆系统与自动 `MEMORY.md`
+- provider 化的记忆分层，可组合 builtin memory、project profile 和 research profile
 - 多智能体与子智能体协同机制
-- Markdown skill 系统
+- 任务结束后的 post-run review，可提炼 memory candidate 和 skill candidate
+- 带 readiness/setup 元数据和 snapshot cache 的 Markdown skill 系统
+- 带 usage 统计、生命周期状态（`active` / `deprecated` / `archived`）、重叠检测与候选合并控制的 skill 治理层
+- trajectory 导出、面向训练资产的压缩、replay scoring 与 benchmark 汇总能力
 - MCP 与 plugin 扩展骨架
 - 来自高质量上游仓库的生态技能包
 - 来自高质量上游仓库的科研通用技能包，覆盖文献、统计、地理空间、可视化、omics 与实验工作流

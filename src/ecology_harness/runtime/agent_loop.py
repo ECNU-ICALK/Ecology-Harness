@@ -86,6 +86,9 @@ class AgentLoop:
                 "step_started",
                 step=step,
             )
+            memory_provider_manager = getattr(self.app, "memory_provider_manager", None)
+            if memory_provider_manager is not None:
+                memory_provider_manager.on_pre_compact(messages)
             compaction_result: CompactionResult = maybe_compact_messages(
                 messages,
                 max_context_tokens=active_settings.max_context_tokens,
