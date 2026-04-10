@@ -30,13 +30,19 @@ class ReplInputTests(unittest.TestCase):
         names = {item.text for item in suggestions}
 
         self.assertIn("/help", names)
+        self.assertIn("/doctor", names)
+        self.assertIn("/setup", names)
+        self.assertIn("/explore", names)
         self.assertIn("/status", names)
+        self.assertIn("/runtime", names)
+        self.assertIn("/analytics", names)
         self.assertIn("/config", names)
         self.assertIn("/model", names)
         self.assertIn("/plugins", names)
         self.assertIn("/mcp", names)
         self.assertIn("/tool", names)
         self.assertIn("/explain", names)
+        self.assertIn("/clarify", names)
 
     def test_tool_suggestions_expand_after_tool_prefix(self) -> None:
         app = self._app()
@@ -75,8 +81,10 @@ class ReplInputTests(unittest.TestCase):
         self.assertIn("provider: auto", toolbar)
         self.assertIn("model: mock-agent", toolbar)
         self.assertIn("mode: default", toolbar)
+        self.assertIn("profile: default", toolbar)
         self.assertIn("trace: off", toolbar)
         self.assertIn("turns: 2", toolbar)
+        self.assertIn("ctx:", toolbar)
         self.assertIn("tools: 4", toolbar)
 
     def test_strip_control_sequences_removes_arrow_escape_codes(self) -> None:

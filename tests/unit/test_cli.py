@@ -90,6 +90,137 @@ class CliTests(unittest.TestCase):
             self.assertIn("⏺ Tool execution complete.", output)
             self.assertIn("hello prompt", output)
 
+    def test_cli_doctor_reports_workspace_health(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "doctor",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Doctor", buffer.getvalue())
+            self.assertIn("workspace:", buffer.getvalue())
+
+    def test_cli_doctor_accepts_probe_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "doctor",
+                        "--probe",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Doctor", buffer.getvalue())
+
+    def test_cli_runtime_reports_live_runtime_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "runtime",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Runtime", buffer.getvalue())
+            self.assertIn("context:", buffer.getvalue())
+
+    def test_cli_analytics_reports_recent_usage_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("analytics cli\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        '--prompt',
+                        '/tool Read {"path":"README.md"}',
+                    ]
+                )
+
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "analytics",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Analytics", buffer.getvalue())
+            self.assertIn("recent_queries", buffer.getvalue())
+
+    def test_cli_setup_creates_bootstrap_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "setup",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertTrue((root / "AGENTS.md").exists())
+            self.assertTrue((root / "STANDING_ORDERS.md").exists())
+            self.assertIn("created:", buffer.getvalue())
+
+    def test_cli_setup_accepts_force_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "AGENTS.md").write_text("old\n", encoding="utf-8")
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "setup",
+                        "--force",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("updated:", buffer.getvalue())
+
+    def test_cli_explore_runs_in_read_only_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "explore",
+                        '/tool Write {"path":"note.txt","content":"hello"}',
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Permission denied", buffer.getvalue())
+            self.assertFalse((root / "note.txt").exists())
+
     def test_cli_short_prompt_flag_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import sqlite3
 from pathlib import Path
+import threading
 from typing import Any
 
 from ecology_harness.runtime.messages import ChatMessage
@@ -58,103 +59,108 @@ class SessionIndex:
     def __init__(self, path: Path) -> None:
         self.path = path
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(self.path))
+        self._lock = threading.RLock()
+        self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._fts_enabled = True
         self._initialize()
 
     def _initialize(self) -> None:
-        self._conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS sessions (
-                session_id TEXT PRIMARY KEY,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                title TEXT NOT NULL,
-                recap TEXT NOT NULL,
-                parent_session_id TEXT NOT NULL,
-                message_count INTEGER NOT NULL
-            )
-            """
-        )
-        self._conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS messages (
-                session_id TEXT NOT NULL,
-                message_index INTEGER NOT NULL,
-                role TEXT NOT NULL,
-                excerpt TEXT NOT NULL,
-                content TEXT NOT NULL,
-                PRIMARY KEY (session_id, message_index)
-            )
-            """
-        )
-        try:
+        with self._lock:
+            self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.execute(
                 """
-                CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
-                USING fts5(session_id UNINDEXED, message_index UNINDEXED, role, excerpt, content)
+                CREATE TABLE IF NOT EXISTS sessions (
+                    session_id TEXT PRIMARY KEY,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    recap TEXT NOT NULL,
+                    parent_session_id TEXT NOT NULL,
+                    message_count INTEGER NOT NULL
+                )
                 """
             )
-        except sqlite3.OperationalError:
-            self._fts_enabled = False
-        self._conn.commit()
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS messages (
+                    session_id TEXT NOT NULL,
+                    message_index INTEGER NOT NULL,
+                    role TEXT NOT NULL,
+                    excerpt TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    PRIMARY KEY (session_id, message_index)
+                )
+                """
+            )
+            try:
+                self._conn.execute(
+                    """
+                    CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
+                    USING fts5(session_id UNINDEXED, message_index UNINDEXED, role, excerpt, content)
+                    """
+                )
+            except sqlite3.OperationalError:
+                self._fts_enabled = False
+            self._conn.commit()
 
     def index_session(self, session: ManagedSession) -> None:
         parent_session_id = session.fork.parent_session_id if session.fork else ""
-        self._conn.execute(
-            """
-            INSERT INTO sessions (session_id, created_at, updated_at, title, recap, parent_session_id, message_count)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(session_id) DO UPDATE SET
-                created_at=excluded.created_at,
-                updated_at=excluded.updated_at,
-                title=excluded.title,
-                recap=excluded.recap,
-                parent_session_id=excluded.parent_session_id,
-                message_count=excluded.message_count
-            """,
-            (
-                session.session_id,
-                session.created_at,
-                session.updated_at,
-                session.title,
-                session.recap,
-                parent_session_id,
-                len(session.messages),
-            ),
-        )
-        self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session.session_id,))
-        if self._fts_enabled:
-            self._conn.execute("DELETE FROM messages_fts WHERE session_id = ?", (session.session_id,))
-        for index, message in enumerate(session.messages):
-            if message.role == "system":
-                continue
-            excerpt = _excerpt(message)
-            content = message.summary_text(max_document_chars=4000).strip()
+        with self._lock:
             self._conn.execute(
                 """
-                INSERT INTO messages (session_id, message_index, role, excerpt, content)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO sessions (session_id, created_at, updated_at, title, recap, parent_session_id, message_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(session_id) DO UPDATE SET
+                    created_at=excluded.created_at,
+                    updated_at=excluded.updated_at,
+                    title=excluded.title,
+                    recap=excluded.recap,
+                    parent_session_id=excluded.parent_session_id,
+                    message_count=excluded.message_count
                 """,
-                (session.session_id, index, message.role, excerpt, content),
+                (
+                    session.session_id,
+                    session.created_at,
+                    session.updated_at,
+                    session.title,
+                    session.recap,
+                    parent_session_id,
+                    len(session.messages),
+                ),
             )
+            self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session.session_id,))
             if self._fts_enabled:
+                self._conn.execute("DELETE FROM messages_fts WHERE session_id = ?", (session.session_id,))
+            for index, message in enumerate(session.messages):
+                if message.role == "system":
+                    continue
+                excerpt = _excerpt(message)
+                content = message.summary_text(max_document_chars=4000).strip()
                 self._conn.execute(
                     """
-                    INSERT INTO messages_fts (session_id, message_index, role, excerpt, content)
+                    INSERT INTO messages (session_id, message_index, role, excerpt, content)
                     VALUES (?, ?, ?, ?, ?)
                     """,
                     (session.session_id, index, message.role, excerpt, content),
                 )
-        self._conn.commit()
+                if self._fts_enabled:
+                    self._conn.execute(
+                        """
+                        INSERT INTO messages_fts (session_id, message_index, role, excerpt, content)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (session.session_id, index, message.role, excerpt, content),
+                    )
+            self._conn.commit()
 
     def stats(self) -> dict[str, Any]:
-        session_count = int(self._conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0])
-        message_count = int(self._conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0])
-        newest = self._conn.execute(
-            "SELECT session_id, title, updated_at FROM sessions ORDER BY updated_at DESC LIMIT 1"
-        ).fetchone()
+        with self._lock:
+            session_count = int(self._conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0])
+            message_count = int(self._conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0])
+            newest = self._conn.execute(
+                "SELECT session_id, title, updated_at FROM sessions ORDER BY updated_at DESC LIMIT 1"
+            ).fetchone()
         return {
             "session_count": session_count,
             "indexed_message_count": message_count,
@@ -167,17 +173,19 @@ class SessionIndex:
         normalized = query.strip()
         if not normalized:
             return []
-        if self._fts_enabled:
-            try:
-                hits = self._search_fts(normalized, limit=limit, exclude_session_id=exclude_session_id)
-            except sqlite3.OperationalError:
-                hits = []
-            if hits:
-                return hits
-        return self._search_like(normalized, limit=limit, exclude_session_id=exclude_session_id)
+        with self._lock:
+            if self._fts_enabled:
+                try:
+                    hits = self._search_fts(normalized, limit=limit, exclude_session_id=exclude_session_id)
+                except sqlite3.OperationalError:
+                    hits = []
+                if hits:
+                    return hits
+            return self._search_like(normalized, limit=limit, exclude_session_id=exclude_session_id)
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()
 
     def _search_fts(self, query: str, limit: int, exclude_session_id: str) -> list[IndexedSessionHit]:
         normalized_query = _normalize_fts_query(query)

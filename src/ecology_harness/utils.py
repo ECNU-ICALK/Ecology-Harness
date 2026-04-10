@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import errno
 import os
 from pathlib import Path
 import re
 import tempfile
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows fallback
+    fcntl = None
 
 
 def slugify(value: str) -> str:
@@ -123,7 +129,21 @@ def atomic_write_text(path: str | Path, text: str, *, encoding: str = "utf-8") -
 def append_text_line(path: str | Path, line: str, *, encoding: str = "utf-8") -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding=encoding) as handle:
-        handle.write(line)
-        handle.flush()
-        os.fsync(handle.fileno())
+    payload = line.encode(encoding)
+    fd = os.open(str(target), os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o644)
+    try:
+        if fcntl is not None:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        written = 0
+        while written < len(payload):
+            chunk = os.write(fd, payload[written:])
+            if chunk <= 0:
+                raise OSError(errno.EIO, "append_text_line failed to write payload")
+            written += chunk
+        os.fsync(fd)
+    finally:
+        try:
+            if fcntl is not None:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)

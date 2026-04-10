@@ -245,6 +245,25 @@ class EvolutionTests(unittest.TestCase):
             self.assertTrue(replay.data["scores"])
             self.assertEqual(replay.data["scores"][0]["task_slice"], "general")
 
+    def test_trajectory_store_recovers_when_jsonl_index_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("trajectory recovery\n", encoding="utf-8")
+            app = self._make_app(root)
+            app.initialize()
+
+            app.run_prompt('/tool Read {"path":"README.md"}')
+            index_path = app.trajectory_store.index_path()
+            stored_records = app.trajectory_store.list_records()
+            self.assertTrue(stored_records)
+
+            index_path.unlink()
+            recovered = app.trajectory_store.list_records()
+
+            self.assertEqual(len(recovered), 1)
+            self.assertEqual(recovered[0].trajectory_id, stored_records[0].trajectory_id)
+            self.assertTrue(index_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 import json
 from urllib import request
+from urllib.parse import urlparse
 
 from ecology_harness.tools.base import ToolContext, ToolDefinition, ToolError, ToolResult
 from ecology_harness.tools.registry import ToolRegistry
@@ -83,7 +84,7 @@ def register_browser_tools(registry: ToolRegistry) -> None:
 def _browser_fetch(params: dict, context: ToolContext) -> ToolResult:
     if not context.settings.sandbox_allow_network:
         raise ToolError("BrowserFetch is blocked because sandbox_allow_network is false.")
-    url = str(params["url"])
+    url = _validated_browser_url(params["url"])
     max_chars = max(int(params.get("max_chars", 4000) or 4000), 256)
     req = request.Request(
         url,
@@ -120,7 +121,7 @@ def _browser_action(params: dict, context: ToolContext) -> ToolResult:
         ) from exc
     if not context.settings.sandbox_allow_network:
         raise ToolError("BrowserAction is blocked because sandbox_allow_network is false.")
-    url = str(params["url"])
+    url = _validated_browser_url(params["url"])
     action = str(params["action"]).strip().lower()
     selector = str(params.get("selector", "") or "")
     text = str(params.get("text", "") or "")
@@ -152,3 +153,11 @@ def _browser_action(params: dict, context: ToolContext) -> ToolResult:
     except Exception as exc:
         raise ToolError("BrowserAction failed: %s" % exc) from exc
     return ToolResult(content=json.dumps(payload, ensure_ascii=False, indent=2), data=payload)
+
+
+def _validated_browser_url(value: object) -> str:
+    url = str(value or "").strip()
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ToolError("Browser tools only support http:// and https:// URLs.")
+    return url

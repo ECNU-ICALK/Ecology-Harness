@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 from pathlib import Path
+import threading
 import uuid
 
 from ecology_harness.runtime.messages import ChatMessage
@@ -133,6 +134,7 @@ class SessionStore:
     def __init__(self, session_dir: Path) -> None:
         self.session_dir = session_dir
         self.session_dir.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
 
     def latest_path(self) -> Path:
         return self.session_dir / "latest.json"
@@ -180,13 +182,15 @@ class SessionStore:
 
     def write_managed(self, managed: ManagedSession, *, update_latest: bool = False) -> None:
         payload = json.dumps(managed.to_dict(), indent=2, ensure_ascii=False)
-        atomic_write_text(self.session_path(managed.session_id), payload, encoding="utf-8")
-        if update_latest:
-            atomic_write_text(self.latest_path(), payload, encoding="utf-8")
+        with self._lock:
+            atomic_write_text(self.session_path(managed.session_id), payload, encoding="utf-8")
+            if update_latest:
+                atomic_write_text(self.latest_path(), payload, encoding="utf-8")
 
     def load(self, reference: str = LATEST_SESSION_REFERENCE) -> ManagedSession:
-        path = self._resolve_path(reference)
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        with self._lock:
+            path = self._resolve_path(reference)
+            raw = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(raw, list):
             now = current_timestamp()
             return ManagedSession(
@@ -200,30 +204,17 @@ class SessionStore:
         return ManagedSession.from_dict(raw)
 
     def list_sessions(self) -> list[ManagedSessionSummary]:
-        sessions = []
-        for path in sorted(self.session_dir.glob("session-*.json")):
-            try:
-                managed = self.load(str(path))
-            except Exception:
-                continue
-            sessions.append(
-                ManagedSessionSummary(
-                    session_id=managed.session_id,
-                    path=path,
-                    updated_at=managed.updated_at,
-                    message_count=len(managed.messages),
-                    title=managed.title,
-                    recap=managed.recap,
-                    parent_session_id=managed.fork.parent_session_id if managed.fork else "",
-                )
-            )
-        if not sessions and self.latest_path().exists():
-            try:
-                managed = self.load(LATEST_SESSION_REFERENCE)
+        with self._lock:
+            sessions = []
+            for path in sorted(self.session_dir.glob("session-*.json")):
+                try:
+                    managed = self.load(str(path))
+                except Exception:
+                    continue
                 sessions.append(
                     ManagedSessionSummary(
                         session_id=managed.session_id,
-                        path=self.latest_path(),
+                        path=path,
                         updated_at=managed.updated_at,
                         message_count=len(managed.messages),
                         title=managed.title,
@@ -231,10 +222,24 @@ class SessionStore:
                         parent_session_id=managed.fork.parent_session_id if managed.fork else "",
                     )
                 )
-            except Exception:
-                pass
-        sessions.sort(key=lambda item: (item.updated_at, item.session_id), reverse=True)
-        return sessions
+            if not sessions and self.latest_path().exists():
+                try:
+                    managed = self.load(LATEST_SESSION_REFERENCE)
+                    sessions.append(
+                        ManagedSessionSummary(
+                            session_id=managed.session_id,
+                            path=self.latest_path(),
+                            updated_at=managed.updated_at,
+                            message_count=len(managed.messages),
+                            title=managed.title,
+                            recap=managed.recap,
+                            parent_session_id=managed.fork.parent_session_id if managed.fork else "",
+                        )
+                    )
+                except Exception:
+                    pass
+            sessions.sort(key=lambda item: (item.updated_at, item.session_id), reverse=True)
+            return sessions
 
     def stats(self) -> dict[str, object]:
         sessions = self.list_sessions()

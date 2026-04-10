@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import json
 from pathlib import Path
+import threading
 from typing import Any
 import uuid
 
@@ -49,6 +50,7 @@ class TrajectoryStore:
     def __init__(self, root: Path) -> None:
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
 
     def index_path(self) -> Path:
         return self.root / "trajectories.jsonl"
@@ -92,15 +94,48 @@ class TrajectoryStore:
             task_slice=task_slice,
         )
         payload = json.dumps(record.to_dict(), ensure_ascii=False, indent=2)
-        atomic_write_text(self.record_path(record.trajectory_id), payload, encoding="utf-8")
-        append_text_line(
-            self.index_path(),
-            json.dumps(record.to_dict(), ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        with self._lock:
+            atomic_write_text(self.record_path(record.trajectory_id), payload, encoding="utf-8")
+            append_text_line(
+                self.index_path(),
+                json.dumps(record.to_dict(), ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
         return record
 
     def list_records(self) -> list[TrajectoryRecord]:
+        with self._lock:
+            records = self._load_index_records()
+            indexed_ids = {item.trajectory_id for item in records}
+            file_records = self._load_record_files()
+            if not records and file_records:
+                self._rewrite_index(file_records)
+                return file_records
+            missing_records = [item for item in file_records if item.trajectory_id not in indexed_ids]
+            if missing_records:
+                merged = records + missing_records
+                merged.sort(key=lambda item: item.created_at, reverse=True)
+                self._rewrite_index(merged)
+                return merged
+            return records
+
+    def get(self, trajectory_id: str) -> TrajectoryRecord | None:
+        with self._lock:
+            path = self.record_path(trajectory_id)
+            if not path.exists():
+                return None
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            return self._record_from_payload(payload)
+
+    def _record_from_payload(self, payload: dict[str, Any]) -> TrajectoryRecord:
+        normalized = dict(payload)
+        normalized.setdefault("attachments", [])
+        normalized.setdefault("metadata", {})
+        normalized.setdefault("quality_tags", [])
+        normalized.setdefault("task_slice", infer_trajectory_slice(str(normalized.get("prompt", "")), attachments=normalized.get("attachments", [])))
+        return TrajectoryRecord(**normalized)
+
+    def _load_index_records(self) -> list[TrajectoryRecord]:
         records: list[TrajectoryRecord] = []
         if not self.index_path().exists():
             return records
@@ -112,24 +147,34 @@ class TrajectoryStore:
                 payload = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if not isinstance(payload, dict):
+                continue
             records.append(self._record_from_payload(payload))
         records.sort(key=lambda item: item.created_at, reverse=True)
         return records
 
-    def get(self, trajectory_id: str) -> TrajectoryRecord | None:
-        path = self.record_path(trajectory_id)
-        if not path.exists():
-            return None
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        return self._record_from_payload(payload)
+    def _load_record_files(self) -> list[TrajectoryRecord]:
+        records: list[TrajectoryRecord] = []
+        for path in sorted(self.root.glob("*.json")):
+            if path.name == self.index_path().name:
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if not isinstance(payload, dict) or "trajectory_id" not in payload:
+                continue
+            records.append(self._record_from_payload(payload))
+        records.sort(key=lambda item: item.created_at, reverse=True)
+        return records
 
-    def _record_from_payload(self, payload: dict[str, Any]) -> TrajectoryRecord:
-        normalized = dict(payload)
-        normalized.setdefault("attachments", [])
-        normalized.setdefault("metadata", {})
-        normalized.setdefault("quality_tags", [])
-        normalized.setdefault("task_slice", infer_trajectory_slice(str(normalized.get("prompt", "")), attachments=normalized.get("attachments", [])))
-        return TrajectoryRecord(**normalized)
+    def _rewrite_index(self, records: list[TrajectoryRecord]) -> None:
+        lines = [
+            json.dumps(item.to_dict(), ensure_ascii=False)
+            for item in sorted(records, key=lambda record: record.created_at, reverse=True)
+        ]
+        payload = ("\n".join(lines) + "\n") if lines else ""
+        atomic_write_text(self.index_path(), payload, encoding="utf-8")
 
 
 def infer_trajectory_slice(prompt: str, attachments: list[str] | None = None) -> str:

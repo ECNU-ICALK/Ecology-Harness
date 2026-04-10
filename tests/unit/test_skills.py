@@ -33,6 +33,10 @@ class SkillTests(unittest.TestCase):
 
             skills = app.skill_loader.list_skills()
             self.assertTrue(any(item.slug == "plan" for item in skills))
+            self.assertTrue(any(item.slug == "recent-research-scan" for item in skills))
+            self.assertTrue(any(item.slug == "deep-interview" for item in skills))
+            self.assertTrue(any(item.slug == "ralplan" for item in skills))
+            self.assertTrue(any(item.slug == "ralph" for item in skills))
             self.assertTrue(any(item.slug == "expand-references" for item in skills))
             self.assertTrue(any(item.slug == "mapbox-geospatial-operations" for item in skills))
             self.assertTrue(any(item.slug == "ecology-dataset-hunt" for item in skills))
@@ -134,6 +138,25 @@ class SkillTests(unittest.TestCase):
             result = app.run_prompt("/explain README")
 
             self.assertTrue(result.final_text)
+
+    def test_workflow_skill_triggers_are_available(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            deep_interview = app.skill_loader.get("deep-interview")
+            ralplan = app.skill_loader.get("ralplan")
+            ralph = app.skill_loader.get("ralph")
+
+            self.assertIsNotNone(deep_interview)
+            self.assertIsNotNone(ralplan)
+            self.assertIsNotNone(ralph)
+            self.assertIn("/clarify", deep_interview.triggers)
+            self.assertIn("/ralplan", ralplan.triggers)
+            self.assertIn("/ralph", ralph.triggers)
 
     def test_bundle_skill_render_includes_bundle_root_hint(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

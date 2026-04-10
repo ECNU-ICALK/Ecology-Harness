@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 beta - 2026-04-11
+
+- added `doctor`, `setup`, and read-only `explore` surfaces inspired by oh-my-codex so operators can inspect workspace health, scaffold bootstrap files, and safely explore repositories without broadening write access
+- added workflow-oriented builtin skill aliases `deep-interview`, `ralplan`, and `ralph` to make clarify → plan → execute flows easier to trigger while still reusing the existing skill/runtime architecture
+- expanded internal runtime coverage with workspace bootstrap management and reusable doctor tooling that can be called from both the CLI and the agent tool layer
+- completed another release hardening pass with updated README guidance, focused regression tests, full unit-test coverage, and fresh wheel/sdist validation
+
 ## 0.4.1 beta - 2026-04-10
 
 - added OpenClaw-style workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, `HEARTBEAT.md`, and related operator files so long-lived local guidance is injected without bloating the core prompt

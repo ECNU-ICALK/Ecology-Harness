@@ -8,12 +8,40 @@ import re
 import statistics
 from typing import Any
 
+from ecology_harness.runtime.compaction import estimate_tokens
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.tools.base import ToolContext, ToolDefinition, ToolError, ToolResult
 from ecology_harness.tools.registry import ToolRegistry
 
 
 def register_runtime_tools(registry: ToolRegistry) -> None:
+    registry.register(
+        ToolDefinition(
+            name="RuntimeStatus",
+            description="Show a live runtime snapshot with context pressure, tasks, agents, and profile state.",
+            input_schema={"type": "object", "properties": {}},
+            handler=_runtime_status,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="AnalyticsSummary",
+            description="Summarize recent session, trajectory, skill usage, MCP, and automation activity.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "limit": {"type": "integer"},
+                    "probe_mcp": {"type": "boolean"},
+                    "timeout_sec": {"type": "integer"},
+                },
+            },
+            handler=_analytics_summary,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
     registry.register(
         ToolDefinition(
             name="ExecuteCode",
@@ -233,6 +261,191 @@ def _execute_code(params: dict, context: ToolContext) -> ToolResult:
     return ToolResult(content=json.dumps(payload, ensure_ascii=False, indent=2), data=payload)
 
 
+def _runtime_status(params: dict, context: ToolContext) -> ToolResult:
+    del params
+    app = context.services.get("app")
+    if app is None:
+        raise ToolError("app service is unavailable.")
+    conversation = context.services.get("conversation") or []
+    token_estimate = estimate_tokens(conversation)
+    max_context_tokens = max(int(app.settings.max_context_tokens or 0), 1)
+    pressure_ratio = min(float(token_estimate) / float(max_context_tokens), 1.0)
+    if pressure_ratio >= app.settings.context_pressure_critical_ratio:
+        pressure_level = "critical"
+    elif pressure_ratio >= app.settings.context_pressure_warn_ratio:
+        pressure_level = "warn"
+    else:
+        pressure_level = "normal"
+    tasks = list(app.task_store.list_tasks())
+    task_status = _status_counts(item.status for item in tasks)
+    subagents = list(app.subagent_manager.list_tasks())
+    subagent_status = _status_counts(item.status for item in subagents)
+    latest_sessions = app.list_sessions()[:3]
+    active_profile = app.profile_manager.get_active().to_dict() if app.profile_manager else {}
+    payload = {
+        "workspace": str(app.settings.workspace_root),
+        "provider": app.settings.provider,
+        "model": app.settings.model,
+        "runtime_mode": getattr(app, "runtime_mode", "default"),
+        "active_profile": active_profile,
+        "conversation_messages": len(conversation),
+        "context_pressure": {
+            "token_estimate": token_estimate,
+            "max_context_tokens": max_context_tokens,
+            "pressure_ratio": round(pressure_ratio, 4),
+            "level": pressure_level,
+        },
+        "tasks": {
+            "total": len(tasks),
+            "status_counts": task_status,
+        },
+        "subagents": {
+            "total": len(subagents),
+            "status_counts": subagent_status,
+        },
+        "recent_sessions": [
+            {
+                "session_id": item.session_id,
+                "title": item.title,
+                "updated_at": item.updated_at,
+                "message_count": item.message_count,
+            }
+            for item in latest_sessions
+        ],
+    }
+    lines = [
+        "workspace: %s" % payload["workspace"],
+        "provider: %s / %s" % (payload["provider"], payload["model"]),
+        "mode: %s" % payload["runtime_mode"],
+        "profile: %s" % (active_profile.get("title", active_profile.get("name", "default")) if active_profile else "default"),
+        "context: %s%% (%s/%s tokens, %s)"
+        % (
+            int(pressure_ratio * 100),
+            token_estimate,
+            max_context_tokens,
+            pressure_level,
+        ),
+        "tasks: %s %s" % (len(tasks), task_status or {}),
+        "subagents: %s %s" % (len(subagents), subagent_status or {}),
+    ]
+    if latest_sessions:
+        lines.append("recent_sessions:")
+        for item in latest_sessions:
+            lines.append(
+                "- %s (%s msgs): %s"
+                % (
+                    item.session_id,
+                    item.message_count,
+                    _clip_text(item.title or item.recap or "-", 72),
+                )
+            )
+    return ToolResult(content="\n".join(lines), data=payload)
+
+
+def _analytics_summary(params: dict, context: ToolContext) -> ToolResult:
+    app = context.services.get("app")
+    if app is None:
+        raise ToolError("app service is unavailable.")
+    limit = max(int(params.get("limit", 5) or 5), 1)
+    probe_mcp = bool(params.get("probe_mcp", False))
+    timeout_sec = max(int(params.get("timeout_sec", 3) or 3), 1)
+    sessions = app.list_sessions()
+    trajectories = list(app.trajectory_store.list_records())
+    skills = app.skill_loader.list_skills(include_archived=True)
+    jobs = list(app.automation_manager.list_jobs())
+    mcp_states = app.mcp_registry.list_server_states(probe_remote=probe_mcp, timeout_sec=timeout_sec)
+    skill_status = _status_counts(item.status for item in skills)
+    skill_readiness = _status_counts(item.readiness for item in skills)
+    top_used = [
+        {
+            "slug": item.slug,
+            "usage_count": item.usage_count,
+            "last_used_at": item.last_used_at,
+            "hub_pack": item.hub_pack,
+        }
+        for item in sorted(
+            skills,
+            key=lambda skill: (-skill.usage_count, skill.slug),
+        )
+        if item.usage_count > 0
+    ][:limit]
+    slice_counts = _status_counts(item.task_slice for item in trajectories)
+    job_status = _status_counts(
+        (item.last_status or ("scheduled" if item.enabled else "disabled"))
+        for item in jobs
+    )
+    payload = {
+        "sessions": app.session_stats(),
+        "recent_sessions": [
+            {
+                "session_id": item.session_id,
+                "title": item.title,
+                "updated_at": item.updated_at,
+                "message_count": item.message_count,
+            }
+            for item in sessions[:limit]
+        ],
+        "recent_queries": [
+            {
+                "trajectory_id": item.trajectory_id,
+                "created_at": item.created_at,
+                "task_slice": item.task_slice,
+                "prompt": item.prompt,
+                "quality_tags": item.quality_tags,
+            }
+            for item in trajectories[:limit]
+        ],
+        "skills": {
+            "total": len(skills),
+            "status_counts": skill_status,
+            "readiness_counts": skill_readiness,
+            "top_used": top_used,
+        },
+        "trajectories": {
+            "total": len(trajectories),
+            "slice_counts": slice_counts,
+        },
+        "automations": {
+            "total": len(jobs),
+            "status_counts": job_status,
+        },
+        "mcp": {
+            "total": len(mcp_states),
+            "status_counts": _status_counts(item.status for item in mcp_states),
+            "probed": probe_mcp,
+        },
+    }
+    lines = [
+        "sessions: %s stored / %s indexed messages"
+        % (
+            payload["sessions"].get("session_count", 0),
+            (payload["sessions"].get("index") or {}).get("indexed_message_count", 0),
+        ),
+        "skills: %s total, ready=%s, setup-needed=%s"
+        % (
+            len(skills),
+            skill_readiness.get("ready", 0),
+            skill_readiness.get("setup-needed", 0),
+        ),
+        "trajectories: %s total, slices=%s" % (len(trajectories), slice_counts or {}),
+        "automations: %s total, states=%s" % (len(jobs), job_status or {}),
+        "mcp: %s server(s), statuses=%s" % (len(mcp_states), payload["mcp"]["status_counts"]),
+    ]
+    if top_used:
+        lines.append("top_used_skills:")
+        lines.extend(
+            "- %(slug)s used=%(usage_count)s (%(hub_pack)s)" % item
+            for item in top_used
+        )
+    if trajectories:
+        lines.append("recent_queries:")
+        lines.extend(
+            "- [%s] %s" % (item.task_slice, _clip_text(item.prompt, 96))
+            for item in trajectories[:limit]
+        )
+    return ToolResult(content="\n".join(lines), data=payload)
+
+
 def _session_stats(params: dict, context: ToolContext) -> ToolResult:
     del params
     app = context.services.get("app")
@@ -250,6 +463,21 @@ def _session_stats(params: dict, context: ToolContext) -> ToolResult:
         lines.append("index_fts_enabled: %s" % index.get("fts_enabled"))
         lines.append("indexed_message_count: %s" % index.get("indexed_message_count"))
     return ToolResult(content="\n".join(lines), data=stats)
+
+
+def _status_counts(values) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        key = str(value or "unknown")
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def _clip_text(text: str, limit: int) -> str:
+    stripped = str(text or "").strip()
+    if len(stripped) <= limit:
+        return stripped
+    return stripped[: max(limit - 1, 0)].rstrip() + "…"
 
 
 def _checkpoint_list(params: dict, context: ToolContext) -> ToolResult:
@@ -351,8 +579,13 @@ def _automation_run_due(params: dict, context: ToolContext) -> ToolResult:
         raise ToolError("automation_manager or app service is unavailable.")
 
     def _runner(job):
-        result = app.run_prompt(job.prompt)
-        return {"final_text": result.final_text}
+        previous_mode = getattr(app, "runtime_mode", "default")
+        app.runtime_mode = "automation"
+        try:
+            result = app.run_prompt(job.prompt)
+            return {"final_text": result.final_text}
+        finally:
+            app.runtime_mode = previous_mode
 
     results = manager.run_due(_runner)
     lines = [
@@ -393,8 +626,13 @@ def _heartbeat_run(params: dict, context: ToolContext) -> ToolResult:
     force = bool(params.get("force", False))
 
     def _runner(prompt: str):
-        result = app.run_prompt(prompt)
-        return {"final_text": result.final_text}
+        previous_mode = getattr(app, "runtime_mode", "default")
+        app.runtime_mode = "heartbeat"
+        try:
+            result = app.run_prompt(prompt)
+            return {"final_text": result.final_text}
+        finally:
+            app.runtime_mode = previous_mode
 
     result = manager.run_heartbeat(
         context.settings.workspace_root,

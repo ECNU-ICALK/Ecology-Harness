@@ -108,6 +108,8 @@ class McpServerState:
     transport: str
     description: str
     enabled: bool
+    runtime_invokable: bool
+    bridge_registered: bool
     tool_count: int
     resource_count: int
     auth: str
@@ -120,6 +122,8 @@ class McpServerState:
             "transport": self.transport,
             "description": self.description,
             "enabled": self.enabled,
+            "runtime_invokable": self.runtime_invokable,
+            "bridge_registered": self.bridge_registered,
             "tool_count": self.tool_count,
             "resource_count": self.resource_count,
             "auth": self.auth,
@@ -197,6 +201,7 @@ class McpServerRegistry:
                         "description": tool.description,
                         "bridge_name": mcp_tool_name(server.name, tool.name),
                         "transport": server.transport,
+                        "runtime_invokable": self._is_runtime_invokable(server),
                     }
                 )
         return rows
@@ -345,6 +350,8 @@ class McpServerRegistry:
         for server in self.list_servers():
             if not server.default_enabled:
                 continue
+            if not self._is_runtime_invokable(server):
+                continue
             for tool in server.tools:
                 registry.register(
                     ToolDefinition(
@@ -390,11 +397,17 @@ class McpServerRegistry:
             transport=server.transport,
             description=server.description,
             enabled=enabled,
+            runtime_invokable=self._is_runtime_invokable(server),
+            bridge_registered=enabled and self._is_runtime_invokable(server),
             tool_count=len(server.tools),
             resource_count=len(server.resources),
             auth=server.auth,
             error_message=probe["error_message"] if probe_remote and enabled and server.transport != "inprocess" else "",
         )
+
+    @staticmethod
+    def _is_runtime_invokable(server: McpServerConfig) -> bool:
+        return server.transport == "inprocess"
 
     def _probe_remote_server(self, server: McpServerConfig, timeout_sec: int = 3) -> dict[str, str]:
         transport = (server.transport or "").strip().lower()

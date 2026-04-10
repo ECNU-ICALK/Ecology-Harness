@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from dataclasses import dataclass, field
 from datetime import datetime
 import difflib
@@ -20,7 +21,12 @@ from ecology_harness.ui import ConsoleRenderer, create_repl_reader
 
 SESSION_COMMAND_LINES = [
     "/help       show session commands",
+    "/doctor     run an environment and workspace health report",
+    "/setup      scaffold workspace bootstrap files",
+    "/explore    run a read-only exploration pass over the workspace",
     "/status     show session status",
+    "/runtime    show a live runtime snapshot",
+    "/analytics  summarize recent usage, sessions, and trajectories",
     "/config     show active runtime configuration",
     "/permissions show or change permission mode",
     "/model      show or change the active model",
@@ -62,7 +68,12 @@ SESSION_COMMAND_LINES = [
 
 SESSION_COMMANDS = {
     "/help",
+    "/doctor",
+    "/setup",
+    "/explore",
     "/status",
+    "/runtime",
+    "/analytics",
     "/config",
     "/permissions",
     "/model",
@@ -110,7 +121,16 @@ PERMISSION_MODE_ALIASES = {
 POSITIONAL_ACTIONS = {
     "prompt",
     "repl",
+    "doctor",
+    "setup",
+    "explore",
+    "clarify",
+    "deep-interview",
+    "ralplan",
+    "ralph",
     "status",
+    "runtime",
+    "analytics",
     "config",
     "model",
     "permissions",
@@ -154,7 +174,13 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  eh repl\n"
+            "  eh doctor --probe\n"
+            "  eh setup\n"
+            "  eh explore \"summarize the codebase without making changes\"\n"
+            "  eh clarify \"help me define the right task boundaries\"\n"
             "  eh status\n"
+            "  eh runtime\n"
+            "  eh analytics\n"
             "  eh prompt \"summarize this repository\"\n"
             "  eh --attach docs/paper.pdf \"summarize this paper\"\n"
             "  eh --attach imgs/specimen.jpg \"identify this species\"\n"
@@ -229,6 +255,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--sandbox-fail-closed",
         action="store_true",
         help="Fail when a requested sandbox backend is unavailable.",
+    )
+    parser.add_argument(
+        "--probe",
+        action="store_true",
+        help="When used with `eh doctor`, probe MCP server availability.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="When used with `eh setup`, overwrite existing bootstrap files.",
     )
     parser.add_argument(
         "--max-steps",
@@ -431,6 +467,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.command_args,
         host=args.host,
         port=args.port,
+        probe=args.probe,
+        force=args.force,
         json_output=args.json,
         quiet=args.quiet,
         conversation=resumed_conversation,
@@ -917,7 +955,115 @@ def _sandbox_status(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_outp
     return 0
 
 
-def _run_prompt(
+def _doctor(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool, probe: bool = False) -> int:
+    result = app.registry.execute(
+        "DoctorReport",
+        {"probe_mcp": probe},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    report = result.data
+    runtime = report.get("runtime", {})
+    bootstrap = report.get("bootstrap", {})
+    deps = report.get("dependencies", {})
+    mcp = report.get("mcp", {})
+    renderer.section(
+        "Doctor",
+        [
+            "workspace: %s" % report.get("workspace", {}).get("root", ""),
+            "provider: %s / %s" % (runtime.get("provider", ""), runtime.get("model", "")),
+            "profile: %s" % runtime.get("profile", ""),
+            "bootstrap_files: %s present, %s missing"
+            % (bootstrap.get("present_count", 0), bootstrap.get("missing_count", 0)),
+            "mcp: %s server(s), statuses=%s" % (mcp.get("total", 0), mcp.get("status_counts", {})),
+            "deps: prompt_toolkit=%s playwright=%s ffmpeg=%s"
+            % (
+                deps.get("prompt_toolkit", {}).get("available", False),
+                deps.get("playwright", {}).get("available", False),
+                deps.get("ffmpeg", {}).get("available", False),
+            ),
+        ],
+    )
+    issues = report.get("issues", [])
+    if issues:
+        renderer.section("Doctor Issues", ["- %s" % item for item in issues])
+    else:
+        renderer.section("Doctor Issues", ["No blocking issues detected."])
+    suggestions = report.get("suggestions", [])
+    if suggestions:
+        renderer.section(
+            "Doctor Suggestions",
+            [
+                "- %(title)s :: %(reason)s"
+                % item
+                + (" [run: %s]" % item["command"] if item.get("command") else "")
+                for item in suggestions
+            ],
+        )
+    return 0
+
+
+def _runtime_status(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool, conversation=None) -> int:
+    result = app.registry.execute(
+        "RuntimeStatus",
+        {},
+        app.settings,
+        services=app.get_services(conversation=conversation),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    renderer.section("Runtime", result.content.splitlines() or ["<empty>"])
+    return 0
+
+
+def _analytics_summary(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
+    result = app.registry.execute(
+        "AnalyticsSummary",
+        {},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    renderer.section("Analytics", result.content.splitlines() or ["<empty>"])
+    return 0
+
+
+def _setup_workspace(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    force: bool = False,
+    files: list[str] | None = None,
+) -> int:
+    result = app.registry.execute(
+        "WorkspaceBootstrapInit",
+        {"force": force, "files": files or []},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    data = result.data
+    renderer.section(
+        "Workspace Setup",
+        [
+            "created: %s" % (", ".join(data.get("created", [])) or "-"),
+            "updated: %s" % (", ".join(data.get("updated", [])) or "-"),
+            "skipped: %s" % (", ".join(data.get("skipped", [])) or "-"),
+            "invalid: %s" % (", ".join(data.get("invalid", [])) or "-"),
+        ],
+    )
+    return 0
+
+
+def _run_explore(
     app: EcologyHarnessApp,
     renderer: ConsoleRenderer,
     prompt: str,
@@ -927,10 +1073,49 @@ def _run_prompt(
     conversation: list[ChatMessage] | None = None,
     attachment_paths: list[str] | None = None,
 ) -> int:
+    read_only_settings = replace(
+        app.settings,
+        permission_mode="read-only",
+        sandbox_mode="read-only",
+    )
+    allowed_tools = {item.name for item in app.registry.list_tools() if item.read_only}
+    previous_mode = app.runtime_mode
+    app.runtime_mode = "explore"
+    try:
+        return _run_prompt(
+            app,
+            renderer,
+            prompt,
+            provider_name,
+            json_output,
+            quiet,
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+            settings=read_only_settings,
+            allowed_tools=allowed_tools,
+            mode_label="explore",
+        )
+    finally:
+        app.runtime_mode = previous_mode
+
+
+def _run_prompt(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    prompt: str,
+    provider_name: str,
+    json_output: bool,
+    quiet: bool,
+    conversation: list[ChatMessage] | None = None,
+    attachment_paths: list[str] | None = None,
+    settings: HarnessSettings | None = None,
+    allowed_tools: set[str] | None = None,
+    mode_label: str = "prompt",
+) -> int:
     normalized_attachments = _resolve_attachment_paths(app, attachment_paths or [])
     event_handler = None
     if not json_output and not quiet:
-        renderer.banner(app, mode="prompt")
+        renderer.banner(app, mode=mode_label)
         renderer.print_prompt_block(
             prompt,
             attachments=_attachment_labels(app, normalized_attachments),
@@ -940,6 +1125,8 @@ def _run_prompt(
         result = app.run_prompt(
             prompt,
             provider_name=provider_name,
+            allowed_tools=allowed_tools,
+            settings=settings,
             event_handler=event_handler,
             conversation=conversation,
             attachment_paths=normalized_attachments,
@@ -978,6 +1165,8 @@ def _handle_positional_command(
     command_args: list[str],
     host: str,
     port: int,
+    probe: bool,
+    force: bool,
     json_output: bool,
     quiet: bool,
     conversation: list[ChatMessage] | None,
@@ -1010,6 +1199,65 @@ def _handle_positional_command(
             conversation=conversation,
             attachment_paths=attachment_paths,
         )
+    if head == "doctor":
+        effective_probe = probe or bool(tail and tail[0] == "--probe")
+        return _doctor(app, renderer, json_output, probe=effective_probe)
+    if head == "setup":
+        effective_force = force or "--force" in tail
+        files = [item for item in tail if item != "--force"]
+        return _setup_workspace(app, renderer, json_output, force=effective_force, files=files)
+    if head == "explore":
+        if not tail:
+            parser.error("`eh explore` requires text after the command.")
+        return _run_explore(
+            app,
+            renderer,
+            " ".join(tail),
+            app.settings.provider,
+            json_output,
+            quiet,
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+        )
+    if head in {"clarify", "deep-interview"}:
+        if not tail:
+            parser.error("`eh %s` requires text after the command." % head)
+        return _run_prompt(
+            app,
+            renderer,
+            "/deep-interview %s" % " ".join(tail),
+            app.settings.provider,
+            json_output,
+            quiet,
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+        )
+    if head == "ralplan":
+        if not tail:
+            parser.error("`eh ralplan` requires text after the command.")
+        return _run_prompt(
+            app,
+            renderer,
+            "/ralplan %s" % " ".join(tail),
+            app.settings.provider,
+            json_output,
+            quiet,
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+        )
+    if head == "ralph":
+        if not tail:
+            parser.error("`eh ralph` requires text after the command.")
+        return _run_prompt(
+            app,
+            renderer,
+            "/ralph %s" % " ".join(tail),
+            app.settings.provider,
+            json_output,
+            quiet,
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+        )
     if head == "status":
         renderer.print_status_panel(
             app,
@@ -1018,6 +1266,10 @@ def _handle_positional_command(
             trace_enabled=not quiet,
         )
         return 0
+    if head == "runtime":
+        return _runtime_status(app, renderer, json_output, conversation=conversation)
+    if head == "analytics":
+        return _analytics_summary(app, renderer, json_output)
     if head == "config":
         renderer.print_config_panel(app)
         return 0
@@ -1152,6 +1404,32 @@ def _handle_repl_command(
     if normalized == "/help":
         renderer.section("Commands", SESSION_COMMAND_LINES)
         return {"action": "continue"}
+    if normalized == "/doctor":
+        _doctor(app, renderer, False)
+        return {"action": "continue"}
+    if normalized.startswith("/setup"):
+        parts = normalized.split()
+        force = "--force" in parts[1:]
+        files = [item for item in parts[1:] if item != "--force"]
+        _setup_workspace(app, renderer, False, force=force, files=files)
+        return {"action": "continue"}
+    if normalized.startswith("/explore"):
+        parts = normalized.split(None, 1)
+        if len(parts) < 2:
+            renderer.print_notice("Usage: /explore <prompt>", level="warn")
+            return {"action": "continue"}
+        _run_explore(
+            app,
+            renderer,
+            parts[1],
+            app.settings.provider,
+            False,
+            not state.trace_enabled,
+            conversation=state.conversation,
+            attachment_paths=state.pending_attachment_paths,
+        )
+        state.pending_attachment_paths = []
+        return {"action": "continue"}
     if normalized == "/status":
         renderer.print_status_panel(
             app,
@@ -1161,6 +1439,12 @@ def _handle_repl_command(
             total_tool_calls=state.total_tool_calls,
             total_steps=state.total_steps,
         )
+        return {"action": "continue"}
+    if normalized == "/runtime":
+        _runtime_status(app, renderer, False, conversation=state.conversation)
+        return {"action": "continue"}
+    if normalized == "/analytics":
+        _analytics_summary(app, renderer, False)
         return {"action": "continue"}
     if normalized == "/config":
         renderer.print_config_panel(app)

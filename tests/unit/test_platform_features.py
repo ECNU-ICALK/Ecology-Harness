@@ -1,6 +1,7 @@
 import json
 import subprocess
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -10,7 +11,7 @@ from ecology_harness.config import HarnessSettings
 from ecology_harness.runtime.messages import ChatMessage, ModelResponse
 from ecology_harness.runtime.provider_router import RoutedProvider
 from ecology_harness.server.api import build_chat_completion_payload
-from ecology_harness.tools import ToolDefinition, ToolResult
+from ecology_harness.tools import ToolDefinition, ToolError, ToolResult
 
 
 class _FakeHtmlResponse:
@@ -110,6 +111,30 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertTrue(sessions[0].title)
             self.assertTrue(sessions[0].recap)
 
+    def test_session_index_can_be_queried_from_another_thread(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            app.run_prompt("请总结这个湿地甲烷项目")
+
+            errors: list[str] = []
+
+            def _worker() -> None:
+                try:
+                    report = app.session_index.search("湿地 甲烷")
+                    self.assertTrue(report)
+                    stats = app.session_stats()
+                    self.assertIn("index", stats)
+                except Exception as exc:  # pragma: no cover - asserted below
+                    errors.append(str(exc))
+
+            thread = threading.Thread(target=_worker, daemon=True)
+            thread.start()
+            thread.join(timeout=5)
+
+            self.assertFalse(errors, errors[0] if errors else "")
+
     def test_session_save_survives_indexing_failure(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -126,6 +151,22 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertTrue(payload["messages"])
             audit_lines = app.settings.audit_log_file.read_text(encoding="utf-8").strip().splitlines()
             self.assertTrue(any("session_index_error" in line for line in audit_lines))
+
+    def test_audit_appends_jsonl_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            app.audit("first", {"value": 1})
+            app.audit("second", {"value": 2})
+
+            lines = app.settings.audit_log_file.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(len(lines), 2)
+            first = json.loads(lines[0])
+            second = json.loads(lines[1])
+            self.assertEqual(first["kind"], "first")
+            self.assertEqual(second["kind"], "second")
 
     def test_checkpoints_can_be_listed_and_restored(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -160,6 +201,98 @@ class PlatformFeatureTests(unittest.TestCase):
             prompt = app.build_system_prompt(prompt_text="比较 APSIM 和 AquaCrop")
             self.assertIn("<work-style-profile>", prompt)
             self.assertIn("Modeling and Simulation", prompt)
+
+    def test_doctor_report_and_workspace_bootstrap_tools(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            status = app.registry.execute(
+                "WorkspaceBootstrapStatus",
+                {},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertEqual(status.data["present_count"], 0)
+
+            created = app.registry.execute(
+                "WorkspaceBootstrapInit",
+                {},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertIn("AGENTS.md", created.data["created"])
+            self.assertTrue((root / "AGENTS.md").exists())
+            self.assertTrue((root / "HEARTBEAT.md").exists())
+
+            report = app.registry.execute(
+                "DoctorReport",
+                {"probe_mcp": False},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertEqual(report.data["bootstrap"]["present_count"], 4)
+            self.assertIn("workspace", report.content)
+            self.assertIn("suggestions", report.data)
+
+    def test_doctor_report_includes_actionable_suggestions_when_workspace_is_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            report = app.registry.execute(
+                "DoctorReport",
+                {"probe_mcp": False},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            suggestions = report.data["suggestions"]
+            self.assertTrue(suggestions)
+            self.assertTrue(any(item["command"] == "eh setup" for item in suggestions))
+
+    def test_runtime_status_reports_context_pressure_and_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            app.task_store.create("Check inputs")
+
+            result = app.registry.execute(
+                "RuntimeStatus",
+                {},
+                app.settings,
+                services=app.get_services(
+                    conversation=[ChatMessage(role="user", content="hello world " * 30)]
+                ),
+            )
+
+            self.assertIn("context:", result.content)
+            self.assertEqual(result.data["tasks"]["total"], 1)
+            self.assertIn("pressure_ratio", result.data["context_pressure"])
+
+    def test_analytics_summary_reports_recent_queries_and_skill_usage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("analytics read\n", encoding="utf-8")
+            app = self._make_app(root)
+            app.initialize()
+
+            app.run_prompt('/tool Read {"path":"README.md"}')
+            app.run_prompt("/recent-research-scan wetland methane monitoring")
+
+            result = app.registry.execute(
+                "AnalyticsSummary",
+                {"limit": 3},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("recent_queries:", result.content)
+            self.assertTrue(result.data["recent_queries"])
+            self.assertIn("skills", result.data)
 
     def test_execute_code_can_call_existing_tools(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -264,6 +397,20 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertIn("https://example.com/a", result.content)
             self.assertEqual(result.data["trust_level"], "untrusted-external")
 
+    def test_browser_tools_reject_non_http_urls(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            with self.assertRaises(ToolError):
+                app.registry.execute(
+                    "BrowserFetch",
+                    {"url": "file:///etc/passwd"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
     def test_remote_mcp_probe_reports_reachable_stdio_server(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -307,8 +454,11 @@ class PlatformFeatureTests(unittest.TestCase):
             )
             rows = {item["server_name"]: item for item in listed.data["servers"]}
             self.assertEqual(rows["probe-stdio"]["status"], "reachable")
+            self.assertFalse(rows["probe-stdio"]["runtime_invokable"])
+            self.assertFalse(rows["probe-stdio"]["bridge_registered"])
+            self.assertIsNone(app.registry.get("mcp__probe-stdio__ping"))
 
-    def test_prompt_builder_injects_workspace_bootstrap_files(self) -> None:
+    def test_prompt_builder_excludes_heartbeat_in_normal_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "STANDING_ORDERS.md").write_text("Always record uncertainty and study scale.\n", encoding="utf-8")
@@ -321,7 +471,11 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertIn("<workspace-bootstrap-context>", prompt)
             self.assertIn("STANDING_ORDERS.md", prompt)
             self.assertIn("Always record uncertainty", prompt)
-            self.assertIn("HEARTBEAT.md", prompt)
+            self.assertNotIn("HEARTBEAT.md", prompt)
+
+            app.runtime_mode = "heartbeat"
+            heartbeat_prompt = app.build_system_prompt(prompt_text="执行 heartbeat")
+            self.assertIn("HEARTBEAT.md", heartbeat_prompt)
 
     def test_plugin_hooks_cover_session_and_run_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

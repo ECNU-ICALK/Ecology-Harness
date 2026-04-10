@@ -13,7 +13,7 @@ surface, so new skills, MCP servers, and tools can keep accumulating without
 making the core messy. Contributions are very welcome, and we would love help
 from the community to keep improving and expanding the ecology stack together.
 
-Current release: `0.4.1 beta` (`0.4.1b0` package version).
+Current release: `0.5.0 beta` (`0.5.0b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## Contents
@@ -38,6 +38,8 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-04-11`: delivery hardening pass for `0.5.0 beta`, tightening workspace-operator context boundaries so `HEARTBEAT.md` is only injected during heartbeat runs, restricting browser tools to `http(s)` URLs, and finishing another full regression/build audit.
+- `2026-04-11`: released `0.5.0 beta`, adding `eh doctor`, `eh setup`, read-only `eh explore`, `eh runtime`, `eh analytics`, and clearer clarify → plan → execute workflow aliases inspired by oh-my-codex while keeping the existing ecology runtime lightweight.
 - `2026-04-10`: released `0.4.1 beta`, adding OpenClaw-inspired workspace bootstrap context files, lightweight heartbeat support, richer plugin lifecycle hooks, and safer handling of external browser content.
 - `2026-04-10`: released `0.4.0 beta`, adding provider routing and fallback, session titles and SQLite-backed indexing, checkpoints, profiles, automation jobs, a minimal API server, browser/code-execution tools, and stronger skill governance.
 - `2026-04-10`: released `0.3.1 beta`, adding `SkillHub` plus `SkillView(file_path)` progressive bundle inspection, patching legacy skill-snapshot compatibility, and finishing a release audit with unit tests, wheel build checks, and installed-wheel smoke tests.
@@ -96,8 +98,13 @@ EcologyHarness/
 - query-aware historical session recall with rewritten queries and BM25 ranking
 - context compaction with continuation summaries for long conversations
 - configurable sandbox policy for file, shell, and network boundaries
-- workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, `HEARTBEAT.md`, and related operator files
+- workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, and related operator files, with `HEARTBEAT.md` reserved for heartbeat runs
+- `eh setup` workspace scaffolding for core operator files such as `AGENTS.md`, `STANDING_ORDERS.md`, `BOOTSTRAP.md`, and `HEARTBEAT.md`
+- `eh doctor` health reporting for bootstrap state, optional dependencies, skills, and MCP readiness
+- `eh runtime` live runtime inspection for context pressure, active profile, task counts, and subagent state
+- `eh analytics` recent usage summaries for sessions, query history, skill usage, trajectories, automations, and MCP health
 - lightweight heartbeat inspection and execution driven by workspace `HEARTBEAT.md`
+- `eh explore` as a read-only exploration surface for safe repository inspection
 - tool registry with typed metadata and validation
 - built-in file, shell, web, memory, skill, task, and subagent tools
 - multimodal prompt attachments for local images, audio, documents, and sampled video frames
@@ -119,7 +126,7 @@ EcologyHarness/
 - curated agriculture/environment/ecology MCP server catalog
 - closed-algae-system and photobioreactor skills plus lab-analysis MCP catalog entries
 - richer plugin lifecycle hooks across session, run, compaction, and error phases
-- safer browser/web handling that marks external content as untrusted input by default
+- safer browser/web handling that marks external content as untrusted input by default and restricts browser tools to `http(s)` URLs
 - permission policy for read-only and workspace-write modes
 - unit test suite built on the standard library
 
@@ -386,6 +393,21 @@ After installation, these are the fastest ways to verify the harness is working:
 # status overview
 eh status
 
+# live runtime snapshot
+eh runtime
+
+# recent usage and query history
+eh analytics
+
+# workspace health report
+eh doctor
+
+# scaffold workspace operator files
+eh setup
+
+# read-only repository exploration
+eh explore "summarize the codebase and highlight likely risks"
+
 # list built-in tools
 eh tools
 
@@ -402,6 +424,11 @@ eh mcp
 export OPENROUTER_API_KEY="sk-or-..."
 eh --provider openrouter --model openai/gpt-4.1-mini \
   "summarize this repository in 5 bullets"
+
+# use the new workflow aliases
+eh clarify "help me tighten the scope of an ecology data-analysis task"
+eh ralplan "design an execution plan for a wetland methane workflow"
+eh ralph "execute the approved plan and report verification"
 
 # one-shot prompt using the natural shorthand
 eh "summarize this repository in 5 bullets"

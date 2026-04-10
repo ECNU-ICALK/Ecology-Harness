@@ -14,6 +14,7 @@ from ecology_harness.tools.builtin.system_tools import register_system_tools
 from ecology_harness.tools.builtin.task_tools import register_task_tools
 from ecology_harness.tools.builtin.search_tools import register_search_tools
 from ecology_harness.tools.builtin.web_tools import register_web_tools
+from ecology_harness.tools.builtin.workspace_tools import register_workspace_tools
 from ecology_harness.tools.registry import ToolRegistry
 
 
@@ -30,6 +31,7 @@ def register_builtin_tools(registry: ToolRegistry) -> None:
     register_task_tools(registry)
     register_system_tools(registry)
     register_runtime_tools(registry)
+    register_workspace_tools(registry)
     register_agent_tools(registry)
     register_plugin_tools(registry)
     register_mcp_tools(registry)

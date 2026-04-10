@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import threading
 import time
 import uuid
 
@@ -81,72 +82,76 @@ class AutomationManager:
         self.directory.mkdir(parents=True, exist_ok=True)
         self.path = self.directory / "jobs.json"
         self.heartbeat_state_path = self.directory / "heartbeat.json"
+        self._lock = threading.RLock()
         if not self.path.exists():
             self._write([])
         if not self.heartbeat_state_path.exists():
             self._write_heartbeat_state({})
 
     def list_jobs(self) -> list[AutomationJob]:
-        return [AutomationJob.from_dict(item) for item in self._read()]
+        with self._lock:
+            return [AutomationJob.from_dict(item) for item in self._read()]
 
     def create_job(self, name: str, prompt: str, schedule: str = "daily", enabled: bool = True, notes: str = "") -> AutomationJob:
-        now = _utcnow()
-        job = AutomationJob(
-            job_id="job_%s" % uuid.uuid4().hex[:10],
-            name=name.strip(),
-            prompt=prompt.strip(),
-            schedule=schedule.strip().lower() or "daily",
-            created_at=_dt_to_text(now),
-            next_run_at=_dt_to_text(self._next_run(now, schedule)),
-            enabled=enabled,
-            notes=notes.strip(),
-        )
-        payload = self._read()
-        payload.append(job.to_dict())
-        self._write(payload)
-        return job
+        with self._lock:
+            now = _utcnow()
+            job = AutomationJob(
+                job_id="job_%s" % uuid.uuid4().hex[:10],
+                name=name.strip(),
+                prompt=prompt.strip(),
+                schedule=schedule.strip().lower() or "daily",
+                created_at=_dt_to_text(now),
+                next_run_at=_dt_to_text(self._next_run(now, schedule)),
+                enabled=enabled,
+                notes=notes.strip(),
+            )
+            payload = self._read()
+            payload.append(job.to_dict())
+            self._write(payload)
+            return job
 
     def run_due(self, runner) -> list[dict[str, object]]:
-        now = _utcnow()
-        payload = self._read()
-        results: list[dict[str, object]] = []
-        for item in payload:
-            job = AutomationJob.from_dict(item)
-            if not job.enabled:
-                continue
-            if _parse_dt(job.next_run_at) > now:
-                continue
-            started = time.monotonic()
-            try:
-                output = runner(job)
-                error = ""
-                status = "succeeded"
-            except Exception as exc:
-                output = None
-                error = str(exc)
-                status = "failed"
-            duration_ms = int((time.monotonic() - started) * 1000)
-            job.last_run_at = _dt_to_text(now)
-            job.next_run_at = _dt_to_text(self._next_run(now, job.schedule))
-            job.run_count += 1
-            job.last_status = status
-            job.last_error = error
-            job.last_duration_ms = duration_ms
-            item.update(job.to_dict())
-            results.append(
-                {
-                    "job_id": job.job_id,
-                    "name": job.name,
-                    "ran_at": job.last_run_at,
-                    "next_run_at": job.next_run_at,
-                    "status": status,
-                    "error": error,
-                    "duration_ms": duration_ms,
-                    "output": output,
-                }
-            )
-        self._write(payload)
-        return results
+        with self._lock:
+            now = _utcnow()
+            payload = self._read()
+            results: list[dict[str, object]] = []
+            for item in payload:
+                job = AutomationJob.from_dict(item)
+                if not job.enabled:
+                    continue
+                if _parse_dt(job.next_run_at) > now:
+                    continue
+                started = time.monotonic()
+                try:
+                    output = runner(job)
+                    error = ""
+                    status = "succeeded"
+                except Exception as exc:
+                    output = None
+                    error = str(exc)
+                    status = "failed"
+                duration_ms = int((time.monotonic() - started) * 1000)
+                job.last_run_at = _dt_to_text(now)
+                job.next_run_at = _dt_to_text(self._next_run(now, job.schedule))
+                job.run_count += 1
+                job.last_status = status
+                job.last_error = error
+                job.last_duration_ms = duration_ms
+                item.update(job.to_dict())
+                self._write(payload)
+                results.append(
+                    {
+                        "job_id": job.job_id,
+                        "name": job.name,
+                        "ran_at": job.last_run_at,
+                        "next_run_at": job.next_run_at,
+                        "status": status,
+                        "error": error,
+                        "duration_ms": duration_ms,
+                        "output": output,
+                    }
+                )
+            return results
 
     def heartbeat_instruction_path(self, workspace_root: Path) -> Path | None:
         for name in ("HEARTBEAT.md", "heartbeat.md"):
@@ -157,7 +162,8 @@ class AutomationManager:
 
     def heartbeat_status(self, workspace_root: Path, interval_minutes: int = 60) -> dict[str, object]:
         now = _utcnow()
-        state = self._read_heartbeat_state()
+        with self._lock:
+            state = self._read_heartbeat_state()
         path = self.heartbeat_instruction_path(workspace_root)
         prompt = ""
         if path is not None:
@@ -196,7 +202,8 @@ class AutomationManager:
         force: bool = False,
     ) -> dict[str, object]:
         now = _utcnow()
-        state = self._read_heartbeat_state()
+        with self._lock:
+            state = self._read_heartbeat_state()
         path = self.heartbeat_instruction_path(workspace_root)
         if path is None:
             return {"ran": False, "skipped": True, "reason": "no-heartbeat-file"}
@@ -242,19 +249,20 @@ class AutomationManager:
         cleaned_text = final_text.replace("HEARTBEAT_OK", "").strip()
         noop = final_text.strip() == "HEARTBEAT_OK" or not cleaned_text
         next_run_at = _dt_to_text(self._next_heartbeat_run(now, interval_minutes))
-        state.update(
-            {
-                "last_run_at": _dt_to_text(now),
-                "next_run_at": next_run_at,
-                "last_result": cleaned_text,
-                "noop": noop,
-                "path": str(path),
-                "last_error": error,
-                "last_status": status,
-                "last_duration_ms": int((time.monotonic() - started) * 1000),
-            }
-        )
-        self._write_heartbeat_state(state)
+        with self._lock:
+            state.update(
+                {
+                    "last_run_at": _dt_to_text(now),
+                    "next_run_at": next_run_at,
+                    "last_result": cleaned_text,
+                    "noop": noop,
+                    "path": str(path),
+                    "last_error": error,
+                    "last_status": status,
+                    "last_duration_ms": int((time.monotonic() - started) * 1000),
+                }
+            )
+            self._write_heartbeat_state(state)
         return {
             "ran": status == "succeeded",
             "skipped": False,

@@ -36,6 +36,7 @@ from ecology_harness.tools import ToolRegistry
 from ecology_harness.tools.builtin import register_builtin_tools
 from ecology_harness.profiles import ProfileManager
 from ecology_harness.automation import AutomationManager
+from ecology_harness.utils import append_text_line
 
 
 class EcologyHarnessApp:
@@ -73,11 +74,22 @@ class EcologyHarnessApp:
         if self._initialized:
             return
         self.settings.ensure_directories()
+        self._initialize_storage_roots()
+        self._initialize_services()
+        self._initialize_memory_providers()
+        register_builtin_tools(self.registry)
+        self.mcp_registry.register_dynamic_tools(self.registry)
+        self._initialized = True
+        self.start_new_session()
+
+    def _initialize_storage_roots(self) -> None:
         self.settings.user_memory_dir.mkdir(parents=True, exist_ok=True)
         self.settings.user_skill_dir.mkdir(parents=True, exist_ok=True)
         self.settings.user_plugin_dir.mkdir(parents=True, exist_ok=True)
         self.settings.user_mcp_dir.mkdir(parents=True, exist_ok=True)
         self.settings.user_agent_dir.mkdir(parents=True, exist_ok=True)
+
+    def _initialize_services(self) -> None:
         self.memory_manager = MemoryManager(
             user_root=self.settings.user_memory_dir,
             project_root=self.settings.memory_dir,
@@ -130,6 +142,8 @@ class EcologyHarnessApp:
         self.profile_manager = ProfileManager(self.settings.profile_dir, active_profile=self.settings.active_profile)
         self.settings.active_profile = self.profile_manager.get_active().name
         self.automation_manager = AutomationManager(self.settings.automation_dir)
+
+    def _initialize_memory_providers(self) -> None:
         project_profile = MarkdownProfileProvider(
             name="project-profile",
             path=self.settings.profile_dir / "project-profile.md",
@@ -150,10 +164,6 @@ class EcologyHarnessApp:
             ],
             history_turns=self.settings.skill_retrieval_history_turns,
         )
-        register_builtin_tools(self.registry)
-        self.mcp_registry.register_dynamic_tools(self.registry)
-        self._initialized = True
-        self.start_new_session()
 
     def build_system_prompt(
         self,
@@ -296,82 +306,28 @@ class EcologyHarnessApp:
         try:
             skill = self.skill_loader.find_by_trigger(prompt)  # type: ignore[union-attr]
             if skill is not None:
-                trigger = prompt.strip().split(" ", 1)[0]
-                args = prompt.strip()[len(trigger) :].strip()
-                self.skill_loader.record_usage(  # type: ignore[union-attr]
+                result = self._run_triggered_skill(
                     skill,
-                    query=prompt,
-                    mode="trigger",
-                    session_id=self._active_session_id,
-                )
-                result = execute_skill(
-                    self,
-                    skill,
-                    args,
-                    depth=0,
-                    event_handler=event_handler,
+                    prompt,
                     conversation=conversation,
                     attachment_paths=attachment_paths,
+                    event_handler=event_handler,
                 )
-                if getattr(result, "messages", None):
-                    compactions = getattr(result, "compactions", [])
-                    self.save_session(
-                        result.messages,
-                        compaction=compactions[-1] if compactions else None,
-                    )
-                    self._post_run_artifacts(
-                        prompt=prompt,
-                        result=result,
-                        attachment_paths=attachment_paths,
-                    )
-                self.run_plugin_hooks(
-                    "PostRun",
-                    {
-                        "prompt": prompt,
-                        "final_text": getattr(result, "final_text", ""),
-                        "steps": getattr(result, "steps", 0),
-                        "tool_count": len(getattr(result, "tool_invocations", [])),
-                        "session_id": self._active_session_id,
-                    },
+            else:
+                result = self._run_agent_prompt(
+                    prompt,
+                    provider_name=provider_name,
+                    allowed_tools=allowed_tools,
                     settings=active_settings,
-                )
-                return result
-            runner = self.create_agent_loop(
-                provider_name,
-                allowed_tools=allowed_tools,
-                settings=active_settings,
-            )
-            result = runner.run(
-                prompt=prompt,
-                settings=active_settings,
-                system_prompt=self.build_system_prompt(
-                    settings=active_settings,
-                    prompt_text=prompt,
                     conversation=conversation,
-                ),
-                conversation=conversation,
-                attachment_paths=attachment_paths,
-                event_handler=event_handler,
-            )
-            self.save_session(
-                result.messages,
-                compaction=result.compactions[-1] if result.compactions else None,
-            )
-            self._post_run_artifacts(
+                    attachment_paths=attachment_paths,
+                    event_handler=event_handler,
+                )
+            self._finalize_run(
                 prompt=prompt,
                 result=result,
-                attachment_paths=attachment_paths,
-            )
-            self.run_plugin_hooks(
-                "PostRun",
-                {
-                    "prompt": prompt,
-                    "final_text": result.final_text,
-                    "steps": result.steps,
-                    "tool_count": len(result.tool_invocations),
-                    "session_id": self._active_session_id,
-                },
                 settings=active_settings,
+                attachment_paths=attachment_paths,
             )
             return result
         except Exception as exc:
@@ -419,8 +375,11 @@ class EcologyHarnessApp:
             "kind": kind,
             "payload": payload,
         }
-        with self.settings.audit_log_file.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        append_text_line(
+            self.settings.audit_log_file,
+            json.dumps(entry, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
 
     def save_session(self, messages, compaction: dict | None = None) -> None:
         self._ensure_initialized()
@@ -646,6 +605,97 @@ class EcologyHarnessApp:
             return
 
         _run_review()
+
+    def _run_triggered_skill(
+        self,
+        skill,
+        prompt: str,
+        *,
+        conversation: list[ChatMessage] | None,
+        attachment_paths: list[str] | None,
+        event_handler=None,
+    ):
+        trigger = prompt.strip().split(" ", 1)[0]
+        args = prompt.strip()[len(trigger) :].strip()
+        self.skill_loader.record_usage(  # type: ignore[union-attr]
+            skill,
+            query=prompt,
+            mode="trigger",
+            session_id=self._active_session_id,
+        )
+        return execute_skill(
+            self,
+            skill,
+            args,
+            depth=0,
+            event_handler=event_handler,
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+        )
+
+    def _run_agent_prompt(
+        self,
+        prompt: str,
+        *,
+        provider_name: str,
+        allowed_tools: set[str] | None,
+        settings: HarnessSettings,
+        conversation: list[ChatMessage] | None,
+        attachment_paths: list[str] | None,
+        event_handler=None,
+    ):
+        runner = self.create_agent_loop(
+            provider_name,
+            allowed_tools=allowed_tools,
+            settings=settings,
+        )
+        return runner.run(
+            prompt=prompt,
+            settings=settings,
+            system_prompt=self.build_system_prompt(
+                settings=settings,
+                prompt_text=prompt,
+                conversation=conversation,
+            ),
+            conversation=conversation,
+            attachment_paths=attachment_paths,
+            event_handler=event_handler,
+        )
+
+    def _finalize_run(
+        self,
+        *,
+        prompt: str,
+        result,
+        settings: HarnessSettings,
+        attachment_paths: list[str] | None,
+    ) -> None:
+        messages = list(getattr(result, "messages", []) or [])
+        if messages:
+            compactions = list(getattr(result, "compactions", []) or [])
+            self.save_session(
+                messages,
+                compaction=compactions[-1] if compactions else None,
+            )
+            self._post_run_artifacts(
+                prompt=prompt,
+                result=result,
+                attachment_paths=attachment_paths,
+            )
+        self.run_plugin_hooks(
+            "PostRun",
+            self._post_run_payload(prompt, result),
+            settings=settings,
+        )
+
+    def _post_run_payload(self, prompt: str, result) -> dict[str, object]:
+        return {
+            "prompt": prompt,
+            "final_text": getattr(result, "final_text", ""),
+            "steps": getattr(result, "steps", 0),
+            "tool_count": len(getattr(result, "tool_invocations", [])),
+            "session_id": self._active_session_id,
+        }
 
     def _safe_index_session(self, managed, *, stage: str) -> None:
         if self.session_index is None:

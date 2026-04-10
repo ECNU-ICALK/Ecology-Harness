@@ -18,7 +18,10 @@ class PromptBuilder:
         "TOOLS.md",
         "IDENTITY.md",
         "USER.md",
+    )
+    _HEARTBEAT_FILE_NAMES = (
         "HEARTBEAT.md",
+        "heartbeat.md",
     )
 
     def build(
@@ -125,7 +128,11 @@ class PromptBuilder:
                     mode,
                     total_sessions,
                 )
-        workspace_bootstrap = self._get_workspace_bootstrap_context(settings.workspace_root, settings)
+        workspace_bootstrap = self._get_workspace_bootstrap_context(
+            settings.workspace_root,
+            settings,
+            runtime_mode=runtime_mode,
+        )
 
         prompt = (
             "You are Ecology Harness, a terminal-native agent harness.\n"
@@ -241,8 +248,13 @@ class PromptBuilder:
         self,
         workspace_root: Path,
         settings: HarnessSettings,
+        runtime_mode: str,
     ) -> str:
-        files = self._discover_workspace_bootstrap_files(workspace_root, max_files=settings.workspace_bootstrap_max_files)
+        files = self._discover_workspace_bootstrap_files(
+            workspace_root,
+            max_files=settings.workspace_bootstrap_max_files,
+            runtime_mode=runtime_mode,
+        )
         if not files:
             return ""
         max_total = max(int(settings.workspace_bootstrap_max_total_chars or 0), 0)
@@ -274,12 +286,20 @@ class PromptBuilder:
             remaining -= len(content)
         return "\n\n".join(parts)
 
-    def _discover_workspace_bootstrap_files(self, workspace_root: Path, max_files: int) -> list[Path]:
+    def _discover_workspace_bootstrap_files(
+        self,
+        workspace_root: Path,
+        max_files: int,
+        runtime_mode: str,
+    ) -> list[Path]:
         current = workspace_root.resolve()
         discovered: list[Path] = []
         seen_names: set[str] = set()
+        file_names = list(self._BOOTSTRAP_FILE_NAMES)
+        if self._should_include_heartbeat_file(runtime_mode):
+            file_names.extend(self._HEARTBEAT_FILE_NAMES)
         for _ in range(6):
-            for name in self._BOOTSTRAP_FILE_NAMES:
+            for name in file_names:
                 if len(discovered) >= max_files:
                     return discovered
                 candidate = current / name
@@ -291,3 +311,6 @@ class PromptBuilder:
                 break
             current = current.parent
         return discovered
+
+    def _should_include_heartbeat_file(self, runtime_mode: str) -> bool:
+        return (runtime_mode or "default").strip().lower() == "heartbeat"

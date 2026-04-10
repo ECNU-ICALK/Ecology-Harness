@@ -22,6 +22,8 @@ except Exception:  # pragma: no cover - optional dependency fallback
     InMemoryHistory = None  # type: ignore[assignment]
     CompleteStyle = None  # type: ignore[assignment]
 
+from ecology_harness.runtime.compaction import estimate_tokens
+
 
 @dataclass(frozen=True)
 class CommandSuggestion:
@@ -32,7 +34,12 @@ class CommandSuggestion:
 
 SESSION_COMMAND_SUGGESTIONS = [
     CommandSuggestion("/help", "show session commands", "session"),
+    CommandSuggestion("/doctor", "run an environment and workspace health report", "session"),
+    CommandSuggestion("/setup", "scaffold workspace bootstrap files", "session"),
+    CommandSuggestion("/explore", "run a read-only exploration pass over the workspace", "session"),
     CommandSuggestion("/status", "show session status", "session"),
+    CommandSuggestion("/runtime", "show a live runtime snapshot with context pressure", "session"),
+    CommandSuggestion("/analytics", "summarize recent usage, sessions, and trajectories", "session"),
     CommandSuggestion("/config", "show active runtime configuration", "session"),
     CommandSuggestion("/permissions", "show or change permission mode", "session"),
     CommandSuggestion("/model", "show or change the active model", "session"),
@@ -185,21 +192,31 @@ def build_toolbar_text(app, state=None) -> str:
     trace_enabled = getattr(state, "trace_enabled", True)
     total_tool_calls = getattr(state, "total_tool_calls", 0)
     attachment_count = len(getattr(state, "pending_attachment_paths", []) or [])
+    conversation = getattr(state, "conversation", []) or []
     provider = getattr(app.settings, "provider", "auto") or "auto"
     model = getattr(app.settings, "model", "")
+    active_profile = getattr(app.settings, "active_profile", "default") or "default"
     permission_mode = getattr(app.settings, "permission_mode", "workspace-write")
     sandbox_mode = getattr(app.settings, "sandbox_mode", "workspace-write")
     sandbox_state = "off" if not getattr(app.settings, "sandbox_enabled", True) else sandbox_mode
     runtime_mode = getattr(app, "runtime_mode", "default")
+    try:
+        token_estimate = estimate_tokens(conversation) if conversation else 0
+    except Exception:
+        token_estimate = 0
+    max_context_tokens = max(int(getattr(app.settings, "max_context_tokens", 0) or 0), 1)
+    context_pressure = int(min(float(token_estimate) / float(max_context_tokens), 1.0) * 100)
     parts = [
         "/ for commands",
         "model: %s" % model,
         "provider: %s" % provider,
         "mode: %s" % runtime_mode,
+        "profile: %s" % active_profile,
         "permissions: %s" % permission_mode,
         "sandbox: %s" % sandbox_state,
         "trace: %s" % ("on" if trace_enabled else "off"),
         "turns: %s" % turns,
+        "ctx: %s%%" % context_pressure,
         "tools: %s" % total_tool_calls,
         "attachments: %s" % attachment_count,
     ]

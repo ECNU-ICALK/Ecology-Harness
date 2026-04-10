@@ -6,7 +6,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 项目希望在保持通用 Harness 内核稳定的同时，把生态领域的扩展面做得越来越丰富，让新的 skills、MCP servers 和 tools 能持续叠加而不把核心运行时搞乱。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.4.1 beta`（包版本为 `0.4.1b0`）。
+当前发布版本是 `0.5.0 beta`（包版本为 `0.5.0b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 阅读导航
@@ -32,6 +32,8 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
+- `2026-04-11`：对 `0.5.0 beta` 做了一轮交付级 hardening，收紧了 workspace operator 上下文边界，让 `HEARTBEAT.md` 只在 heartbeat 运行时注入，同时把浏览器工具限制为只接受 `http(s)` URL，并完成了新一轮回归、构建与打包校验。
+- `2026-04-11`：发布 `0.5.0 beta`，加入 `eh doctor`、`eh setup`、只读 `eh explore`、`eh runtime`、`eh analytics`，以及更清晰的 clarify → plan → execute 工作流别名；这些能力参考了 oh-my-codex，但仍保持现有 Ecology Harness 运行时的轻量结构。
 - `2026-04-10`：发布 `0.4.1 beta`，加入了更像 OpenClaw 的 workspace bootstrap context files、轻量 heartbeat、更多 plugin 生命周期 hooks，以及对外部浏览器内容“默认不可信”的安全处理。
 - `2026-04-10`：发布 `0.4.0 beta`，新增 provider 路由与 fallback、session 标题和 SQLite 索引、checkpoint、profile、automation、最小 API server、browser/code execution 工具，以及更完整的 skill 治理能力。
 - `2026-04-10`：发布 `0.3.1 beta`，新增 `SkillHub` 与 `SkillView(file_path)` 渐进式 bundle 查看能力，修补旧 skill snapshot 的兼容问题，并完成一轮交付级审计，包括单元测试、wheel/sdist 打包校验和安装后 smoke test。
@@ -89,8 +91,13 @@ EcologyHarness/
 - 会话持久化、恢复与上下文压缩
 - 基于 query rewrite 和 BM25 的历史 session 检索与召回
 - 可配置 Sandbox、权限策略与审计
-- 支持自动读取 `STANDING_ORDERS.md`、`AGENTS.md`、`BOOTSTRAP.md`、`HEARTBEAT.md` 等 workspace bootstrap 上下文文件
+- 支持自动读取 `STANDING_ORDERS.md`、`AGENTS.md`、`BOOTSTRAP.md` 等 workspace bootstrap 上下文文件，`HEARTBEAT.md` 仅在 heartbeat 运行时注入
+- `eh setup` 可为工作区脚手架生成 `AGENTS.md`、`STANDING_ORDERS.md`、`BOOTSTRAP.md`、`HEARTBEAT.md`
+- `eh doctor` 可做工作区、依赖、skills 与 MCP readiness 的健康检查
+- `eh runtime` 可查看实时运行快照，包括上下文压力、active profile、任务计数和子智能体状态
+- `eh analytics` 可汇总近期 session、query history、trajectory 切片、skill 使用情况、automation 与 MCP 状态
 - 基于工作区 `HEARTBEAT.md` 的轻量 heartbeat 查看与执行能力
+- `eh explore` 提供只读探索模式，适合安全地浏览仓库和整理上下文
 - 工具注册系统与内置通用工具
 - 支持本地图片、音频、文档与视频抽帧附件的多模态输入
 - 内置文档分析工具，可处理 `pdf`、`docx`、`md`、`csv`、`json`、`html`、`ipynb`
@@ -111,7 +118,7 @@ EcologyHarness/
 - 面向农业、环境、生态场景的 MCP 目录
 - 封闭藻类系统 / 光生物反应器 skills 与实验分析型 MCP 目录
 - 覆盖 session、run、compaction 和 error 阶段的更完整 plugin lifecycle hooks
-- 对 browser/web 抓取内容默认按“不可信外部输入”处理
+- 对 browser/web 抓取内容默认按“不可信外部输入”处理，并把浏览器工具限制为只接受 `http(s)` URL
 - 标准库 `unittest` 测试集
 
 ## 已安装 Skill Packs
@@ -374,6 +381,21 @@ PYTHONPATH=src python3 -m ecology_harness --help
 # 查看状态
 eh status
 
+# 查看实时运行快照
+eh runtime
+
+# 查看近期使用与查询历史摘要
+eh analytics
+
+# 查看工作区健康状态
+eh doctor
+
+# 初始化 bootstrap 文件
+eh setup
+
+# 只读探索仓库
+eh explore "梳理这个仓库的结构和潜在风险"
+
 # 查看内置工具
 eh tools
 
@@ -388,6 +410,11 @@ eh providers
 export OPENROUTER_API_KEY="sk-or-..."
 eh --provider openrouter --model openai/gpt-4.1-mini \
   "summarize this repository in 5 bullets"
+
+# 使用新的工作流别名
+eh clarify "帮我先把一个生态数据分析任务的边界理清楚"
+eh ralplan "为湿地甲烷分析工作流设计执行计划"
+eh ralph "执行已经批准的计划并汇报验证结果"
 
 # 查看生态技能
 eh skills
