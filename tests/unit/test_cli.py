@@ -298,6 +298,35 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("hello provider timeout", buffer.getvalue())
 
+    def test_cli_accepts_provider_router_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "--provider-fallback",
+                        "openai",
+                        "--provider-fallback",
+                        "gemini",
+                        "--provider-retry-attempts",
+                        "3",
+                        "--provider-retry-backoff-ms",
+                        "250",
+                        "--provider-pool-strategy",
+                        "round-robin",
+                        "config",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            output = buffer.getvalue()
+            self.assertIn("provider_fallbacks: openai, gemini", output)
+            self.assertIn("provider_retry_attempts: 3", output)
+            self.assertIn("provider_retry_backoff_ms: 250", output)
+            self.assertIn("provider_pool_strategy: round-robin", output)
+
     def test_cli_max_steps_defaults_to_unlimited(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             buffer = io.StringIO()

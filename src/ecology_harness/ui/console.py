@@ -234,6 +234,8 @@ class ConsoleRenderer:
                 "command_timeout_sec: %s" % settings.command_timeout_sec,
                 "provider_timeout_sec: %s" % settings.provider_timeout_sec,
                 "provider_fallbacks: %s" % (", ".join(settings.provider_fallbacks) or "-"),
+                "provider_retry_attempts: %s" % settings.provider_retry_attempts,
+                "provider_retry_backoff_ms: %s" % settings.provider_retry_backoff_ms,
                 "provider_pool_strategy: %s" % settings.provider_pool_strategy,
                 "sandbox: %s" % self.sandbox_text(settings),
                 "",

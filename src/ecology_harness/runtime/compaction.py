@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
+from typing import Callable, Optional
 
 from ecology_harness.runtime.messages import ChatMessage
 
@@ -15,6 +16,7 @@ COMPACT_DIRECT_RESUME_INSTRUCTION = (
     "Continue directly from the preserved context. Do not acknowledge the summary or ask the "
     "user to repeat prior details."
 )
+CriticalFactExtractor = Callable[[list[ChatMessage], int], Optional[list[str]]]
 
 
 @dataclass(frozen=True)
@@ -39,7 +41,9 @@ class SummaryCompressionResult:
 @dataclass(frozen=True)
 class CompactionConfig:
     preserve_recent_messages: int = 8
+    min_recent_messages: int = 4
     max_estimated_tokens: int = 10_000
+    target_estimated_tokens: int = 8_000
     summary_budget: SummaryCompressionBudget = SummaryCompressionBudget()
 
 
@@ -105,8 +109,13 @@ def maybe_compact_messages(
     messages: list[ChatMessage],
     max_context_tokens: int,
     preserve_last_n_turns: int,
+    critical_fact_extractor: CriticalFactExtractor | None = None,
 ) -> CompactionResult:
     threshold = int(max_context_tokens * 0.7)
+    target_after = min(
+        threshold,
+        max(int(max_context_tokens * 0.55), min(512, threshold)),
+    )
     token_estimate_before = estimate_tokens(messages)
     if token_estimate_before <= threshold:
         return CompactionResult(
@@ -129,12 +138,15 @@ def maybe_compact_messages(
 
     config = CompactionConfig(
         preserve_recent_messages=max(6, preserve_last_n_turns * 2),
+        min_recent_messages=max(4, preserve_last_n_turns),
         max_estimated_tokens=threshold,
+        target_estimated_tokens=target_after,
     )
     return compact_messages(
         snipped_messages,
         config=config,
         token_estimate_before=token_estimate_before,
+        critical_fact_extractor=critical_fact_extractor,
     )
 
 
@@ -142,6 +154,7 @@ def compact_messages(
     messages: list[ChatMessage],
     config: CompactionConfig | None = None,
     token_estimate_before: int | None = None,
+    critical_fact_extractor: CriticalFactExtractor | None = None,
 ) -> CompactionResult:
     active_config = config or CompactionConfig()
     start = _compaction_start_index(messages)
@@ -154,19 +167,66 @@ def compact_messages(
             token_estimate_after=current_tokens,
         )
 
-    keep_from = max(start, len(messages) - active_config.preserve_recent_messages)
+    preferred_preserve = min(max(active_config.preserve_recent_messages, 1), len(compactable))
+    soft_min_preserve = min(
+        preferred_preserve,
+        max(2, min(active_config.min_recent_messages, len(compactable))),
+    )
+    hard_min_preserve = 1 if preferred_preserve else 0
+
+    best_result: CompactionResult | None = None
+    for preserve_count in range(preferred_preserve, hard_min_preserve - 1, -1):
+        result = _build_compaction_candidate(
+            messages,
+            start=start,
+            preserve_count=preserve_count,
+            active_config=active_config,
+            token_estimate_before=token_estimate_before,
+            critical_fact_extractor=critical_fact_extractor,
+        )
+        if result is None:
+            continue
+        if best_result is None or result.token_estimate_after < best_result.token_estimate_after:
+            best_result = result
+        if result.token_estimate_after <= active_config.target_estimated_tokens:
+            return result
+        if (
+            preserve_count <= soft_min_preserve
+            and result.token_estimate_after <= active_config.max_estimated_tokens
+        ):
+            return result
+
+    if best_result is not None:
+        return best_result
+
+    current_tokens = estimate_tokens(messages)
+    return CompactionResult(
+        messages=messages,
+        token_estimate_before=token_estimate_before or current_tokens,
+        token_estimate_after=current_tokens,
+    )
+
+
+def _build_compaction_candidate(
+    messages: list[ChatMessage],
+    *,
+    start: int,
+    preserve_count: int,
+    active_config: CompactionConfig,
+    token_estimate_before: int | None,
+    critical_fact_extractor: CriticalFactExtractor | None,
+) -> CompactionResult | None:
+    keep_from = max(start, len(messages) - max(preserve_count, 0))
     removed = messages[start:keep_from]
     preserved = messages[keep_from:]
     if not removed:
-        current_tokens = estimate_tokens(messages)
-        return CompactionResult(
-            messages=messages,
-            token_estimate_before=token_estimate_before or current_tokens,
-            token_estimate_after=current_tokens,
-        )
+        return None
 
     existing_summary = _extract_existing_summary(messages)
-    new_summary = summarize_messages(removed)
+    new_summary = summarize_messages(
+        removed,
+        critical_fact_extractor=critical_fact_extractor,
+    )
     merged_summary = merge_compact_summaries(existing_summary, new_summary)
     formatted_summary = format_compact_summary(merged_summary)
     compressed_summary = compress_summary_text(
@@ -183,6 +243,49 @@ def compact_messages(
     compacted_messages.append(ChatMessage(role="system", content=continuation))
     compacted_messages.extend(preserved)
     token_after = estimate_tokens(compacted_messages)
+    if token_after > active_config.max_estimated_tokens and preserved:
+        budgeted_preserved = _snip_verbose_messages(
+            preserved,
+            max_chars=max(240, min(900, int(active_config.target_estimated_tokens or 0))),
+            preserve_tail=1,
+        )
+        compacted_messages = list(messages[:1]) if messages and messages[0].role == "system" else []
+        compacted_messages.append(ChatMessage(role="system", content=continuation))
+        compacted_messages.extend(budgeted_preserved)
+        token_after = estimate_tokens(compacted_messages)
+    if token_after > active_config.max_estimated_tokens:
+        tighter_budget = SummaryCompressionBudget(
+            max_chars=max(400, active_config.summary_budget.max_chars // 2),
+            max_lines=max(12, active_config.summary_budget.max_lines // 2),
+            max_line_chars=max(100, active_config.summary_budget.max_line_chars - 40),
+        )
+        compressed_summary = compress_summary_text(formatted_summary, budget=tighter_budget)
+        continuation = get_compact_continuation_message(
+            compressed_summary,
+            suppress_follow_up_questions=True,
+            recent_messages_preserved=bool(preserved),
+        )
+        compacted_messages = list(messages[:1]) if messages and messages[0].role == "system" else []
+        compacted_messages.append(ChatMessage(role="system", content=continuation))
+        compacted_messages.extend(
+            _snip_verbose_messages(
+                preserved,
+                max_chars=max(180, min(600, int(active_config.target_estimated_tokens * 0.75))),
+                preserve_tail=1,
+            )
+        )
+        token_after = estimate_tokens(compacted_messages)
+    if token_after > active_config.max_estimated_tokens and preserved:
+        compacted_messages = list(messages[:1]) if messages and messages[0].role == "system" else []
+        compacted_messages.append(ChatMessage(role="system", content=continuation))
+        compacted_messages.extend(
+            _snip_verbose_messages(
+                preserved,
+                max_chars=max(160, min(420, int(active_config.target_estimated_tokens * 0.6))),
+                preserve_tail=0,
+            )
+        )
+        token_after = estimate_tokens(compacted_messages)
     return CompactionResult(
         messages=compacted_messages,
         compacted=True,
@@ -195,7 +298,10 @@ def compact_messages(
     )
 
 
-def summarize_messages(messages: list[ChatMessage]) -> str:
+def summarize_messages(
+    messages: list[ChatMessage],
+    critical_fact_extractor: CriticalFactExtractor | None = None,
+) -> str:
     user_messages = [item for item in messages if item.role == "user"]
     assistant_messages = [item for item in messages if item.role == "assistant"]
     tool_messages = [item for item in messages if item.role == "tool"]
@@ -225,6 +331,14 @@ def summarize_messages(messages: list[ChatMessage]) -> str:
     if pending_work:
         lines.append("- Pending work:")
         lines.extend("  - %s" % item for item in pending_work[:4])
+
+    critical_facts = _extract_critical_facts(
+        messages,
+        extractor=critical_fact_extractor,
+    )
+    if critical_facts:
+        lines.append("- Critical facts to preserve:")
+        lines.extend("  - %s" % item for item in critical_facts[:5])
 
     key_files = _collect_key_files(messages)
     if key_files:
@@ -377,6 +491,39 @@ def _collect_recent_role_summaries(
     return summaries
 
 
+def _snip_verbose_messages(
+    messages: list[ChatMessage],
+    *,
+    max_chars: int,
+    preserve_tail: int = 1,
+) -> list[ChatMessage]:
+    if max_chars <= 0 or not messages:
+        return list(messages)
+    cutoff = max(0, len(messages) - max(preserve_tail, 0))
+    snipped: list[ChatMessage] = []
+    for index, message in enumerate(messages):
+        cloned = ChatMessage(
+            role=message.role,
+            content=message.content,
+            name=message.name,
+            tool_call_id=message.tool_call_id,
+            tool_calls=list(message.tool_calls),
+            content_parts=list(message.content_parts),
+        )
+        if index < cutoff and len(cloned.content_text() or "") > max_chars:
+            content = cloned.content_text()
+            first_half = content[: max_chars // 2]
+            last_quarter = content[-(max_chars // 4) :] if max_chars >= 4 else ""
+            snipped_chars = len(content) - len(first_half) - len(last_quarter)
+            cloned.content = "%s\n[... %s chars snipped ...]\n%s" % (
+                first_half,
+                max(snipped_chars, 0),
+                last_quarter,
+            )
+        snipped.append(cloned)
+    return snipped
+
+
 def _infer_pending_work(messages: list[ChatMessage]) -> list[str]:
     pending = []
     keywords = ("todo", "next", "remaining", "follow up", "need to", "should", "plan")
@@ -420,6 +567,101 @@ def _infer_current_work(messages: list[ChatMessage]) -> str:
         if text:
             return text
     return ""
+
+
+def _extract_critical_facts(
+    messages: list[ChatMessage],
+    limit: int = 5,
+    extractor: CriticalFactExtractor | None = None,
+) -> list[str]:
+    semantic_facts = _extract_semantic_critical_facts(
+        messages,
+        limit=limit,
+        extractor=extractor,
+    )
+    if semantic_facts:
+        return semantic_facts
+    return _extract_pattern_critical_facts(messages, limit=limit)
+
+
+def _extract_semantic_critical_facts(
+    messages: list[ChatMessage],
+    *,
+    limit: int,
+    extractor: CriticalFactExtractor | None,
+) -> list[str]:
+    if extractor is None:
+        return []
+    try:
+        extracted = extractor(messages, limit)
+    except Exception:
+        return []
+    return _normalize_critical_fact_items(extracted, limit=limit)
+
+
+def _extract_pattern_critical_facts(messages: list[ChatMessage], limit: int = 5) -> list[str]:
+    patterns = (
+        re.compile(r"\bMUST\s*:\s*(.+)", re.IGNORECASE),
+        re.compile(r"\bCRITICAL\s*:\s*(.+)", re.IGNORECASE),
+        re.compile(r"\bIMPORTANT\s*:\s*(.+)", re.IGNORECASE),
+        re.compile(r"\bDO NOT\s*:\s*(.+)", re.IGNORECASE),
+        re.compile(r"\bNEXT(?:\s+STEP)?\s*:\s*(.+)", re.IGNORECASE),
+    )
+    facts: list[str] = []
+    seen = set()
+    for message in messages:
+        text = message.summary_text(max_document_chars=900)
+        if not text:
+            continue
+        in_critical_section = False
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                in_critical_section = False
+                continue
+            lowered = line.lower()
+            if "critical facts" in lowered:
+                in_critical_section = True
+                continue
+            normalized = line.lstrip("-* ").strip()
+            matched = None
+            for pattern in patterns:
+                capture = pattern.search(normalized)
+                if capture:
+                    matched = capture.group(0).strip()
+                    break
+            if matched is None and in_critical_section and normalized:
+                matched = normalized
+            if matched is None:
+                continue
+            truncated = _truncate_line(_collapse_inline_whitespace(matched), 180)
+            key = truncated.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            facts.append(truncated)
+            if len(facts) >= limit:
+                return facts
+    return facts
+
+
+def _normalize_critical_fact_items(items: list[str] | None, *, limit: int) -> list[str]:
+    if not items:
+        return []
+    facts: list[str] = []
+    seen = set()
+    for raw_item in items:
+        text = _truncate_line(_collapse_inline_whitespace(str(raw_item or "").strip()), 180)
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        facts.append(text)
+        if len(facts) >= limit:
+            break
+    return facts
 
 
 def _summarize_message(message: ChatMessage) -> str:
@@ -501,7 +743,11 @@ def _push_line_with_budget(lines: list[str], line: str, budget: SummaryCompressi
 
 
 def _line_priority(line: str) -> int:
-    if line in {"Summary:", "Conversation summary:"} or _is_core_detail(line):
+    if (
+        line in {"Summary:", "Conversation summary:"}
+        or _is_core_detail(line)
+        or _contains_preserve_signal(line)
+    ):
         return 0
     if line.endswith(":"):
         return 1
@@ -517,11 +763,27 @@ def _is_core_detail(line: str) -> bool:
             "- Scope:",
             "- Current work:",
             "- Pending work:",
+            "- Critical facts to preserve:",
             "- Key files referenced:",
             "- Tools mentioned:",
             "- Recent user requests:",
             "- Previously compacted context:",
             "- Newly compacted context:",
+        )
+    )
+
+
+def _contains_preserve_signal(line: str) -> bool:
+    upper = line.upper()
+    return any(
+        marker in upper
+        for marker in (
+            "MUST:",
+            "CRITICAL:",
+            "IMPORTANT:",
+            "DO NOT:",
+            "NEXT:",
+            "NEXT STEP:",
         )
     )
 

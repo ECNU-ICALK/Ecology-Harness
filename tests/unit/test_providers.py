@@ -1,7 +1,9 @@
 import json
+import io
 import os
 import socket
 import unittest
+from urllib import error
 from unittest.mock import patch
 
 from ecology_harness.config import HarnessSettings
@@ -15,12 +17,16 @@ from ecology_harness.runtime.providers import (
     bare_model,
     create_provider,
     detect_provider,
+    effective_context_limit,
     list_provider_specs,
     resolve_api_key,
     resolve_base_url,
     resolve_provider,
 )
+from ecology_harness.tools.registry import ToolRegistry
 from ecology_harness.tools import ToolDefinition, ToolResult
+from ecology_harness.tools.builtin.claw_tools import register_claw_compat_tools
+from ecology_harness.tools.builtin.task_tools import register_task_tools
 
 
 class _FakeResponse:
@@ -42,10 +48,12 @@ class _CaptureUrlopen:
     def __init__(self, payload):
         self.payload = payload
         self.seen_timeout = None
+        self.request_body = None
 
     def __call__(self, req, timeout=None):
-        del req
         self.seen_timeout = timeout
+        if getattr(req, "data", None):
+            self.request_body = json.loads(req.data.decode("utf-8"))
         return _FakeResponse(self.payload)
 
 
@@ -160,6 +168,18 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(provider_name, "openrouter")
         self.assertEqual(model_name, "openai/gpt-4.1-mini")
 
+    def test_effective_context_limit_respects_provider_caps(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        self.assertEqual(settings.max_context_tokens, 640_000)
+
+        settings.provider = "openai"
+        settings.model = "gpt-4o"
+        self.assertEqual(effective_context_limit(settings), 128_000)
+
+        settings.provider = "openrouter"
+        settings.model = "google/gemma-4-26b-a4b-it"
+        self.assertEqual(effective_context_limit(settings), 640_000)
+
     def test_provider_router_round_robin_reports_actual_key_slot(self) -> None:
         from ecology_harness.runtime.provider_router import RoutedProvider
 
@@ -255,6 +275,67 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(result.content, "done")
         self.assertIsNone(capture.seen_timeout)
 
+    def test_openai_compatible_provider_normalizes_missing_array_items(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.api_key = "test-key"
+        settings.provider = "gemini"
+        settings.model = "gemini-2.0-flash"
+        provider = OpenAICompatibleProvider()
+        tool = ToolDefinition(
+            name="BrokenArrayTool",
+            description="Tool with underspecified arrays.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "files": {"type": "array"},
+                    "constraints": {"type": "array"},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "tags": {"type": "array"},
+                            },
+                        },
+                    },
+                },
+            },
+            handler=lambda params, _: ToolResult(content=json.dumps(params)),
+        )
+        capture = _CaptureUrlopen({"choices": [{"message": {"content": "done"}}]})
+
+        with patch("ecology_harness.runtime.providers.request.urlopen", side_effect=capture):
+            result = provider.complete(
+                [ChatMessage(role="system", content="system"), ChatMessage(role="user", content="hello")],
+                [tool],
+                settings,
+            )
+
+        self.assertEqual(result.content, "done")
+        parameters = capture.request_body["tools"][0]["function"]["parameters"]
+        self.assertEqual(parameters["properties"]["files"]["items"]["type"], "string")
+        self.assertEqual(parameters["properties"]["constraints"]["items"]["type"], "string")
+        self.assertEqual(
+            parameters["properties"]["items"]["items"]["properties"]["tags"]["items"]["type"],
+            "string",
+        )
+
+    def test_curated_builtin_tools_define_array_item_schemas(self) -> None:
+        registry = ToolRegistry()
+        register_claw_compat_tools(registry)
+        register_task_tools(registry)
+
+        brief_schema = registry.get("BriefTool").input_schema
+        task_update_schema = registry.get("TaskUpdate").input_schema
+        todo_schema = registry.get("TodoWriteTool").input_schema
+
+        self.assertEqual(brief_schema["properties"]["files"]["items"]["type"], "string")
+        self.assertEqual(brief_schema["properties"]["constraints"]["items"]["type"], "string")
+        self.assertEqual(task_update_schema["properties"]["add_blocks"]["items"]["type"], "string")
+        self.assertEqual(task_update_schema["properties"]["add_blocked_by"]["items"]["type"], "string")
+        self.assertEqual(todo_schema["properties"]["items"]["items"]["type"], "object")
+
     def test_provider_timeout_error_mentions_provider_timeout_flag(self) -> None:
         settings = HarnessSettings.from_workspace(".")
         settings.api_key = "test-key"
@@ -276,6 +357,36 @@ class ProviderTests(unittest.TestCase):
 
         self.assertIn("--provider-timeout", str(exc.exception))
         self.assertIn("321", str(exc.exception))
+
+    def test_provider_http_429_error_mentions_fallback_options(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.api_key = "test-key"
+        settings.provider = "openrouter"
+        settings.model = "google/gemma-4-26b-a4b-it:free"
+        provider = OpenAICompatibleProvider()
+        http_error = error.HTTPError(
+            url="https://example.com",
+            code=429,
+            msg="Too Many Requests",
+            hdrs=None,
+            fp=io.BytesIO(
+                b'{"error":{"message":"google/gemma-4-26b-a4b-it:free is temporarily rate-limited upstream"}}'
+            ),
+        )
+
+        with patch(
+            "ecology_harness.runtime.providers.request.urlopen",
+            side_effect=http_error,
+        ):
+            with self.assertRaises(ProviderError) as exc:
+                provider.complete(
+                    [ChatMessage(role="system", content="system"), ChatMessage(role="user", content="hello")],
+                    self._dummy_tools(),
+                    settings,
+                )
+
+        self.assertIn("--provider-fallback", str(exc.exception))
+        self.assertIn("--provider-retry-attempts", str(exc.exception))
 
     def test_anthropic_provider_parses_tool_calls(self) -> None:
         settings = HarnessSettings.from_workspace(".")

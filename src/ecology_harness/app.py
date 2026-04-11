@@ -39,6 +39,21 @@ from ecology_harness.automation import AutomationManager
 from ecology_harness.utils import append_text_line
 
 
+COMPACTION_FACT_EXTRACTION_PROMPT = """You extract critical facts from older conversation context before it is compacted.
+
+Return strict JSON with this shape:
+{"critical_facts":["..."]}
+
+Rules:
+- Keep only facts the assistant must preserve after compaction.
+- Prefer durable constraints, decisions, explicit user requirements, blocking errors, exact next steps, commands, file paths, model/provider choices, and things marked as must/critical/important.
+- Do not include generic chatter, redundant detail, or routine tool noise.
+- Use short standalone strings.
+- Return at most the requested number of items.
+- If nothing important should survive, return {"critical_facts":[]}.
+"""
+
+
 class EcologyHarnessApp:
     """Application wiring for the harness runtime."""
 
@@ -95,6 +110,10 @@ class EcologyHarnessApp:
             project_root=self.settings.memory_dir,
             max_index_lines=self.settings.memory_index_max_lines,
             max_index_bytes=self.settings.memory_index_max_bytes,
+            context_max_chars=self.settings.memory_context_max_chars,
+            context_max_relevant_items=self.settings.memory_context_max_relevant_items,
+            context_excerpt_chars=self.settings.memory_context_excerpt_chars,
+            inventory_max_items=self.settings.memory_inventory_max_items,
         )
         builtin_skill_dir = Path(__file__).resolve().parent / "skills" / "builtin"
         self.skill_loader = SkillLoader(
@@ -204,6 +223,8 @@ class EcologyHarnessApp:
             query=prompt_text,
             conversation=conversation,
             limit=active_settings.memory_provider_prompt_top_k,
+            max_chars=active_settings.memory_provider_context_max_chars,
+            max_hit_chars=active_settings.memory_provider_hit_max_chars,
         )
         profile_context = self.profile_manager.build_context() if self.profile_manager is not None else ""
         if profile_context:
@@ -279,6 +300,11 @@ class EcologyHarnessApp:
         active_settings = settings or self.settings
         provider = create_provider(provider_name or active_settings.provider, settings=active_settings)
         return AgentLoop(self, provider, allowed_tools=allowed_tools)
+
+    def get_compaction_fact_extractor(self, settings: HarnessSettings | None = None):
+        self._ensure_initialized()
+        active_settings = settings or self.settings
+        return self._create_compaction_fact_extractor(active_settings)
 
     def run_prompt(
         self,
@@ -747,3 +773,117 @@ class EcologyHarnessApp:
             return response.content
 
         return _review
+
+    def _create_compaction_fact_extractor(self, settings: HarnessSettings):
+        if not getattr(settings, "compression_semantic_extraction_enabled", True):
+            return None
+        configured_provider = (getattr(settings, "compression_provider", "") or "").strip()
+        if configured_provider == "off":
+            return None
+        configured_model = (getattr(settings, "compression_model", "") or "").strip()
+
+        extraction_settings = replace(settings)
+        if configured_provider:
+            extraction_settings.provider = configured_provider
+        if configured_model:
+            extraction_settings.model = configured_model
+
+        def _extract(messages: list[ChatMessage], limit: int) -> list[str] | None:
+            slot_settings = resolve_slot_settings(extraction_settings, "compression")
+            max_messages = max(int(getattr(slot_settings, "compression_semantic_max_messages", 0) or 0), 1)
+            max_chars = max(int(getattr(slot_settings, "compression_semantic_max_chars", 0) or 0), 500)
+            max_facts = max(int(getattr(slot_settings, "compression_semantic_max_facts", 0) or 0), 1)
+            payload = {
+                "limit": min(limit, max_facts),
+                "messages": _serialize_compaction_messages(
+                    messages[-max_messages:],
+                    max_chars=max_chars,
+                ),
+            }
+            try:
+                provider = create_provider(slot_settings.provider, settings=slot_settings)
+            except (ProviderError, Exception):
+                return None
+            try:
+                response = provider.complete(
+                    [
+                        ChatMessage(role="system", content=COMPACTION_FACT_EXTRACTION_PROMPT),
+                        ChatMessage(
+                            role="user",
+                            content=json.dumps(payload, ensure_ascii=False, indent=2),
+                        ),
+                    ],
+                    [],
+                    slot_settings,
+                )
+            except Exception:
+                return None
+            parsed = _parse_json_object_from_text(response.content)
+            if not isinstance(parsed, dict):
+                return None
+            facts = parsed.get("critical_facts")
+            if not isinstance(facts, list):
+                return None
+            return [str(item) for item in facts if str(item or "").strip()]
+
+        return _extract
+
+
+def _serialize_compaction_messages(
+    messages: list[ChatMessage],
+    *,
+    max_chars: int,
+) -> list[dict[str, str]]:
+    payload: list[dict[str, str]] = []
+    remaining = max_chars
+    for message in messages:
+        if remaining <= 0:
+            break
+        text = message.summary_text(max_document_chars=min(700, max(remaining, 120))).strip()
+        if not text:
+            continue
+        snippet = text[:remaining].strip()
+        if not snippet:
+            continue
+        payload.append({"role": message.role, "content": snippet})
+        remaining -= len(snippet)
+        if remaining > 0:
+            remaining -= 1
+    return payload
+
+
+def _parse_json_object_from_text(text: str) -> dict | None:
+    raw = (text or "").strip()
+    if not raw:
+        return None
+    for candidate in (raw, _strip_fenced_json(raw)):
+        if not candidate:
+            continue
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start >= 0 and end > start:
+        try:
+            parsed = json.loads(raw[start : end + 1])
+        except json.JSONDecodeError:
+            return None
+        if isinstance(parsed, dict):
+            return parsed
+    return None
+
+
+def _strip_fenced_json(text: str) -> str:
+    raw = text.strip()
+    if not raw.startswith("```"):
+        return raw
+    lines = raw.splitlines()
+    if len(lines) < 3:
+        return raw
+    if lines[0].startswith("```") and lines[-1].strip() == "```":
+        return "\n".join(lines[1:-1]).strip()
+    return raw

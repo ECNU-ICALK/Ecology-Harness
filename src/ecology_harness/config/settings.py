@@ -40,7 +40,7 @@ class HarnessSettings:
     provider_retry_attempts: int = 1
     provider_retry_backoff_ms: int = 150
     max_agent_loops: int = 0
-    max_context_tokens: int = 128_000
+    max_context_tokens: int = 640_000
     preserve_last_n_turns: int = 6
     context_pressure_warn_ratio: float = 0.7
     context_pressure_critical_ratio: float = 0.88
@@ -61,6 +61,12 @@ class HarnessSettings:
     evolution_review_min_tool_calls: int = 3
     evolution_auto_memory_apply: bool = False
     evolution_auto_skill_apply: bool = False
+    compression_provider: str = ""
+    compression_model: str = ""
+    compression_semantic_extraction_enabled: bool = True
+    compression_semantic_max_messages: int = 14
+    compression_semantic_max_chars: int = 9_000
+    compression_semantic_max_facts: int = 5
     memory_provider_prompt_top_k: int = 3
     memory_provider_search_default_k: int = 5
     trajectory_export_enabled: bool = True
@@ -70,6 +76,12 @@ class HarnessSettings:
     memory_index_max_lines: int = 200
     memory_index_max_bytes: int = 25_000
     memory_default_scope: str = "project"
+    memory_context_max_chars: int = 5_500
+    memory_context_max_relevant_items: int = 4
+    memory_context_excerpt_chars: int = 220
+    memory_inventory_max_items: int = 4
+    memory_provider_context_max_chars: int = 3_000
+    memory_provider_hit_max_chars: int = 700
     sandbox_enabled: bool = True
     sandbox_mode: str = "workspace-write"
     sandbox_backend: str = "internal"

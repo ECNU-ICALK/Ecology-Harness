@@ -279,6 +279,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum seconds to wait for a model provider response. Use 0 to disable the timeout.",
     )
     parser.add_argument(
+        "--provider-fallback",
+        action="append",
+        default=[],
+        help="Fallback provider(s) to try after the primary provider, for example --provider-fallback openai.",
+    )
+    parser.add_argument(
+        "--provider-retry-attempts",
+        type=int,
+        default=1,
+        help="Retry attempts per provider before falling back. Defaults to 1.",
+    )
+    parser.add_argument(
+        "--provider-retry-backoff-ms",
+        type=int,
+        default=150,
+        help="Backoff in milliseconds between retry attempts. Defaults to 150.",
+    )
+    parser.add_argument(
+        "--provider-pool-strategy",
+        default="fill-first",
+        help="API key pool strategy: fill-first, round-robin, or least-used.",
+    )
+    parser.add_argument(
         "--host",
         default="127.0.0.1",
         help="Host for `eh serve`.",
@@ -418,6 +441,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     settings.sandbox_fail_closed = args.sandbox_fail_closed
     settings.max_agent_loops = args.max_steps
     settings.provider_timeout_sec = args.provider_timeout
+    settings.provider_fallbacks = tuple(str(item).strip() for item in args.provider_fallback if str(item).strip())
+    settings.provider_retry_attempts = max(int(args.provider_retry_attempts or 1), 1)
+    settings.provider_retry_backoff_ms = max(int(args.provider_retry_backoff_ms or 0), 0)
+    settings.provider_pool_strategy = str(args.provider_pool_strategy or "fill-first").strip().lower() or "fill-first"
 
     app = EcologyHarnessApp(settings)
     app.initialize()

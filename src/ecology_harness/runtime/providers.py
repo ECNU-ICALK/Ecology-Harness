@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from dataclasses import dataclass
+import copy
 import json
 import os
 import socket
@@ -37,6 +38,55 @@ class ProviderSpec:
         payload = asdict(self)
         payload["model_examples"] = list(self.model_examples)
         return payload
+
+
+def _normalized_tool_schema(schema: Any) -> dict[str, Any]:
+    """Return a provider-safe JSON schema for tool parameters.
+
+    Some OpenAI-compatible backends, especially Google's Gemini/OpenAI bridge,
+    reject array schemas that omit an ``items`` definition. We normalize the
+    minimal subset of JSON schema we emit so tool declarations stay accepted
+    even when a bundled tool definition is underspecified.
+    """
+
+    if not isinstance(schema, dict):
+        return {"type": "object", "properties": {}}
+
+    normalized: dict[str, Any] = copy.deepcopy(schema)
+    schema_type = str(normalized.get("type", "") or "").strip().lower()
+
+    if schema_type == "object":
+        properties = normalized.get("properties")
+        if not isinstance(properties, dict):
+            properties = {}
+        normalized["properties"] = {
+            str(name): _normalized_tool_schema(value)
+            if isinstance(value, dict)
+            else {"type": "string"}
+            for name, value in properties.items()
+        }
+        additional = normalized.get("additionalProperties")
+        if isinstance(additional, dict):
+            normalized["additionalProperties"] = _normalized_tool_schema(additional)
+    elif schema_type == "array":
+        items = normalized.get("items")
+        if isinstance(items, dict) and items:
+            normalized["items"] = _normalized_tool_schema(items)
+        else:
+            normalized["items"] = {"type": "string"}
+
+    for key in ("allOf", "anyOf", "oneOf"):
+        value = normalized.get(key)
+        if isinstance(value, list):
+            normalized[key] = [
+                _normalized_tool_schema(item) if isinstance(item, dict) else {"type": "string"}
+                for item in value
+            ]
+    return normalized
+
+
+def _tool_parameters_schema(tool: ToolDefinition) -> dict[str, Any]:
+    return _normalized_tool_schema(tool.input_schema)
 
 
 PROVIDERS: dict[str, ProviderSpec] = {
@@ -273,7 +323,7 @@ class AnthropicProvider(BaseProvider):
             {
                 "name": tool.name,
                 "description": tool.description,
-                "input_schema": tool.input_schema,
+                "input_schema": _tool_parameters_schema(tool),
             }
             for tool in tools
         ]
@@ -341,7 +391,7 @@ class OpenAICompatibleProvider(BaseProvider):
                 "function": {
                     "name": tool.name,
                     "description": tool.description,
-                    "parameters": tool.input_schema,
+                    "parameters": _tool_parameters_schema(tool),
                 },
             }
             for tool in tools
@@ -396,7 +446,7 @@ class OllamaProvider(BaseProvider):
                     "function": {
                         "name": tool.name,
                         "description": tool.description,
-                        "parameters": tool.input_schema,
+                        "parameters": _tool_parameters_schema(tool),
                     },
                 }
                 for tool in tools
@@ -543,6 +593,29 @@ def _routing_needed(settings: HarnessSettings) -> bool:
 
 def list_provider_specs() -> list[ProviderSpec]:
     return list(PROVIDERS.values())
+
+
+def effective_context_limit(settings: HarnessSettings) -> int:
+    requested = max(int(getattr(settings, "max_context_tokens", 0) or 0), 1)
+    provider_names: list[str] = []
+    requested_provider = (getattr(settings, "provider", "") or "auto").strip().lower()
+    if requested_provider in {"", "auto"}:
+        provider_names.append(detect_provider(getattr(settings, "model", "")))
+    else:
+        provider_names.append(requested_provider)
+    for fallback in getattr(settings, "provider_fallbacks", ()) or ():
+        normalized = str(fallback).strip().lower()
+        if normalized and normalized not in provider_names:
+            provider_names.append(normalized)
+    limits = [
+        int(spec.context_limit)
+        for name in provider_names
+        for spec in [PROVIDERS.get(name)]
+        if spec is not None and int(spec.context_limit or 0) > 0
+    ]
+    if not limits:
+        return requested
+    return min(requested, min(limits))
 
 
 def messages_to_openai(
@@ -709,7 +782,7 @@ def _perform_json_request(req: request.Request, timeout: int | None) -> dict[str
             return json.loads(response.read().decode("utf-8"))
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        raise ProviderError("Provider HTTP error %s: %s" % (exc.code, body)) from exc
+        raise ProviderError(_provider_http_error_message(exc.code, body)) from exc
     except (TimeoutError, socket.timeout) as exc:
         raise ProviderError(_provider_timeout_message(timeout)) from exc
     except error.URLError as exc:
@@ -891,3 +964,15 @@ def _provider_timeout_message(timeout: int | None) -> str:
         "Provider request timed out after %ss. Increase --provider-timeout for long-running tasks."
         % timeout
     )
+
+
+def _provider_http_error_message(status_code: int, body: str) -> str:
+    message = "Provider HTTP error %s: %s" % (status_code, body)
+    normalized = (body or "").lower()
+    if status_code == 429 and ("rate-limit" in normalized or "rate limit" in normalized):
+        message += (
+            " Shared free-tier or upstream capacity limits are likely active. "
+            "Retry shortly, remove `:free`, or configure `--provider-fallback` "
+            "and `--provider-retry-attempts`."
+        )
+    return message

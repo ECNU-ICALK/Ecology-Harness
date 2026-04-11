@@ -2,9 +2,9 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 Python Agent Harness。当前项目已经内置了一批不断增长的生态能力包，包括面向不同子方向的 skills、可发现的 MCP 目录，以及用于文献检索、空间分析、水体微宇宙、光生物反应器、生物多样性观测、显微图像和多模态分析的实用 tools。
+Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 Python Agent Harness。它把生态领域专用的能力面和稳定的通用运行时结合在一起：一方面内置了持续扩展的 skills、MCP catalogs、scientific toolkits、多模态与文档分析能力，另一方面又能支撑文献综述、空间推理、生物多样性观测、水体微宇宙、光生物反应器、显微分析、生态系统建模等具体研究任务。
 
-项目希望在保持通用 Harness 内核稳定的同时，把生态领域的扩展面做得越来越丰富，让新的 skills、MCP servers 和 tools 能持续叠加而不把核心运行时搞乱。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
+除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection 等 operator 功能，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
 当前发布版本是 `0.5.0 beta`（包版本为 `0.5.0b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
@@ -322,6 +322,13 @@ eh tool VideoSampleFrames '{"path":"video/camera_trap.mp4","frame_count":6}'
 
 ### 一键安装
 
+默认情况下，安装脚本会自动创建或复用一个专用的
+`eh_py` conda 环境，并在其中安装主包；同时它还会顺手 bootstrap
+一批当前常用的 MCP 基础运行时，包括 `uv/uvx`、核心 Python helper 模块，
+以及放在 `~/.ecology_harness/mcp_runtimes` 下的本地 runtime checkout/build。
+像 `baidu-maps/labarchives` 这类可选增强，以及 `gis-mcp` 这类更重的 GIS
+依赖默认不会一起装上；如果是在交互终端里执行安装脚本，基础安装完成后会再询问你是否继续补装。
+
 ```bash
 bash scripts/install.sh
 ```
@@ -336,6 +343,36 @@ bash scripts/install.sh --with-dev
 
 ```bash
 bash scripts/install.sh --uv
+```
+
+如果你想强制指定某个 conda 环境：
+
+```bash
+bash scripts/install.sh --conda-env eh_py
+```
+
+如果你只想安装主包，不希望同时 bootstrap MCP 运行时：
+
+```bash
+bash scripts/install.sh --skip-mcp-runtimes
+```
+
+如果你希望安装时顺手把 `uvx` 类 MCP 的缓存也预热：
+
+```bash
+bash scripts/install.sh --warm-mcp-caches
+```
+
+如果你还想安装 `baidu-maps` 和 `labarchives` 这组可选增强：
+
+```bash
+bash scripts/install.sh --with-python311-mcps
+```
+
+如果你还想安装更重的可选 GIS MCP 依赖：
+
+```bash
+bash scripts/install.sh --with-gis-mcp
 ```
 
 ### 从源码安装
@@ -359,6 +396,14 @@ python3 -m pip install -e '.[dev]'
 ```bash
 uv sync
 uv run eh --help
+```
+
+如果你已经有自己的 conda 环境，推荐这样安装：
+
+```bash
+source activate eh_py
+python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pip install -e .
 ```
 
 安装完成后，推荐直接使用：

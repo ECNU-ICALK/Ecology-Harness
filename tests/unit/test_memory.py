@@ -116,6 +116,74 @@ class MemoryTests(unittest.TestCase):
             self.assertIn("Remote Sensing Workflow", memory_context)
             self.assertIn("Landsat", memory_context)
 
+    def test_memory_context_is_bounded_and_uses_inventory_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            settings.memory_context_max_chars = 900
+            settings.memory_context_excerpt_chars = 120
+            settings.memory_inventory_max_items = 2
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            for index in range(6):
+                app.memory_manager.save(
+                    name="Project Memory %s" % index,
+                    description="Long-running project note %s" % index,
+                    content=("Important ecological modeling detail %s. " % index) * 40,
+                    memory_type="project",
+                    scope="project",
+                )
+
+            memory_context = app.memory_manager.get_memory_context(
+                query="ecological modeling detail",
+                include_guidance=False,
+            )
+
+            self.assertIn("## Relevant memories", memory_context)
+            self.assertIn("## Memory inventory", memory_context)
+            self.assertNotIn("[Project memories]", memory_context)
+            self.assertLessEqual(len(memory_context), settings.memory_context_max_chars)
+
+            guided_context = app.memory_manager.get_memory_context(
+                query="ecological modeling detail",
+                include_guidance=True,
+            )
+            self.assertIn("## MEMORY.md", guided_context)
+            self.assertLessEqual(len(guided_context), settings.memory_context_max_chars + 32)
+
+    def test_memory_provider_context_is_bounded_and_summarized(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            settings.memory_provider_context_max_chars = 420
+            settings.memory_provider_hit_max_chars = 160
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            app.registry.execute(
+                "ProfileWrite",
+                {
+                    "profile": "project-profile",
+                    "content": ("Wetland methane water-table coupling. " * 60).strip(),
+                },
+                app.settings,
+                services=app.get_services(),
+            )
+
+            provider_context = app.memory_provider_manager.build_context(
+                query="wetland methane water table",
+                limit=3,
+                max_chars=settings.memory_provider_context_max_chars,
+                max_hit_chars=settings.memory_provider_hit_max_chars,
+            )
+
+            self.assertIn("[project-profile]", provider_context)
+            self.assertIn("Matched terms:", provider_context)
+            self.assertLessEqual(len(provider_context), settings.memory_provider_context_max_chars)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -46,8 +46,8 @@ def register_claw_compat_tools(registry: ToolRegistry) -> None:
                 "properties": {
                     "objective": {"type": "string"},
                     "context": {"type": "string"},
-                    "constraints": {"type": "array"},
-                    "files": {"type": "array"},
+                    "constraints": {"type": "array", "items": {"type": "string"}},
+                    "files": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["objective"],
             },
@@ -121,7 +121,24 @@ def register_claw_compat_tools(registry: ToolRegistry) -> None:
             input_schema={
                 "type": "object",
                 "properties": {
-                    "items": {"type": "array"},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "subject": {"type": "string"},
+                                "content": {"type": "string"},
+                                "title": {"type": "string"},
+                                "description": {"type": "string"},
+                                "status": {"type": "string"},
+                                "active_form": {"type": "string"},
+                                "activeForm": {"type": "string"},
+                                "owner": {"type": "string"},
+                                "metadata": {"type": "object"},
+                            },
+                        },
+                    },
                 },
                 "required": ["items"],
             },

@@ -9,6 +9,7 @@ import statistics
 from typing import Any
 
 from ecology_harness.runtime.compaction import estimate_tokens
+from ecology_harness.runtime.providers import effective_context_limit
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.tools.base import ToolContext, ToolDefinition, ToolError, ToolResult
 from ecology_harness.tools.registry import ToolRegistry
@@ -268,7 +269,7 @@ def _runtime_status(params: dict, context: ToolContext) -> ToolResult:
         raise ToolError("app service is unavailable.")
     conversation = context.services.get("conversation") or []
     token_estimate = estimate_tokens(conversation)
-    max_context_tokens = max(int(app.settings.max_context_tokens or 0), 1)
+    max_context_tokens = effective_context_limit(app.settings)
     pressure_ratio = min(float(token_estimate) / float(max_context_tokens), 1.0)
     if pressure_ratio >= app.settings.context_pressure_critical_ratio:
         pressure_level = "critical"

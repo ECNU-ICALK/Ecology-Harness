@@ -3,15 +3,21 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 Ecology Harness is a Python-first agent harness for ecology, environment, and
-agroecology workflows. It now includes a growing ecology pack of domain skills,
-MCP catalogs, and practical tools for literature review, geospatial reasoning,
-aquatic microcosms, photobioreactors, biodiversity observation, microscopy, and
-multimodal analysis.
+agroecology workflows. It combines an ecology-specialized capability surface,
+including domain skills, MCP catalogs, scientific toolkits, multimodal and
+document analysis, with a stable runtime for literature review, geospatial
+reasoning, biodiversity observation, aquatic microcosms, photobioreactors,
+microscopy, ecosystem modeling, and related research tasks.
 
-The project combines a stable generic runtime with an ecology-first extension
-surface, so new skills, MCP servers, and tools can keep accumulating without
-making the core messy. Contributions are very welcome, and we would love help
-from the community to keep improving and expanding the ecology stack together.
+Beyond a traditional CLI agent, the project also includes query-aware
+skill/MCP retrieval, long-lived memory and historical session recall, bounded
+context compaction, profile-backed work modes, and a self-evolution loop that
+distills reusable memory and skill candidates after runs. Around that core, it
+adds practical operator features such as `eh setup`, `eh doctor`, heartbeat,
+analytics, checkpoints, automation, and progressive skill inspection, so the
+ecology stack can keep growing without letting the runtime become unmanageable.
+Contributions are very welcome, and we would love help from the community to
+keep improving and expanding it together.
 
 Current release: `0.5.0 beta` (`0.5.0b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
@@ -324,7 +330,15 @@ summarize the attached materials
 
 ### One-Command Setup
 
-This project now supports an OpenHarness-style local install script:
+This project now supports an OpenHarness-style local install script. By default,
+it creates or reuses a dedicated conda environment named
+`eh_py`, installs the package there, and bootstraps the basic MCP
+runtime prerequisites we currently rely on: `uv/uvx`, core Python helper
+modules, and the local runtime checkouts/builds under
+`~/.ecology_harness/mcp_runtimes`. Optional add-ons such as
+`baidu-maps/labarchives` and the heavier `gis-mcp` stack are not installed by
+default; interactive installs will ask whether you want them after the base
+setup completes.
 
 ```bash
 bash scripts/install.sh
@@ -340,6 +354,36 @@ If you prefer `uv`:
 
 ```bash
 bash scripts/install.sh --uv
+```
+
+If you want to force a specific conda environment:
+
+```bash
+bash scripts/install.sh --conda-env eh_py
+```
+
+If you only want the package install and want to skip MCP runtime bootstrap:
+
+```bash
+bash scripts/install.sh --skip-mcp-runtimes
+```
+
+If you also want to prefetch `uvx`-backed MCP caches during install:
+
+```bash
+bash scripts/install.sh --warm-mcp-caches
+```
+
+If you also want the optional `baidu-maps` and `labarchives` helpers:
+
+```bash
+bash scripts/install.sh --with-python311-mcps
+```
+
+If you also want the heavier optional GIS MCP stack:
+
+```bash
+bash scripts/install.sh --with-gis-mcp
 ```
 
 ### Install From Source
@@ -368,6 +412,14 @@ If you prefer `uv`, you can also do:
 ```bash
 uv sync
 uv run eh --help
+```
+
+If you already maintain a conda environment for Ecology Harness, we recommend:
+
+```bash
+source activate eh_py
+python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pip install -e .
 ```
 
 After installation, you can enter the program directly with:

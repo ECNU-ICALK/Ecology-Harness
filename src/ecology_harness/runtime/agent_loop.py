@@ -8,7 +8,7 @@ from ecology_harness.runtime.attachments import build_user_message
 from ecology_harness.runtime.compaction import CompactionResult, estimate_tokens, maybe_compact_messages
 from ecology_harness.runtime.events import Event
 from ecology_harness.runtime.messages import ChatMessage
-from ecology_harness.runtime.providers import BaseProvider
+from ecology_harness.runtime.providers import BaseProvider, effective_context_limit
 from ecology_harness.tools import ToolError
 
 
@@ -80,6 +80,7 @@ class AgentLoop:
         step = 0
         while active_settings.max_agent_loops <= 0 or step < active_settings.max_agent_loops:
             step += 1
+            context_limit = effective_context_limit(active_settings)
             _emit_event(
                 emitted_events,
                 event_handler,
@@ -100,8 +101,9 @@ class AgentLoop:
                 memory_provider_manager.on_pre_compact(messages)
             compaction_result: CompactionResult = maybe_compact_messages(
                 messages,
-                max_context_tokens=active_settings.max_context_tokens,
+                max_context_tokens=context_limit,
                 preserve_last_n_turns=active_settings.preserve_last_n_turns,
+                critical_fact_extractor=self.app.get_compaction_fact_extractor(active_settings),
             )
             messages = compaction_result.messages
             if compaction_result.compacted:
@@ -138,8 +140,8 @@ class AgentLoop:
             )
             token_estimate = estimate_tokens(messages)
             pressure_ratio = (
-                float(token_estimate) / float(active_settings.max_context_tokens)
-                if active_settings.max_context_tokens
+                float(token_estimate) / float(context_limit)
+                if context_limit
                 else 0.0
             )
             if pressure_ratio >= active_settings.context_pressure_warn_ratio:
@@ -149,7 +151,7 @@ class AgentLoop:
                     "context_pressure",
                     step=step,
                     token_estimate=token_estimate,
-                    max_context_tokens=active_settings.max_context_tokens,
+                    max_context_tokens=context_limit,
                     pressure_ratio=round(pressure_ratio, 4),
                     level=(
                         "critical"

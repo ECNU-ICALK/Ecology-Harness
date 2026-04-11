@@ -50,11 +50,19 @@ class MemoryManager:
         project_root: Path,
         max_index_lines: int = 200,
         max_index_bytes: int = 25_000,
+        context_max_chars: int = 5_500,
+        context_max_relevant_items: int = 4,
+        context_excerpt_chars: int = 220,
+        inventory_max_items: int = 4,
     ) -> None:
         self.user_root = user_root
         self.project_root = project_root
         self.max_index_lines = max_index_lines
         self.max_index_bytes = max_index_bytes
+        self.context_max_chars = max(800, context_max_chars)
+        self.context_max_relevant_items = max(1, context_max_relevant_items)
+        self.context_excerpt_chars = max(80, context_excerpt_chars)
+        self.inventory_max_items = max(1, inventory_max_items)
         self.user_root.mkdir(parents=True, exist_ok=True)
         self.project_root.mkdir(parents=True, exist_ok=True)
 
@@ -208,7 +216,11 @@ class MemoryManager:
         include_guidance: bool = False,
     ) -> str:
         parts = []
-        relevant = self._select_relevant_items(query=query, conversation=conversation)
+        relevant = self._select_relevant_items(
+            query=query,
+            conversation=conversation,
+            max_items=self.context_max_relevant_items,
+        )
         if relevant:
             relevant_lines = ["## Relevant memories"]
             freshness_index = {header.file_path: header for header in self.scan_all("all")}
@@ -221,27 +233,53 @@ class MemoryManager:
                     item.name,
                     item.memory_type,
                     item.scope,
-                    item.description or _excerpt(item.content, 96),
+                    item.description or _excerpt(item.content, min(120, self.context_excerpt_chars)),
                 )
                 if freshness:
                     line += " (%s)" % freshness
                 relevant_lines.append(line)
-                excerpt = _excerpt(item.content, 180)
-                if excerpt:
-                    relevant_lines.append("  excerpt: %s" % excerpt)
+                excerpt = _excerpt(item.content, self.context_excerpt_chars)
+                if excerpt and excerpt.lower() != (item.description or "").strip().lower():
+                    relevant_lines.append("  detail: %s" % excerpt)
             parts.append("\n".join(relevant_lines))
-        user_index = self.get_index_content("user")
-        project_index = self.get_index_content("project")
-        if user_index:
-            parts.append(self.truncate_index_content(user_index))
-        if project_index:
-            parts.append("[Project memories]\n" + self.truncate_index_content(project_index))
+        inventory_summary = self._build_inventory_summary()
+        if inventory_summary:
+            parts.append(inventory_summary)
         if not parts:
             return ""
-        body = "\n\n".join(parts)
+        body_budget = self.context_max_chars
+        if include_guidance:
+            body_budget = max(
+                400,
+                self.context_max_chars - len(MEMORY_SYSTEM_PROMPT) - len("\n\n## MEMORY.md\n"),
+            )
+        body = _fit_blocks_to_budget(parts, body_budget)
         if include_guidance:
             return "%s\n\n## MEMORY.md\n%s" % (MEMORY_SYSTEM_PROMPT, body)
         return body
+
+    def _build_inventory_summary(self) -> str:
+        sections = ["## Memory inventory"]
+        for scope in ("user", "project"):
+            items = self.list_items(scope=scope)
+            if not items:
+                continue
+            labels = []
+            for item in items[: self.inventory_max_items]:
+                summary = item.description or _excerpt(
+                    item.content,
+                    min(80, max(40, self.context_excerpt_chars // 2)),
+                )
+                labels.append("%s (%s)" % (item.name, summary))
+            sections.append(
+                "- %s memories: %s item(s). Recent: %s"
+                % (
+                    scope.capitalize(),
+                    len(items),
+                    "; ".join(labels),
+                )
+            )
+        return "\n".join(sections) if len(sections) > 1 else ""
 
     def _root_for_scope(self, scope: str) -> Path:
         if scope == "user":
@@ -370,3 +408,24 @@ def _excerpt(text: str, limit: int) -> str:
     if len(cleaned) <= limit:
         return cleaned
     return cleaned[: limit - 3] + "..."
+
+
+def _fit_blocks_to_budget(blocks: list[str], max_chars: int) -> str:
+    selected: list[str] = []
+    used = 0
+    for block in blocks:
+        normalized = block.strip()
+        if not normalized:
+            continue
+        separator = 2 if selected else 0
+        if used + separator + len(normalized) <= max_chars:
+            selected.append(normalized)
+            used += separator + len(normalized)
+            continue
+        remaining = max_chars - used - separator
+        if remaining <= 32:
+            break
+        shortened = normalized[: max(0, remaining - 3)].rstrip() + "..."
+        selected.append(shortened)
+        break
+    return "\n\n".join(selected).strip()

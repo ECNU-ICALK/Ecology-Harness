@@ -23,6 +23,7 @@ except Exception:  # pragma: no cover - optional dependency fallback
     CompleteStyle = None  # type: ignore[assignment]
 
 from ecology_harness.runtime.compaction import estimate_tokens
+from ecology_harness.runtime.providers import effective_context_limit
 
 
 @dataclass(frozen=True)
@@ -204,7 +205,7 @@ def build_toolbar_text(app, state=None) -> str:
         token_estimate = estimate_tokens(conversation) if conversation else 0
     except Exception:
         token_estimate = 0
-    max_context_tokens = max(int(getattr(app.settings, "max_context_tokens", 0) or 0), 1)
+    max_context_tokens = effective_context_limit(app.settings)
     context_pressure = int(min(float(token_estimate) / float(max_context_tokens), 1.0) * 100)
     parts = [
         "/ for commands",

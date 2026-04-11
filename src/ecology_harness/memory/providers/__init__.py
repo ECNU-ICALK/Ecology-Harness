@@ -45,7 +45,14 @@ class MemoryProviderManager:
         for provider in self.providers:
             provider.on_pre_compact(messages)
 
-    def build_context(self, query: str, conversation=None, limit: int = 3) -> str:
+    def build_context(
+        self,
+        query: str,
+        conversation=None,
+        limit: int = 3,
+        max_chars: int = 3_000,
+        max_hit_chars: int = 700,
+    ) -> str:
         parts: list[str] = []
         primary_hits = self.search(query, conversation=conversation, limit=limit)
         for hit in primary_hits.hits[:limit]:
@@ -53,8 +60,14 @@ class MemoryProviderManager:
                 continue
             if not hit.content.strip():
                 continue
-            parts.append("## %s\n%s" % (hit.title, hit.content.strip()))
-        return "\n\n".join(parts)
+            section_lines = ["## %s [%s]" % (hit.title, hit.provider)]
+            if hit.description.strip():
+                section_lines.append("Summary: %s" % _shorten(hit.description.strip(), 180))
+            if hit.matched_terms:
+                section_lines.append("Matched terms: %s" % ", ".join(hit.matched_terms[:6]))
+            section_lines.append(_shorten(hit.content.strip(), max_hit_chars))
+            parts.append("\n".join(section_lines))
+        return _fit_blocks_to_budget(parts, max_chars)
 
     def search(self, query: str, conversation=None, limit: int = 5) -> MemoryProviderSearchReport:
         rewriter = SkillQueryRewriter(history_turns=self.history_turns)
@@ -94,3 +107,30 @@ __all__ = [
     "MemoryProviderManager",
     "MemoryProviderSearchReport",
 ]
+
+
+def _shorten(text: str, limit: int) -> str:
+    stripped = text.strip()
+    if len(stripped) <= limit:
+        return stripped
+    return stripped[: max(0, limit - 3)].rstrip() + "..."
+
+
+def _fit_blocks_to_budget(blocks: list[str], max_chars: int) -> str:
+    selected: list[str] = []
+    used = 0
+    for block in blocks:
+        normalized = block.strip()
+        if not normalized:
+            continue
+        separator = 2 if selected else 0
+        if used + separator + len(normalized) <= max_chars:
+            selected.append(normalized)
+            used += separator + len(normalized)
+            continue
+        remaining = max_chars - used - separator
+        if remaining <= 32:
+            break
+        selected.append(normalized[: max(0, remaining - 3)].rstrip() + "...")
+        break
+    return "\n\n".join(selected).strip()

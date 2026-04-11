@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import tempfile
 import threading
@@ -41,6 +42,17 @@ class _FakeProvider:
         if self.should_fail:
             raise RuntimeError("429 rate limit from %s" % self.provider_name)
         return ModelResponse(content="ok from %s" % self.provider_name, raw={})
+
+
+class _FakeJsonProvider:
+    name = "mock-json"
+
+    def __init__(self, content: str) -> None:
+        self._content = content
+
+    def complete(self, messages, tools, settings):
+        del messages, tools, settings
+        return ModelResponse(content=self._content, raw={})
 
 
 class PlatformFeatureTests(unittest.TestCase):
@@ -457,6 +469,240 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertFalse(rows["probe-stdio"]["runtime_invokable"])
             self.assertFalse(rows["probe-stdio"]["bridge_registered"])
             self.assertIsNone(app.registry.get("mcp__probe-stdio__ping"))
+
+    def test_remote_mcp_probe_checks_disabled_servers_too(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            project_mcp_dir = app.settings.mcp_dir
+            project_mcp_dir.mkdir(parents=True, exist_ok=True)
+            (project_mcp_dir / "disabled-probe.json").write_text(
+                json.dumps(
+                    {
+                        "servers": [
+                            {
+                                "name": "disabled-stdio",
+                                "transport": "stdio",
+                                "description": "Disabled probe candidate",
+                                "default_enabled": False,
+                                "command": "python3",
+                                "tools": [{"name": "ping", "description": "Ping", "input_schema": {"type": "object", "properties": {}}}],
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            app.initialize()
+
+            listed = app.registry.execute(
+                "ListMcpServersTool",
+                {"probe": True},
+                app.settings,
+                services=app.get_services(),
+            )
+            rows = {item["server_name"]: item for item in listed.data["servers"]}
+            self.assertEqual(rows["disabled-stdio"]["status"], "reachable")
+            self.assertFalse(rows["disabled-stdio"]["enabled"])
+
+    def test_remote_mcp_probe_detects_missing_node_entrypoint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            project_mcp_dir = app.settings.mcp_dir
+            project_mcp_dir.mkdir(parents=True, exist_ok=True)
+            (project_mcp_dir / "broken-node.json").write_text(
+                json.dumps(
+                    {
+                        "servers": [
+                            {
+                                "name": "broken-node",
+                                "transport": "stdio",
+                                "description": "Broken node entrypoint",
+                                "default_enabled": False,
+                                "command": "node",
+                                "args": ["/path/to/missing/index.js"],
+                                "tools": [{"name": "ping", "description": "Ping", "input_schema": {"type": "object", "properties": {}}}],
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            app.initialize()
+
+            result = app.registry.execute(
+                "ProbeMcpServerTool",
+                {"server": "broken-node"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertEqual(result.data["status"], "missing-script")
+            self.assertIn("Script not found", result.data["error_message"])
+
+    def test_remote_mcp_probe_resolves_built_node_runtime_from_user_runtime_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            runtime_root = root / "mcp-runtimes"
+            script = runtime_root / "gbif-mcp" / "build" / "index.js"
+            script.parent.mkdir(parents=True, exist_ok=True)
+            script.write_text("console.log('gbif');\n", encoding="utf-8")
+            node_path = root / "bin" / "node"
+            node_path.parent.mkdir(parents=True, exist_ok=True)
+            node_path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            node_path.chmod(0o755)
+            with patch.dict(
+                os.environ,
+                {
+                    "ECOLOGY_HARNESS_MCP_RUNTIME_ROOT": str(runtime_root),
+                    "ECOLOGY_HARNESS_MCP_NODE": str(node_path),
+                },
+                clear=False,
+            ):
+                app = self._make_app(root)
+                app.initialize()
+                result = app.registry.execute(
+                    "ProbeMcpServerTool",
+                    {"server": "gbif"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["status"], "reachable")
+
+    def test_remote_mcp_probe_resolves_uvx_from_override(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            uvx_path = root / "bin" / "uvx"
+            uvx_path.parent.mkdir(parents=True, exist_ok=True)
+            uvx_path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            uvx_path.chmod(0o755)
+            with patch.dict(
+                os.environ,
+                {
+                    "ECOLOGY_HARNESS_MCP_UVX": str(uvx_path),
+                },
+                clear=False,
+            ):
+                app = self._make_app(root)
+                app.initialize()
+                result = app.registry.execute(
+                    "ProbeMcpServerTool",
+                    {"server": "stac"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["status"], "reachable")
+
+    def test_remote_mcp_probe_resolves_python_module_from_alternate_env(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            fake_python = root / "bin" / "python"
+            fake_python.parent.mkdir(parents=True, exist_ok=True)
+            fake_python.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            fake_python.chmod(0o755)
+            with patch(
+                "ecology_harness.mcp.registry.McpServerRegistry._find_python_with_module",
+                return_value=str(fake_python),
+            ), patch(
+                "ecology_harness.mcp.registry.McpServerRegistry._python_can_find_module",
+                return_value=True,
+            ):
+                app = self._make_app(root)
+                app.initialize()
+                result = app.registry.execute(
+                    "ProbeMcpServerTool",
+                    {"server": "baidu-maps"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["status"], "reachable")
+
+    def test_compaction_fact_extractor_uses_model_json_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            with patch(
+                "ecology_harness.app.create_provider",
+                return_value=_FakeJsonProvider(
+                    '{"critical_facts":["Preserve the current APSIM calibration","Do not drop the pending validation step"]}'
+                ),
+            ):
+                extractor = app.get_compaction_fact_extractor()
+                facts = extractor(
+                    [
+                        ChatMessage(
+                            role="user",
+                            content="We are calibrating APSIM and must keep the validation step.",
+                        ),
+                        ChatMessage(role="assistant", content="Understood."),
+                    ],
+                    5,
+                )
+
+            self.assertEqual(
+                facts,
+                [
+                    "Preserve the current APSIM calibration",
+                    "Do not drop the pending validation step",
+                ],
+            )
+
+    def test_semantic_scholar_mcp_uses_local_compat_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            fake_payload = {
+                "schema_version": "1.0",
+                "workflow": "paper-triage",
+                "status": "ok",
+                "runtime": {"mode": "vendored", "module": "semantic_scholar_skills.standalone"},
+                "arguments": {"query": "ecology world model"},
+                "result": {
+                    "shortlist": [
+                        {
+                            "paper": {"title": "BioAnalyst: A Foundation Model for Biodiversity", "year": 2025},
+                            "score": 0.92,
+                            "why": ["strong title match", "recent work"],
+                        }
+                    ],
+                    "notes": ["compat path used"],
+                },
+            }
+
+            with patch(
+                "ecology_harness.mcp.registry.McpServerRegistry._semantic_scholar_python",
+                return_value="/Users/jiezhou/anaconda/envs/py310/bin/python",
+            ), patch(
+                "ecology_harness.mcp.registry.subprocess.run",
+                return_value=subprocess.CompletedProcess(
+                    args=["python3"],
+                    returncode=0,
+                    stdout=json.dumps(fake_payload, ensure_ascii=False),
+                    stderr="",
+                ),
+            ):
+                result = app.registry.execute(
+                    "MCPTool",
+                    {"server": "semantic-scholar", "tool": "paper_search", "arguments": {"query": "ecology world model"}},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertIn("semantic-scholar/paper_search via paper-triage", result.content)
+            self.assertIn("BioAnalyst", result.content)
+            self.assertEqual(result.data["compat_mode"], "local-vendored-workflow")
 
     def test_prompt_builder_excludes_heartbeat_in_normal_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
