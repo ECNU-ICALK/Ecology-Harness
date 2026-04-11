@@ -4,6 +4,7 @@ from dataclasses import replace
 from datetime import datetime
 import json
 from pathlib import Path
+from typing import Callable
 
 from ecology_harness.agents import SubAgentManager
 from ecology_harness.config import HarnessSettings
@@ -17,7 +18,7 @@ from ecology_harness.memory.providers import (
     MemoryProviderManager,
 )
 from ecology_harness.mcp import McpServerRegistry
-from ecology_harness.permissions import PermissionPolicy
+from ecology_harness.permissions import PermissionDecision, PermissionPolicy
 from ecology_harness.plugins import PluginManager
 from ecology_harness.runtime import AgentLoop
 from ecology_harness.runtime import ChatMessage
@@ -82,6 +83,8 @@ class EcologyHarnessApp:
         self._active_session_id = ""
         self._active_session_created_at = ""
         self._active_fork: SessionForkRecord | None = None
+        self._permission_request_handler: Callable[[dict], str] | None = None
+        self._permission_session_grants: set[str] = set()
         self.runtime_mode = "default"
         self._initialized = False
 
@@ -395,6 +398,58 @@ class EcologyHarnessApp:
         services.update(extra)
         return services
 
+    def set_permission_request_handler(self, handler: Callable[[dict], str] | None) -> None:
+        self._permission_request_handler = handler
+
+    def get_permission_request_handler(self) -> Callable[[dict], str] | None:
+        return self._permission_request_handler
+
+    def authorize_tool_use(
+        self,
+        *,
+        tool_name: str,
+        arguments: dict,
+        settings: HarnessSettings | None = None,
+        registry: ToolRegistry | None = None,
+    ) -> tuple[bool, str]:
+        self._ensure_initialized()
+        active_settings = settings or self.settings
+        decision = self.permission_policy.check(
+            tool_name=tool_name,
+            arguments=arguments,
+            registry=registry or self.registry,
+            settings=active_settings,
+        )
+        if decision.allowed:
+            return True, decision.reason
+        if decision.requestable and decision.grant_key and decision.grant_key in self._permission_session_grants:
+            return True, "approved for this session"
+        if not decision.requestable or self._permission_request_handler is None:
+            return False, decision.reason
+        try:
+            response = str(
+                self._permission_request_handler(
+                    {
+                        "tool": tool_name,
+                        "reason": decision.reason,
+                        "summary": decision.summary or tool_name,
+                        "grant_key": decision.grant_key,
+                        "permission_mode": active_settings.permission_mode,
+                    }
+                )
+            ).strip().lower()
+        except Exception as exc:
+            return False, "%s (permission prompt failed: %s)" % (decision.reason, exc)
+        if response in {"allow", "allow-once", "once", "y", "yes", "o"}:
+            return True, "approved once by user"
+        if response in {"allow-session", "session", "s"} and decision.grant_key:
+            self._permission_session_grants.add(decision.grant_key)
+            return True, "approved for this session by user"
+        return False, decision.reason
+
+    def permission_session_grants_count(self) -> int:
+        return len(self._permission_session_grants)
+
     def audit(self, kind: str, payload: dict) -> None:
         entry = {
             "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
@@ -492,6 +547,7 @@ class EcologyHarnessApp:
         self._active_session_id = managed.session_id
         self._active_session_created_at = managed.created_at
         self._active_fork = fork
+        self._permission_session_grants.clear()
         self.run_plugin_hooks(
             "SessionStart",
             {

@@ -1,11 +1,12 @@
 import io
+import argparse
 import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from ecology_harness.cli import main
+from ecology_harness.cli import _should_prompt_for_permission_choice, main
 
 
 class CliTests(unittest.TestCase):
@@ -240,6 +241,22 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("hello short flag", buffer.getvalue())
 
+    def test_cli_only_prompts_for_permission_choice_when_entering_interactive_repl(self) -> None:
+        args = argparse.Namespace(
+            prompt="",
+            list_tools=False,
+            list_providers=False,
+            describe_tool="",
+            exec_tool="",
+            command_args=[],
+        )
+        with patch("sys.stdin.isatty", return_value=True), patch("sys.stdout.isatty", return_value=True):
+            self.assertTrue(_should_prompt_for_permission_choice([], args))
+            self.assertFalse(_should_prompt_for_permission_choice(["--permission-mode", "ask"], args))
+        args.command_args = ["doctor"]
+        with patch("sys.stdin.isatty", return_value=True), patch("sys.stdout.isatty", return_value=True):
+            self.assertFalse(_should_prompt_for_permission_choice([], args))
+
     def test_cli_supports_positional_prompt_shorthand(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -276,6 +293,96 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(exit_code, 0)
             self.assertIn("hello prompt subcommand", buffer.getvalue())
+
+    def test_cli_lists_saved_sessions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("hello sessions\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "--prompt",
+                        '/tool Read {"path":"README.md"}',
+                    ]
+                )
+
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "sessions",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Sessions", buffer.getvalue())
+            self.assertIn("msgs", buffer.getvalue().lower())
+
+    def test_cli_searches_saved_sessions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("wetland methane session\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "--prompt",
+                        '/tool Read {"path":"README.md"}',
+                    ]
+                )
+
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "sessions",
+                        "search",
+                        "wetland methane",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Session Search", buffer.getvalue())
+            self.assertIn("README.md", buffer.getvalue())
+
+    def test_cli_resume_without_id_uses_interactive_selector(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "README.md").write_text("resume selector\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "--prompt",
+                        '/tool Read {"path":"README.md"}',
+                    ]
+                )
+
+            with patch("ecology_harness.cli.select_list_option", return_value="latest"), patch(
+                "ecology_harness.cli.run_repl",
+                return_value=0,
+            ) as run_repl_mock:
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "resume",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            run_repl_mock.assert_called_once()
 
     def test_cli_accepts_provider_timeout_flag(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

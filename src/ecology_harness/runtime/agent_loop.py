@@ -288,10 +288,9 @@ class AgentLoop:
                 tool_arguments = dict(tool_call.arguments)
                 if tool_call.name == "Bash":
                     tool_arguments["_sandbox"] = self.app.sandbox
-                allowed, reason = self.app.permission_policy.check(
+                allowed, reason = self.app.authorize_tool_use(
                     tool_name=tool_call.name,
                     arguments=tool_arguments,
-                    registry=self.app.registry,
                     settings=active_settings,
                 )
                 if not allowed:

@@ -255,6 +255,9 @@ class ConsoleRenderer:
             "Permissions",
             [
                 "permission_mode: %s" % settings.permission_mode,
+                "session_permission_grants: %s" % (
+                    app.permission_session_grants_count() if hasattr(app, "permission_session_grants_count") else 0
+                ),
                 "sandbox_enabled: %s" % _bool_text(settings.sandbox_enabled),
                 "sandbox_backend: %s" % settings.sandbox_backend,
                 "sandbox_mode: %s" % settings.sandbox_mode,

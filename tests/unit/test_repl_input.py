@@ -6,6 +6,8 @@ from unittest.mock import patch
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
 from ecology_harness.ui.repl_input import (
+    _build_prompt_history,
+    _make_readline_reader,
     _should_use_prompt_toolkit,
     _strip_control_sequences,
     build_toolbar_text,
@@ -94,6 +96,25 @@ class ReplInputTests(unittest.TestCase):
     def test_prompt_toolkit_can_be_forced_off(self) -> None:
         with patch.dict("os.environ", {"EH_FORCE_BASIC_REPL": "1"}, clear=False):
             self.assertFalse(_should_use_prompt_toolkit())
+
+    def test_workspace_settings_expose_repl_history_path(self) -> None:
+        app = self._app()
+        self.assertEqual(app.settings.repl_history_path, app.settings.state_dir / "repl-history.txt")
+
+    def test_prompt_history_uses_file_history_when_path_is_available(self) -> None:
+        app = self._app()
+        history = _build_prompt_history(app.settings.repl_history_path)
+        self.assertTrue(hasattr(history, "append_string"))
+
+    def test_readline_reader_persists_history_file(self) -> None:
+        app = self._app()
+        history_path = app.settings.repl_history_path
+        reader = _make_readline_reader(history_path)
+        with patch("builtins.input", return_value="历史问题"):
+            line = reader("> ")
+        self.assertEqual(line, "历史问题")
+        if history_path.exists():
+            self.assertIn("历史问题", history_path.read_text(encoding="utf-8", errors="ignore"))
 
 
 if __name__ == "__main__":

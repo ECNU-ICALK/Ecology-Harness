@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from pathlib import Path
 import sys
 from typing import Iterable
 
@@ -13,14 +14,18 @@ except Exception:  # pragma: no cover - optional dependency fallback
 try:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.completion import Completer, Completion
+    from prompt_toolkit.history import FileHistory
     from prompt_toolkit.history import InMemoryHistory
     from prompt_toolkit.shortcuts import CompleteStyle
+    from prompt_toolkit.shortcuts import radiolist_dialog
 except Exception:  # pragma: no cover - optional dependency fallback
     PromptSession = None  # type: ignore[assignment]
     Completer = object  # type: ignore[assignment]
     Completion = None  # type: ignore[assignment]
+    FileHistory = None  # type: ignore[assignment]
     InMemoryHistory = None  # type: ignore[assignment]
     CompleteStyle = None  # type: ignore[assignment]
+    radiolist_dialog = None  # type: ignore[assignment]
 
 from ecology_harness.runtime.compaction import estimate_tokens
 from ecology_harness.runtime.providers import effective_context_limit
@@ -45,6 +50,8 @@ SESSION_COMMAND_SUGGESTIONS = [
     CommandSuggestion("/permissions", "show or change permission mode", "session"),
     CommandSuggestion("/model", "show or change the active model", "session"),
     CommandSuggestion("/session", "show saved session information", "session"),
+    CommandSuggestion("/sessions", "list or search saved sessions", "session"),
+    CommandSuggestion("/resume", "load a saved session into the current REPL", "session"),
     CommandSuggestion("/cost", "show current session activity summary", "session"),
     CommandSuggestion("/tools", "list built-in tools", "session"),
     CommandSuggestion("/skills", "list available skills", "session"),
@@ -122,10 +129,11 @@ def suggest_repl_commands(app, text: str) -> list[CommandSuggestion]:
 
 
 def create_repl_reader(app, console, state_getter=None):
+    history_path = getattr(getattr(app, "settings", None), "repl_history_path", None)
     if _should_use_prompt_toolkit():
         completer = ReplCompleter(app)
         session = PromptSession(
-            history=InMemoryHistory(),
+            history=_build_prompt_history(history_path),
             completer=completer,
             complete_while_typing=True,
             complete_style=CompleteStyle.MULTI_COLUMN,
@@ -141,23 +149,97 @@ def create_repl_reader(app, console, state_getter=None):
         return _read
 
     if _should_use_readline():
-        return _readline_reader
+        return _make_readline_reader(history_path)
 
     return _fallback_reader
+
+
+def select_list_option(
+    title: str,
+    text: str,
+    options: list[tuple[str, str]],
+    default: str = "",
+) -> str:
+    if not options:
+        return ""
+    if _should_use_prompt_toolkit() and radiolist_dialog is not None:
+        try:
+            selected = radiolist_dialog(
+                title=title,
+                text=text,
+                values=options,
+                default=default or options[0][0],
+            ).run()
+        except Exception:
+            selected = None
+        return str(selected or "")
+    if not _should_use_readline() and not bool(getattr(sys.stdin, "isatty", lambda: False)()):
+        return ""
+    print(title)
+    print(text)
+    for index, (_value, label) in enumerate(options, start=1):
+        print("  %s. %s" % (index, label))
+    while True:
+        try:
+            answer = input("Select a session number (Enter to cancel): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return ""
+        if not answer:
+            return ""
+        if answer.isdigit():
+            position = int(answer)
+            if 1 <= position <= len(options):
+                return options[position - 1][0]
+        print("Please enter a number between 1 and %s." % len(options))
 
 
 def _fallback_reader(prompt_text: str) -> str:
     return input(prompt_text)
 
 
-def _readline_reader(prompt_text: str) -> str:
-    line = input(prompt_text)
-    if line and readline is not None:  # pragma: no branch - tiny guard
-        try:
-            readline.add_history(line)
-        except Exception:
-            pass
-    return _strip_control_sequences(line)
+def _build_prompt_history(history_path: Path | None):
+    if FileHistory is not None and history_path is not None:
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        return FileHistory(str(history_path))
+    return InMemoryHistory()
+
+
+def _make_readline_reader(history_path: Path | None):
+    _load_readline_history(history_path)
+
+    def _readline_reader(prompt_text: str) -> str:
+        line = input(prompt_text)
+        if line and readline is not None:  # pragma: no branch - tiny guard
+            try:
+                readline.add_history(line)
+                _save_readline_history(history_path)
+            except Exception:
+                pass
+        return _strip_control_sequences(line)
+
+    return _readline_reader
+
+
+def _load_readline_history(history_path: Path | None) -> None:
+    if readline is None or history_path is None:
+        return
+    try:
+        if hasattr(readline, "clear_history"):
+            readline.clear_history()
+        if history_path.exists():
+            readline.read_history_file(str(history_path))
+    except Exception:
+        pass
+
+
+def _save_readline_history(history_path: Path | None) -> None:
+    if readline is None or history_path is None:
+        return
+    try:
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        readline.write_history_file(str(history_path))
+    except Exception:
+        pass
 
 
 def _should_use_prompt_toolkit() -> bool:

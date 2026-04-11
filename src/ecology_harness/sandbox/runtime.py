@@ -96,6 +96,7 @@ class SandboxPolicy:
         *,
         cwd: str | Path | None = None,
         timeout_sec: int | None = None,
+        env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess:
         self.validate_command(command)
         resolved_cwd = self.resolve_directory(cwd)
@@ -111,6 +112,7 @@ class SandboxPolicy:
                     capture_output=True,
                     text=True,
                     timeout=timeout,
+                    env=env,
                 )
             finally:
                 if profile_path is not None:
@@ -125,6 +127,7 @@ class SandboxPolicy:
             capture_output=True,
             text=True,
             timeout=timeout,
+            env=env,
         )
 
     def describe(self) -> dict[str, object]:

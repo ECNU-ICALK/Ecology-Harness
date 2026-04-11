@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import py_compile
 import subprocess
+import sys
 
 from ecology_harness.tools.base import ToolContext, ToolDefinition, ToolError, ToolResult
 from ecology_harness.tools.registry import ToolRegistry
@@ -81,9 +83,10 @@ def _bash(params: dict, context: ToolContext) -> ToolResult:
     cwd = params.get("cwd")
     timeout = params.get("timeout_sec", context.settings.command_timeout_sec)
     sandbox = context.services.get("sandbox")
+    shell_env = _build_runtime_shell_env()
     try:
         if sandbox is not None:
-            completed = sandbox.run_shell(command, cwd=cwd, timeout_sec=timeout)
+            completed = sandbox.run_shell(command, cwd=cwd, timeout_sec=timeout, env=shell_env)
         else:
             completed = subprocess.run(
                 command,
@@ -93,6 +96,7 @@ def _bash(params: dict, context: ToolContext) -> ToolResult:
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=shell_env,
             )
     except subprocess.TimeoutExpired as exc:
         raise ToolError("Command timed out after %ss" % timeout) from exc
@@ -116,8 +120,29 @@ def _bash(params: dict, context: ToolContext) -> ToolResult:
             "cwd": cwd or str(context.settings.workspace_root),
             "returncode": completed.returncode,
             "truncated": truncated,
+            "python_executable": shell_env.get("ECOLOGY_HARNESS_RUNTIME_PYTHON", ""),
         },
     )
+
+
+def _build_runtime_shell_env() -> dict[str, str]:
+    env = dict(os.environ)
+    python_executable = str(Path(sys.executable).resolve())
+    python_bin = str(Path(python_executable).parent)
+    existing_path = env.get("PATH", "")
+    path_parts = [part for part in existing_path.split(os.pathsep) if part]
+    if python_bin not in path_parts:
+        env["PATH"] = os.pathsep.join([python_bin, *path_parts]) if path_parts else python_bin
+    env["ECOLOGY_HARNESS_RUNTIME_PYTHON"] = python_executable
+
+    prefix = str(Path(python_executable).parent.parent)
+    prefix_path = Path(prefix)
+    if (prefix_path / "conda-meta").exists():
+        env["CONDA_PREFIX"] = prefix
+        env.setdefault("CONDA_DEFAULT_ENV", prefix_path.name)
+    elif (prefix_path / "pyvenv.cfg").exists():
+        env["VIRTUAL_ENV"] = prefix
+    return env
 
 
 def _get_diagnostics(params: dict, context: ToolContext) -> ToolResult:

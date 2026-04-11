@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
@@ -100,6 +101,33 @@ class BuiltinToolTests(unittest.TestCase):
                 services=app.get_services(),
             )
             self.assertEqual(result.content, "ok")
+
+    def test_bash_tool_prefers_current_runtime_python_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            with patch("ecology_harness.tools.builtin.system_tools.subprocess.run") as run_mock:
+                run_mock.return_value.stdout = "3.11.0\n"
+                run_mock.return_value.stderr = ""
+                run_mock.return_value.returncode = 0
+                result = app.registry.execute(
+                    "Bash",
+                    {"command": "python3 --version"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["returncode"], 0)
+            _, kwargs = run_mock.call_args
+            env = kwargs["env"]
+            runtime_python = env["ECOLOGY_HARNESS_RUNTIME_PYTHON"]
+            runtime_bin = str(Path(runtime_python).parent)
+            self.assertTrue(env["PATH"].split(":")[0] == runtime_bin)
+            self.assertIn("python_executable", result.data)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from datetime import datetime
 import difflib
 import json
 import shlex
+import sys
 from typing import Sequence
 
 from ecology_harness.app import EcologyHarnessApp
@@ -16,7 +17,7 @@ from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.runtime.providers import ProviderError, list_provider_specs
 from ecology_harness.server import run_api_server
 from ecology_harness.tools import ToolError
-from ecology_harness.ui import ConsoleRenderer, create_repl_reader
+from ecology_harness.ui import ConsoleRenderer, create_repl_reader, select_list_option
 
 
 SESSION_COMMAND_LINES = [
@@ -31,6 +32,8 @@ SESSION_COMMAND_LINES = [
     "/permissions show or change permission mode",
     "/model      show or change the active model",
     "/session    show current and saved session details",
+    "/sessions   list or search saved sessions",
+    "/resume [ID] load a saved session, or choose one interactively",
     "/cost       show current session activity summary",
     "/tools      list built-in tools",
     "/skills     list available skills",
@@ -78,6 +81,8 @@ SESSION_COMMANDS = {
     "/permissions",
     "/model",
     "/session",
+    "/sessions",
+    "/resume",
     "/cost",
     "/tools",
     "/skills",
@@ -116,6 +121,7 @@ MODEL_ALIASES = {
 
 PERMISSION_MODE_ALIASES = {
     "danger-full-access": "allow-all",
+    "ask-before-write": "ask",
 }
 
 POSITIONAL_ACTIONS = {
@@ -148,6 +154,8 @@ POSITIONAL_ACTIONS = {
     "providers",
     "sandbox",
     "session",
+    "sessions",
+    "resume",
     "tool",
     "skill-hub",
     "skill-view",
@@ -187,7 +195,11 @@ def build_parser() -> argparse.ArgumentParser:
             "  eh --provider openrouter --model openai/gpt-4.1-mini \"inspect this workspace\"\n"
             "  eh \"review src/ecology_harness/cli.py\"\n"
             "  eh tool Read '{\"path\":\"README.md\"}'\n"
-            "  eh --resume latest repl"
+            "  eh --resume latest repl\n"
+            "  eh sessions\n"
+            "  eh sessions search 湿地 甲烷\n"
+            "  eh resume\n"
+            "  eh resume latest"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -229,7 +241,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--permission-mode",
         default="workspace-write",
-        help="Permission mode: workspace-write, read-only, allow-all, or danger-full-access.",
+        help="Permission mode: workspace-write, ask, read-only, allow-all, or danger-full-access.",
     )
     parser.add_argument(
         "--sandbox-mode",
@@ -423,8 +435,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    raw_argv = list(argv) if argv is not None else list(sys.argv[1:])
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw_argv)
     renderer = ConsoleRenderer()
 
     settings = HarnessSettings.from_workspace(args.workspace)
@@ -445,6 +458,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     settings.provider_retry_attempts = max(int(args.provider_retry_attempts or 1), 1)
     settings.provider_retry_backoff_ms = max(int(args.provider_retry_backoff_ms or 0), 0)
     settings.provider_pool_strategy = str(args.provider_pool_strategy or "fill-first").strip().lower() or "fill-first"
+    if _should_prompt_for_permission_choice(raw_argv, args):
+        settings.permission_mode = _prompt_for_permission_mode(renderer, settings.permission_mode)
 
     app = EcologyHarnessApp(settings)
     app.initialize()
@@ -528,95 +543,99 @@ def run_repl(
         trace_enabled=show_trace,
         pending_attachment_paths=_resolve_attachment_paths(app, initial_attachment_paths or []),
     )
+    previous_handler = app.get_permission_request_handler() if hasattr(app, "get_permission_request_handler") else None
+    app.set_permission_request_handler(_build_permission_request_handler(console))
     if initial_conversation:
         state.turn_count = _conversation_turn_count(initial_conversation)
-    read_line = create_repl_reader(app, console, state_getter=lambda: state)
+    try:
+        read_line = create_repl_reader(app, console, state_getter=lambda: state)
 
-    console.banner(app, mode="repl", turn_count=state.turn_count)
-    console.print_repl_welcome()
-    if initial_conversation:
-        console.print_notice(
-            "Resumed %s conversation messages from %s."
-            % (len(initial_conversation), app.latest_session_path())
-        )
-    else:
-        console.print_notice("Type / for commands, or ask directly in natural language.")
-    if state.pending_attachment_paths:
-        console.print_notice(
-            "Loaded %s pending attachment(s): %s"
-            % (
-                len(state.pending_attachment_paths),
-                ", ".join(_attachment_labels(app, state.pending_attachment_paths)),
-            )
-        )
-
-    while True:
-        try:
-            line = read_line(console.prompt_label(app, state.turn_count + 1)).strip()
-        except EOFError:
-            console.print()
-            return 0
-        except KeyboardInterrupt:
-            console.print()
-            return 130
-
-        if not line:
-            continue
-
-        command_result = _handle_repl_command(
-            app,
-            console,
-            line,
-            json_output=json_output,
-            state=state,
-        )
-        if command_result is not None:
-            action = command_result["action"]
-            if action == "exit":
-                return command_result["code"]
-            if action == "continue":
-                continue
-
-        try:
-            result = app.run_prompt(
-                line,
-                provider_name=app.settings.provider,
-                event_handler=console.build_trace_printer() if state.trace_enabled and not json_output else None,
-                conversation=state.conversation,
-                attachment_paths=state.pending_attachment_paths,
-            )
-        except (ToolError, ProviderError) as exc:
-            console.print_notice(str(exc), level="error")
-            continue
-
-        if result.messages:
-            state.conversation = result.messages
-        state.turn_count += 1
-        state.total_steps += result.steps
-        state.total_tool_calls += len(result.tool_invocations)
-        state.last_prompt = line
-        state.pending_attachment_paths = []
-
-        if json_output:
-            print(
-                json.dumps(
-                    {
-                        "final_text": result.final_text,
-                        "steps": result.steps,
-                        "tool_invocations": result.tool_invocations,
-                        "events": [item.to_dict() for item in result.events],
-                    },
-                    indent=2,
-                    ensure_ascii=False,
-                )
+        console.banner(app, mode="repl", turn_count=state.turn_count)
+        console.print_repl_welcome()
+        if initial_conversation:
+            console.print_notice(
+                "Resumed %s conversation messages from %s."
+                % (len(initial_conversation), app.latest_session_path())
             )
         else:
-            console.print_final_block(
-                result.final_text,
-                steps=result.steps,
-                tool_calls=len(result.tool_invocations),
-                tools_used=_tool_names_from_invocations(result.tool_invocations),
+            console.print_notice("Type / for commands, or ask directly in natural language.")
+        if state.pending_attachment_paths:
+            console.print_notice(
+                "Loaded %s pending attachment(s): %s"
+                % (
+                    len(state.pending_attachment_paths),
+                    ", ".join(_attachment_labels(app, state.pending_attachment_paths)),
+                )
             )
+
+        while True:
+            try:
+                line = read_line(console.prompt_label(app, state.turn_count + 1)).strip()
+            except EOFError:
+                console.print()
+                return 0
+            except KeyboardInterrupt:
+                console.print()
+                return 130
+
+            if not line:
+                continue
+            command_result = _handle_repl_command(
+                app,
+                console,
+                line,
+                json_output=json_output,
+                state=state,
+            )
+            if command_result is not None:
+                action = command_result["action"]
+                if action == "exit":
+                    return command_result["code"]
+                if action == "continue":
+                    continue
+
+            try:
+                result = app.run_prompt(
+                    line,
+                    provider_name=app.settings.provider,
+                    event_handler=console.build_trace_printer() if state.trace_enabled and not json_output else None,
+                    conversation=state.conversation,
+                    attachment_paths=state.pending_attachment_paths,
+                )
+            except (ToolError, ProviderError) as exc:
+                console.print_notice(str(exc), level="error")
+                continue
+
+            if result.messages:
+                state.conversation = result.messages
+            state.turn_count += 1
+            state.total_steps += result.steps
+            state.total_tool_calls += len(result.tool_invocations)
+            state.last_prompt = line
+            state.pending_attachment_paths = []
+
+            if json_output:
+                print(
+                    json.dumps(
+                        {
+                            "final_text": result.final_text,
+                            "steps": result.steps,
+                            "tool_invocations": result.tool_invocations,
+                            "events": [item.to_dict() for item in result.events],
+                        },
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                )
+            else:
+                console.print_final_block(
+                    result.final_text,
+                    steps=result.steps,
+                    tool_calls=len(result.tool_invocations),
+                    tools_used=_tool_names_from_invocations(result.tool_invocations),
+                )
+    finally:
+        app.set_permission_request_handler(previous_handler)
 
 
 def _list_tools(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
@@ -943,6 +962,66 @@ def _list_checkpoints(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_ou
     return 0
 
 
+def _list_sessions(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
+    sessions = app.list_sessions()
+    payload = [
+        {
+            "session_id": item.session_id,
+            "updated_at": item.updated_at,
+            "message_count": item.message_count,
+            "title": item.title,
+            "recap": item.recap,
+            "parent_session_id": item.parent_session_id,
+            "path": str(item.path),
+        }
+        for item in sessions
+    ]
+    if json_output:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if not payload:
+        renderer.section("Sessions", ["No saved sessions found."])
+        return 0
+    rows = [
+        [
+            item["session_id"],
+            item["updated_at"],
+            str(item["message_count"]),
+            item["title"] or "-",
+            _truncate_cli_text(item["recap"] or "-", 72),
+        ]
+        for item in payload[:20]
+    ]
+    renderer.print_table("Sessions", ["id", "updated_at", "msgs", "title", "recap"], rows)
+    return 0
+
+
+def _search_sessions(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool, query: str) -> int:
+    report = app.search_sessions(query)
+    payload = report.to_dict()
+    if json_output:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if not report.hits:
+        renderer.section("Session Search", ["query: %s" % query, "No matching sessions found."])
+        return 0
+    rows = [
+        [
+            item.session_id,
+            item.updated_at,
+            str(item.message_count),
+            item.title or "-",
+            _truncate_cli_text(
+                (item.message_matches[0].excerpt if item.message_matches else item.excerpt) or "-",
+                72,
+            ),
+        ]
+        for item in report.hits
+    ]
+    renderer.print_table("Session Search", ["id", "updated_at", "msgs", "title", "excerpt"], rows)
+    return 0
+
+
 def _list_memories(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
     items = [item.to_index_dict() for item in app.memory_manager.list_items()]
     if json_output:
@@ -1126,6 +1205,57 @@ def _run_explore(
         app.runtime_mode = previous_mode
 
 
+def _resume_into_repl(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    quiet: bool,
+    reference: str,
+    attachment_paths: list[str] | None = None,
+) -> int:
+    selected_reference = reference.strip()
+    if not selected_reference:
+        selected_reference = _select_session_reference(app, renderer)
+        if not selected_reference:
+            renderer.print_notice("Resume cancelled.", level="warn")
+            return 0
+    try:
+        conversation = app.load_session(selected_reference)
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        renderer.print_notice(str(exc), level="error")
+        return 1
+    return run_repl(
+        app,
+        renderer=renderer,
+        json_output=json_output,
+        show_trace=not json_output and not quiet,
+        initial_conversation=conversation,
+        initial_attachment_paths=attachment_paths,
+    )
+
+
+def _select_session_reference(app: EcologyHarnessApp, renderer: ConsoleRenderer) -> str:
+    sessions = app.list_sessions()
+    if not sessions:
+        renderer.print_notice("No saved sessions found.", level="warn")
+        return ""
+    options: list[tuple[str, str]] = []
+    for item in sessions[:20]:
+        label = "%s | %s msgs | %s | %s" % (
+            item.updated_at,
+            item.message_count,
+            item.session_id,
+            _truncate_cli_text(item.title or item.recap or "-", 72),
+        )
+        options.append((item.session_id, label))
+    return select_list_option(
+        title="Resume Session",
+        text="Use ↑↓ to choose a saved session, then press Enter.",
+        options=options,
+        default=options[0][0],
+    )
+
+
 def _run_prompt(
     app: EcologyHarnessApp,
     renderer: ConsoleRenderer,
@@ -1141,6 +1271,8 @@ def _run_prompt(
 ) -> int:
     normalized_attachments = _resolve_attachment_paths(app, attachment_paths or [])
     event_handler = None
+    previous_handler = app.get_permission_request_handler() if hasattr(app, "get_permission_request_handler") else None
+    permission_handler = _build_permission_request_handler(renderer)
     if not json_output and not quiet:
         renderer.banner(app, mode=mode_label)
         renderer.print_prompt_block(
@@ -1149,6 +1281,7 @@ def _run_prompt(
         )
         event_handler = renderer.build_trace_printer()
     try:
+        app.set_permission_request_handler(permission_handler)
         result = app.run_prompt(
             prompt,
             provider_name=provider_name,
@@ -1161,6 +1294,8 @@ def _run_prompt(
     except (ToolError, ProviderError) as exc:
         renderer.print_notice(str(exc), level="error")
         return 1
+    finally:
+        app.set_permission_request_handler(previous_handler)
 
     if json_output:
         print(
@@ -1376,6 +1511,23 @@ def _handle_positional_command(
             turn_count=_conversation_turn_count(conversation),
         )
         return 0
+    if head == "sessions":
+        if tail and tail[0] == "search":
+            query = " ".join(tail[1:]).strip()
+            if not query:
+                parser.error("`eh sessions search` requires a query.")
+            return _search_sessions(app, renderer, json_output, query)
+        return _list_sessions(app, renderer, json_output)
+    if head == "resume":
+        reference = " ".join(tail).strip()
+        return _resume_into_repl(
+            app,
+            renderer,
+            json_output=json_output,
+            quiet=quiet,
+            reference=reference,
+            attachment_paths=attachment_paths,
+        )
     if head == "tool":
         if not tail:
             parser.error("`eh tool` requires a tool name.")
@@ -1498,6 +1650,41 @@ def _handle_repl_command(
         )
         return {"action": "continue"}
     if normalized == "/session":
+        renderer.print_session_panel(
+            app,
+            conversation_messages=len(state.conversation or []),
+            turn_count=state.turn_count,
+        )
+        return {"action": "continue"}
+    if normalized == "/sessions":
+        _list_sessions(app, renderer, False)
+        return {"action": "continue"}
+    if normalized.startswith("/sessions search"):
+        parts = normalized.split(None, 2)
+        if len(parts) < 3:
+            renderer.print_notice("Usage: /sessions search <query>", level="warn")
+            return {"action": "continue"}
+        _search_sessions(app, renderer, False, parts[2])
+        return {"action": "continue"}
+    if normalized.startswith("/resume"):
+        parts = normalized.split(None, 1)
+        reference = parts[1].strip() if len(parts) > 1 else ""
+        if not reference:
+            reference = _select_session_reference(app, renderer)
+            if not reference:
+                renderer.print_notice("Resume cancelled.", level="warn")
+                return {"action": "continue"}
+        try:
+            state.conversation = app.load_session(reference)
+        except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+            renderer.print_notice(str(exc), level="error")
+            return {"action": "continue"}
+        state.turn_count = _conversation_turn_count(state.conversation)
+        state.total_tool_calls = 0
+        state.total_steps = 0
+        state.last_prompt = ""
+        state.pending_attachment_paths = []
+        renderer.print_notice("Resumed session %s." % reference)
         renderer.print_session_panel(
             app,
             conversation_messages=len(state.conversation or []),
@@ -1669,6 +1856,95 @@ def _resolve_permission_mode(mode: str) -> str:
     return PERMISSION_MODE_ALIASES.get(normalized, normalized)
 
 
+def _is_interactive_terminal() -> bool:
+    return bool(getattr(sys.stdin, "isatty", lambda: False)()) and bool(
+        getattr(sys.stdout, "isatty", lambda: False)()
+    )
+
+
+def _should_prompt_for_permission_choice(raw_argv: Sequence[str], args) -> bool:
+    if not _is_interactive_terminal():
+        return False
+    if any(item == "--permission-mode" or item.startswith("--permission-mode=") for item in raw_argv):
+        return False
+    if args.prompt or args.list_tools or args.list_providers or args.describe_tool or args.exec_tool:
+        return False
+    if args.command_args and args.command_args[0] not in {"repl"}:
+        return False
+    return True
+
+
+def _prompt_for_permission_mode(renderer: ConsoleRenderer, current_mode: str) -> str:
+    renderer.section(
+        "Permissions",
+        [
+            "Choose a starting permission mode for this session.",
+            "1. workspace-write  :: allow normal workspace edits and commands",
+            "2. ask              :: ask before write and execution tools run",
+            "3. read-only        :: block write and execution tools",
+            "4. allow-all        :: disable permission checks",
+            "Press Enter to keep the default: %s" % current_mode,
+        ],
+    )
+    choices = {
+        "1": "workspace-write",
+        "2": "ask",
+        "3": "read-only",
+        "4": "allow-all",
+    }
+    while True:
+        try:
+            selected = input("permission mode [1/2/3/4]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            renderer.print_notice("Keeping permission_mode=%s" % current_mode)
+            return current_mode
+        if not selected:
+            renderer.print_notice("permission_mode=%s" % current_mode)
+            return current_mode
+        resolved = choices.get(selected, _resolve_permission_mode(selected))
+        if resolved in {"workspace-write", "ask", "read-only", "allow-all"}:
+            renderer.print_notice("permission_mode=%s" % resolved)
+            return resolved
+        renderer.print_notice("Unknown permission choice: %s" % selected, level="warn")
+
+
+def _build_permission_request_handler(renderer: ConsoleRenderer):
+    if not _is_interactive_terminal():
+        return None
+
+    def _request(payload: dict) -> str:
+        tool = str(payload.get("tool", ""))
+        reason = str(payload.get("reason", "permission required"))
+        summary = str(payload.get("summary", tool))
+        renderer.section(
+            "Permission Request",
+            [
+                "tool: %s" % tool,
+                "summary: %s" % summary,
+                "reason: %s" % reason,
+                "Choices: [o] allow once  [s] allow for this session  [n] deny",
+            ],
+        )
+        while True:
+            try:
+                choice = input("permission [o/s/n]: ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                renderer.print_notice("Permission denied for %s." % tool, level="warn")
+                return "deny"
+            if choice in {"", "n", "no", "deny"}:
+                renderer.print_notice("Permission denied for %s." % tool, level="warn")
+                return "deny"
+            if choice in {"o", "once", "y", "yes"}:
+                renderer.print_notice("Permission granted once for %s." % tool)
+                return "allow-once"
+            if choice in {"s", "session"}:
+                renderer.print_notice("Permission granted for this session: %s." % tool)
+                return "allow-session"
+            renderer.print_notice("Please enter o, s, or n.", level="warn")
+
+    return _request
+
+
 def _tool_names_from_invocations(tool_invocations: list[dict]) -> list[str]:
     names = []
     for item in tool_invocations:
@@ -1676,6 +1952,14 @@ def _tool_names_from_invocations(tool_invocations: list[dict]) -> list[str]:
         if name and name not in names:
             names.append(name)
     return names
+
+
+def _truncate_cli_text(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    if limit <= 3:
+        return text[:limit]
+    return text[: limit - 3].rstrip() + "..."
 
 
 def _normalize_repl_command(line: str) -> tuple[str, bool]:

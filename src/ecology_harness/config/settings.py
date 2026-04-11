@@ -211,6 +211,10 @@ class HarnessSettings:
     def skill_quarantine_dir(self) -> Path:
         return self.skill_dir / ".skill-quarantine"
 
+    @property
+    def repl_history_path(self) -> Path:
+        return self.state_dir / "repl-history.txt"
+
     def resolved_sandbox_read_roots(self) -> list[Path]:
         roots = [
             self.workspace_root,

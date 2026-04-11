@@ -186,7 +186,7 @@ def _execute_code(params: dict, context: ToolContext) -> ToolResult:
     tool_count = 0
     stdout = io.StringIO()
     registry = context.services.get("tool_registry")
-    permission_policy = context.services.get("app").permission_policy if context.services.get("app") else None
+    app = context.services.get("app")
 
     def call_tool(name: str, arguments: dict | None = None):
         nonlocal tool_count
@@ -197,11 +197,10 @@ def _execute_code(params: dict, context: ToolContext) -> ToolResult:
         tool_count += 1
         arguments = dict(arguments or {})
         allowed, reason = True, ""
-        if permission_policy is not None:
-            allowed, reason = permission_policy.check(
+        if app is not None:
+            allowed, reason = app.authorize_tool_use(
                 tool_name=name,
                 arguments=arguments,
-                registry=registry,
                 settings=context.settings,
             )
         if not allowed:
