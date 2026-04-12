@@ -40,7 +40,7 @@ class HarnessSettings:
     provider_retry_attempts: int = 1
     provider_retry_backoff_ms: int = 150
     max_agent_loops: int = 0
-    max_context_tokens: int = 640_000
+    max_context_tokens: int = 258_000
     preserve_last_n_turns: int = 6
     context_pressure_warn_ratio: float = 0.7
     context_pressure_critical_ratio: float = 0.88

@@ -170,7 +170,7 @@ class ProviderTests(unittest.TestCase):
 
     def test_effective_context_limit_respects_provider_caps(self) -> None:
         settings = HarnessSettings.from_workspace(".")
-        self.assertEqual(settings.max_context_tokens, 640_000)
+        self.assertEqual(settings.max_context_tokens, 258_000)
 
         settings.provider = "openai"
         settings.model = "gpt-4o"
@@ -178,7 +178,7 @@ class ProviderTests(unittest.TestCase):
 
         settings.provider = "openrouter"
         settings.model = "google/gemma-4-26b-a4b-it"
-        self.assertEqual(effective_context_limit(settings), 640_000)
+        self.assertEqual(effective_context_limit(settings), 258_000)
 
     def test_provider_router_round_robin_reports_actual_key_slot(self) -> None:
         from ecology_harness.runtime.provider_router import RoutedProvider
