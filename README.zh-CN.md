@@ -4,7 +4,7 @@
 
 Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 Python Agent Harness。它把生态领域专用的能力面和稳定的通用运行时结合在一起：一方面内置了持续扩展的 skills、MCP catalogs、scientific toolkits、多模态与文档分析能力，另一方面又能支撑文献综述、空间推理、生物多样性观测、水体微宇宙、光生物反应器、显微分析、生态系统建模等具体研究任务。
 
-除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection，以及面向团队通知的飞书 / Lark webhook 轻量集成，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
+除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection，以及面向团队通知的飞书 / Lark、钉钉、企业微信 webhook 轻量集成，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
 当前发布版本是 `0.5.0 beta`（包版本为 `0.5.0b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
@@ -32,7 +32,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
-- `2026-04-17`：新增轻量 integrations 层，首批支持飞书 / Lark webhook，提供 `eh integrations` 运维命令、`FeishuNotify` 工具，以及在 doctor 里可见的集成状态。
+- `2026-04-17`：扩展轻量 integrations 层，在飞书 / Lark 之外新增钉钉与企业微信 webhook 支持，加入通用 `IntegrationNotify` 消息发送和 `eh integrations` 运维命令。
 - `2026-04-11`：对 `0.5.0 beta` 做了一轮交付级 hardening，收紧了 workspace operator 上下文边界，让 `HEARTBEAT.md` 只在 heartbeat 运行时注入，同时把浏览器工具限制为只接受 `http(s)` URL，并完成了新一轮回归、构建与打包校验。
 - `2026-04-11`：发布 `0.5.0 beta`，加入 `eh doctor`、`eh setup`、只读 `eh explore`、`eh runtime`、`eh analytics`，以及更清晰的 clarify → plan → execute 工作流别名；这些能力参考了 oh-my-codex，但仍保持现有 Ecology Harness 运行时的轻量结构。
 - `2026-04-10`：发布 `0.4.1 beta`，加入了更像 OpenClaw 的 workspace bootstrap context files、轻量 heartbeat、更多 plugin 生命周期 hooks，以及对外部浏览器内容“默认不可信”的安全处理。
@@ -60,7 +60,7 @@ EcologyHarness/
 │   ├── ecology/              # 生态领域 catalog 与扩展入口
 │   ├── evaluation/           # Trajectory 导出、压缩与 benchmark 汇总
 │   ├── evolution/            # 任务后复盘与自进化 candidate 生成
-│   ├── integrations/         # 轻量外部集成，例如飞书 / Lark webhook
+│   ├── integrations/         # 轻量外部集成，例如飞书 / Lark、钉钉、企业微信 webhook
 │   ├── mcp/                  # MCP 注册、目录和桥接逻辑
 │   ├── memory/               # 持久记忆管理
 │   ├── permissions/          # 权限策略与安全检查
@@ -100,7 +100,7 @@ EcologyHarness/
 - `eh analytics` 可汇总近期 session、query history、trajectory 切片、skill 使用情况、automation 与 MCP 状态
 - 基于工作区 `HEARTBEAT.md` 的轻量 heartbeat 查看与执行能力
 - `eh explore` 提供只读探索模式，适合安全地浏览仓库和整理上下文
-- 支持轻量飞书 / Lark webhook 集成，可用于通知和自动化输出
+- 支持轻量飞书 / Lark、钉钉、企业微信 webhook 集成，可用于通知和自动化输出
 - 工具注册系统与内置通用工具
 - 支持本地图片、音频、文档与视频抽帧附件的多模态输入
 - 内置文档分析工具，可处理 `pdf`、`docx`、`md`、`csv`、`json`、`html`、`ipynb`
@@ -454,6 +454,15 @@ eh mcp
 # 配置飞书 / Lark webhook 集成
 eh integrations add feishu-webhook --name default \
   --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/...
+
+# 配置钉钉 webhook 集成
+eh integrations add dingtalk-webhook --name ops \
+  --webhook-url https://oapi.dingtalk.com/robot/send?access_token=... \
+  --secret your-dingtalk-secret
+
+# 配置企业微信 webhook 集成
+eh integrations add wecom-webhook --name team \
+  --webhook-url https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...
 
 # 发送一条测试消息
 eh integrations test default "Ecology Harness integration test"

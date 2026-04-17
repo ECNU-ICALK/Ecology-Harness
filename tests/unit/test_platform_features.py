@@ -72,6 +72,22 @@ class _FakeFeishuResponse:
         return False
 
 
+class _FakeWebhookResponse:
+    def __init__(self, payload: Optional[dict] = None, status: int = 200) -> None:
+        self.status = status
+        self._payload = payload or {"errcode": 0, "errmsg": "ok"}
+
+    def read(self) -> bytes:
+        return json.dumps(self._payload, ensure_ascii=False).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        del exc_type, exc, tb
+        return False
+
+
 class PlatformFeatureTests(unittest.TestCase):
     def _make_app(self, root: Path) -> EcologyHarnessApp:
         settings = HarnessSettings.from_workspace(root)
@@ -332,6 +348,65 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertEqual(payload["msg_type"], "post")
             self.assertIn("timestamp", payload)
             self.assertIn("sign", payload)
+
+    def test_dingtalk_integration_can_be_configured_and_notified(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            app.integration_manager.configure_dingtalk_webhook(
+                name="ops",
+                webhook_url="https://oapi.dingtalk.com/robot/send?access_token=abc12345",
+                secret="ding-secret",
+            )
+
+            with patch(
+                "ecology_harness.integrations.manager.urllib_request.urlopen",
+                return_value=_FakeWebhookResponse(),
+            ) as urlopen_mock:
+                result = app.registry.execute(
+                    "IntegrationNotify",
+                    {"name": "ops", "text": "hello dingtalk", "title": "Alert"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["integration"]["kind"], "dingtalk-webhook")
+            request = urlopen_mock.call_args.args[0]
+            self.assertIn("oapi.dingtalk.com", request.full_url)
+            self.assertIn("timestamp=", request.full_url)
+            self.assertIn("sign=", request.full_url)
+            payload = json.loads(request.data.decode("utf-8"))
+            self.assertEqual(payload["msgtype"], "markdown")
+            self.assertEqual(payload["markdown"]["title"], "Alert")
+
+    def test_wecom_integration_can_be_configured_and_notified(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            app.integration_manager.configure_wecom_webhook(
+                name="team",
+                webhook_url="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=abc12345",
+            )
+
+            with patch(
+                "ecology_harness.integrations.manager.urllib_request.urlopen",
+                return_value=_FakeWebhookResponse(),
+            ) as urlopen_mock:
+                result = app.registry.execute(
+                    "WeComNotify",
+                    {"name": "team", "text": "hello wecom", "title": "Digest"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["integration"]["kind"], "wecom-webhook")
+            request = urlopen_mock.call_args.args[0]
+            self.assertIn("qyapi.weixin.qq.com", request.full_url)
+            payload = json.loads(request.data.decode("utf-8"))
+            self.assertEqual(payload["msgtype"], "markdown")
+            self.assertIn("Digest", payload["markdown"]["content"])
 
     def test_runtime_status_reports_context_pressure_and_counts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

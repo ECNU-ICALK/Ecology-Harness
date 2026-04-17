@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import Optional
 from unittest.mock import patch
 
 from ecology_harness.cli import _should_prompt_for_permission_choice, main
@@ -14,6 +15,23 @@ class _FakeFeishuResponse:
 
     def read(self) -> bytes:
         return b'{"StatusCode":0,"StatusMessage":"success"}'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        del exc_type, exc, tb
+        return False
+
+
+class _FakeWebhookResponse:
+    status = 200
+
+    def __init__(self, payload: Optional[bytes] = None) -> None:
+        self._payload = payload or b'{"errcode":0,"errmsg":"ok"}'
+
+    def read(self) -> bytes:
+        return self._payload
 
     def __enter__(self):
         return self
@@ -283,6 +301,87 @@ class CliTests(unittest.TestCase):
                             "default",
                             "hello",
                             "team",
+                        ]
+                    )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Integration Test", buffer.getvalue())
+
+    def test_cli_can_add_dingtalk_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "integrations",
+                        "add",
+                        "dingtalk-webhook",
+                        "--name",
+                        "ops",
+                        "--webhook-url",
+                        "https://oapi.dingtalk.com/robot/send?access_token=abc12345",
+                        "--secret",
+                        "ding-secret",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Integration Added", buffer.getvalue())
+
+    def test_cli_can_add_wecom_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "integrations",
+                        "add",
+                        "wecom-webhook",
+                        "--name",
+                        "team",
+                        "--webhook-url",
+                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=abc12345",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Integration Added", buffer.getvalue())
+
+    def test_cli_can_test_dingtalk_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "integrations",
+                        "add",
+                        "dingtalk-webhook",
+                        "--name",
+                        "ops",
+                        "--webhook-url",
+                        "https://oapi.dingtalk.com/robot/send?access_token=abc12345",
+                        "--secret",
+                        "ding-secret",
+                    ]
+                )
+
+            buffer = io.StringIO()
+            with patch("ecology_harness.integrations.manager.urllib_request.urlopen", return_value=_FakeWebhookResponse()):
+                with redirect_stdout(buffer):
+                    exit_code = main(
+                        [
+                            "--workspace",
+                            tmpdir,
+                            "integrations",
+                            "test",
+                            "ops",
+                            "hello",
+                            "ops",
                         ]
                     )
 

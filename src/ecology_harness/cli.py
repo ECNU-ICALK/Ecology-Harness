@@ -204,7 +204,9 @@ def build_parser() -> argparse.ArgumentParser:
             "  eh resume\n"
             "  eh resume latest\n"
             "  eh integrations\n"
-            "  eh integrations add feishu-webhook --name default --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/..."
+            "  eh integrations add feishu-webhook --name default --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/...\n"
+            "  eh integrations add dingtalk-webhook --name ops --webhook-url https://oapi.dingtalk.com/robot/send?access_token=...\n"
+            "  eh integrations add wecom-webhook --name team --webhook-url https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..."
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -864,6 +866,7 @@ def _list_integrations(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_o
             [
                 "No integrations configured.",
                 "Tip: eh integrations add feishu-webhook --name default --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/...",
+                "Also supported: dingtalk-webhook, wecom-webhook",
             ],
         )
         return 0
@@ -881,11 +884,12 @@ def _list_integrations(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_o
     return 0
 
 
-def _add_feishu_integration(
+def _add_integration(
     app: EcologyHarnessApp,
     renderer: ConsoleRenderer,
     json_output: bool,
     *,
+    kind: str,
     name: str,
     webhook_url: str,
     secret: str = "",
@@ -896,12 +900,29 @@ def _add_feishu_integration(
         renderer.print_notice("integration_manager service is unavailable.", level="error")
         return 1
     try:
-        item = manager.configure_feishu_webhook(
-            name=name,
-            webhook_url=webhook_url,
-            secret=secret,
-            notes=notes,
-        )
+        if kind == "feishu-webhook":
+            item = manager.configure_feishu_webhook(
+                name=name,
+                webhook_url=webhook_url,
+                secret=secret,
+                notes=notes,
+            )
+        elif kind == "dingtalk-webhook":
+            item = manager.configure_dingtalk_webhook(
+                name=name,
+                webhook_url=webhook_url,
+                secret=secret,
+                notes=notes,
+            )
+        elif kind == "wecom-webhook":
+            item = manager.configure_wecom_webhook(
+                name=name,
+                webhook_url=webhook_url,
+                notes=notes,
+            )
+        else:
+            renderer.print_notice("Unsupported integration kind: %s" % kind, level="error")
+            return 1
     except ValueError as exc:
         renderer.print_notice(str(exc), level="error")
         return 1
@@ -931,7 +952,7 @@ def _test_integration(
 ) -> int:
     try:
         result = app.registry.execute(
-            "FeishuNotify",
+            "IntegrationNotify",
             {"name": name, "text": message, "title": title},
             app.settings,
             services=app.get_services(),
@@ -1592,8 +1613,13 @@ def _handle_positional_command(
         if len(parts) == 1:
             return _list_integrations(app, renderer, json_output)
         if parts[1] == "add":
-            if len(parts) < 3 or parts[2] != "feishu-webhook":
-                parser.error("`eh integrations add` currently supports `feishu-webhook`.")
+            if len(parts) < 3:
+                parser.error("`eh integrations add` requires an integration kind.")
+            kind = parts[2]
+            if kind not in {"feishu-webhook", "dingtalk-webhook", "wecom-webhook"}:
+                parser.error(
+                    "`eh integrations add` currently supports `feishu-webhook`, `dingtalk-webhook`, and `wecom-webhook`."
+                )
             name = ""
             webhook_url = ""
             secret = ""
@@ -1620,11 +1646,14 @@ def _handle_positional_command(
                     continue
                 parser.error("Unknown or incomplete integrations add option: %s" % token)
             if not name or not webhook_url:
-                parser.error("`eh integrations add feishu-webhook` requires --name and --webhook-url.")
-            return _add_feishu_integration(
+                parser.error("`eh integrations add %s` requires --name and --webhook-url." % kind)
+            if kind == "wecom-webhook" and secret:
+                parser.error("`eh integrations add wecom-webhook` does not use --secret.")
+            return _add_integration(
                 app,
                 renderer,
                 json_output,
+                kind=kind,
                 name=name,
                 webhook_url=webhook_url,
                 secret=secret,
