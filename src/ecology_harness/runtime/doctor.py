@@ -25,6 +25,13 @@ class HarnessDoctor:
             probe_remote=probe_mcp,
             timeout_sec=timeout_sec,
         )
+        integrations = self.app.integration_manager.status_summary() if self.app.integration_manager is not None else {
+            "total": 0,
+            "enabled": 0,
+            "kinds": {},
+            "status_counts": {},
+            "items": [],
+        }
         mcp_status_counts: dict[str, int] = {}
         for item in mcp_states:
             status = str(getattr(item, "status", "unknown") or "unknown")
@@ -53,10 +60,16 @@ class HarnessDoctor:
                 "%s MCP server(s) were unreachable during probing."
                 % mcp_status_counts.get("unreachable", 0)
             )
+        if integrations["status_counts"].get("invalid-config", 0):
+            issues.append(
+                "%s integration(s) have invalid configuration."
+                % integrations["status_counts"].get("invalid-config", 0)
+            )
         suggestions = self._build_suggestions(
             bootstrap_status=bootstrap_status,
             skill_status_counts=skill_status_counts,
             mcp_states=mcp_states,
+            integrations=integrations,
             optional_dependencies=optional_dependencies,
             probe_mcp=probe_mcp,
         )
@@ -86,6 +99,7 @@ class HarnessDoctor:
                 "status_counts": mcp_status_counts,
                 "probed": probe_mcp,
             },
+            "integrations": integrations,
             "dependencies": optional_dependencies,
             "issues": issues,
             "suggestions": suggestions,
@@ -111,6 +125,7 @@ class HarnessDoctor:
         bootstrap_status: dict[str, Any],
         skill_status_counts: dict[str, int],
         mcp_states: list[Any],
+        integrations: dict[str, Any],
         optional_dependencies: dict[str, dict[str, object]],
         probe_mcp: bool,
     ) -> list[dict[str, str]]:
@@ -201,6 +216,16 @@ class HarnessDoctor:
                     "command": "eh mcp",
                     "reason": "%s probed MCP server(s) were unreachable; verify URLs, network access, or service health."
                     % len(unreachable_states),
+                }
+            )
+        if integrations.get("status_counts", {}).get("invalid-config", 0):
+            suggestions.append(
+                {
+                    "severity": "medium",
+                    "title": "Repair invalid integration configuration",
+                    "command": "eh integrations",
+                    "reason": "%s configured integration(s) need valid webhook or channel settings."
+                    % integrations["status_counts"].get("invalid-config", 0),
                 }
             )
         return suggestions

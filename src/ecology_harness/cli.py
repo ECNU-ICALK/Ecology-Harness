@@ -40,6 +40,7 @@ SESSION_COMMAND_LINES = [
     "/skill-hub [query] browse installed skill packs and matching skills",
     "/skill-view NAME [PATH] inspect a skill or a single file in its bundle",
     "/plugins    list installed plugins",
+    "/integrations list configured external integrations",
     "/mcp        list configured MCP servers",
     "/profiles   list available work-style profiles",
     "/heartbeat  show workspace heartbeat status or run `/heartbeat run`",
@@ -89,6 +90,7 @@ SESSION_COMMANDS = {
     "/skill-hub",
     "/skill-view",
     "/plugins",
+    "/integrations",
     "/mcp",
     "/profiles",
     "/heartbeat",
@@ -144,6 +146,7 @@ POSITIONAL_ACTIONS = {
     "tools",
     "skills",
     "plugins",
+    "integrations",
     "mcp",
     "profiles",
     "heartbeat",
@@ -199,7 +202,9 @@ def build_parser() -> argparse.ArgumentParser:
             "  eh sessions\n"
             "  eh sessions search 湿地 甲烷\n"
             "  eh resume\n"
-            "  eh resume latest"
+            "  eh resume latest\n"
+            "  eh integrations\n"
+            "  eh integrations add feishu-webhook --name default --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/..."
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -437,7 +442,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     raw_argv = list(argv) if argv is not None else list(sys.argv[1:])
     parser = build_parser()
-    args = parser.parse_args(raw_argv)
+    args, extras = parser.parse_known_args(raw_argv)
+    if extras:
+        if args.command_args:
+            args.command_args.extend(extras)
+        else:
+            parser.error("unrecognized arguments: %s" % " ".join(extras))
     renderer = ConsoleRenderer()
 
     settings = HarnessSettings.from_workspace(args.workspace)
@@ -837,6 +847,105 @@ def _list_plugins(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output
     return 0
 
 
+def _list_integrations(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
+    result = app.registry.execute(
+        "IntegrationList",
+        {},
+        app.settings,
+        services=app.get_services(),
+    )
+    items = result.data.get("integrations", [])
+    if json_output:
+        print(json.dumps(items, indent=2, ensure_ascii=False))
+        return 0
+    if not items:
+        renderer.section(
+            "Integrations",
+            [
+                "No integrations configured.",
+                "Tip: eh integrations add feishu-webhook --name default --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/...",
+            ],
+        )
+        return 0
+    rows = [
+        [
+            item["name"],
+            item["kind"],
+            item["status"],
+            "yes" if item["enabled"] else "no",
+            item.get("config", {}).get("webhook_url", "-"),
+        ]
+        for item in items
+    ]
+    renderer.print_table("Integrations", ["name", "kind", "status", "enabled", "endpoint"], rows)
+    return 0
+
+
+def _add_feishu_integration(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    *,
+    name: str,
+    webhook_url: str,
+    secret: str = "",
+    notes: str = "",
+) -> int:
+    manager = app.integration_manager
+    if manager is None:
+        renderer.print_notice("integration_manager service is unavailable.", level="error")
+        return 1
+    try:
+        item = manager.configure_feishu_webhook(
+            name=name,
+            webhook_url=webhook_url,
+            secret=secret,
+            notes=notes,
+        )
+    except ValueError as exc:
+        renderer.print_notice(str(exc), level="error")
+        return 1
+    if json_output:
+        print(json.dumps(item, indent=2, ensure_ascii=False))
+        return 0
+    renderer.section(
+        "Integration Added",
+        [
+            "name: %s" % item["name"],
+            "kind: %s" % item["kind"],
+            "status: %s" % item["status"],
+            "endpoint: %s" % item.get("config", {}).get("webhook_url", ""),
+        ],
+    )
+    return 0
+
+
+def _test_integration(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    *,
+    name: str,
+    message: str,
+    title: str = "",
+) -> int:
+    try:
+        result = app.registry.execute(
+            "FeishuNotify",
+            {"name": name, "text": message, "title": title},
+            app.settings,
+            services=app.get_services(),
+        )
+    except ToolError as exc:
+        renderer.print_notice(str(exc), level="error")
+        return 1
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    renderer.section("Integration Test", result.content.splitlines() or ["<empty>"])
+    return 0
+
+
 def _list_mcp_servers(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool) -> int:
     result = app.registry.execute(
         "ListMcpServersTool",
@@ -1085,6 +1194,11 @@ def _doctor(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_output: bool
             "bootstrap_files: %s present, %s missing"
             % (bootstrap.get("present_count", 0), bootstrap.get("missing_count", 0)),
             "mcp: %s server(s), statuses=%s" % (mcp.get("total", 0), mcp.get("status_counts", {})),
+            "integrations: %s, statuses=%s"
+            % (
+                report.get("integrations", {}).get("total", 0),
+                report.get("integrations", {}).get("status_counts", {}),
+            ),
             "deps: prompt_toolkit=%s playwright=%s ffmpeg=%s"
             % (
                 deps.get("prompt_toolkit", {}).get("available", False),
@@ -1473,6 +1587,75 @@ def _handle_positional_command(
         return _skill_view(app, renderer, json_output, name, file_path)
     if head == "plugins":
         return _list_plugins(app, renderer, json_output)
+    if head == "integrations":
+        parts = list(command_args)
+        if len(parts) == 1:
+            return _list_integrations(app, renderer, json_output)
+        if parts[1] == "add":
+            if len(parts) < 3 or parts[2] != "feishu-webhook":
+                parser.error("`eh integrations add` currently supports `feishu-webhook`.")
+            name = ""
+            webhook_url = ""
+            secret = ""
+            notes = ""
+            index = 3
+            while index < len(parts):
+                token = parts[index]
+                next_value = parts[index + 1] if index + 1 < len(parts) else ""
+                if token == "--name" and next_value:
+                    name = next_value
+                    index += 2
+                    continue
+                if token == "--webhook-url" and next_value:
+                    webhook_url = next_value
+                    index += 2
+                    continue
+                if token == "--secret" and next_value:
+                    secret = next_value
+                    index += 2
+                    continue
+                if token == "--notes" and next_value:
+                    notes = next_value
+                    index += 2
+                    continue
+                parser.error("Unknown or incomplete integrations add option: %s" % token)
+            if not name or not webhook_url:
+                parser.error("`eh integrations add feishu-webhook` requires --name and --webhook-url.")
+            return _add_feishu_integration(
+                app,
+                renderer,
+                json_output,
+                name=name,
+                webhook_url=webhook_url,
+                secret=secret,
+                notes=notes,
+            )
+        if parts[1] == "test":
+            if len(parts) < 3:
+                parser.error("`eh integrations test` requires an integration name.")
+            name = parts[2]
+            title = ""
+            message_tokens: list[str] = []
+            index = 3
+            while index < len(parts):
+                token = parts[index]
+                next_value = parts[index + 1] if index + 1 < len(parts) else ""
+                if token == "--title" and next_value:
+                    title = next_value
+                    index += 2
+                    continue
+                message_tokens.append(token)
+                index += 1
+            message = " ".join(message_tokens).strip() or "Ecology Harness integration test"
+            return _test_integration(
+                app,
+                renderer,
+                json_output,
+                name=name,
+                message=message,
+                title=title,
+            )
+        parser.error("Unknown integrations subcommand: %s" % parts[1])
     if head == "mcp":
         return _list_mcp_servers(app, renderer, json_output)
     if head == "profiles":
@@ -1719,6 +1902,9 @@ def _handle_repl_command(
         return {"action": "continue"}
     if normalized == "/plugins":
         _list_plugins(app, renderer, False)
+        return {"action": "continue"}
+    if normalized == "/integrations":
+        _list_integrations(app, renderer, False)
         return {"action": "continue"}
     if normalized == "/mcp":
         _list_mcp_servers(app, renderer, False)

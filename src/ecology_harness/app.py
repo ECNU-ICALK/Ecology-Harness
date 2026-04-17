@@ -18,6 +18,7 @@ from ecology_harness.memory.providers import (
     MemoryProviderManager,
 )
 from ecology_harness.mcp import McpServerRegistry
+from ecology_harness.integrations import IntegrationManager
 from ecology_harness.permissions import PermissionDecision, PermissionPolicy
 from ecology_harness.plugins import PluginManager
 from ecology_harness.runtime import AgentLoop
@@ -63,6 +64,7 @@ class EcologyHarnessApp:
         self.registry = ToolRegistry()
         self.memory_manager: MemoryManager | None = None
         self.memory_provider_manager: MemoryProviderManager | None = None
+        self.integration_manager: IntegrationManager | None = None
         self.skill_loader: SkillLoader | None = None
         self.plugin_manager: PluginManager | None = None
         self.task_store: TaskStore | None = None
@@ -119,6 +121,7 @@ class EcologyHarnessApp:
             inventory_max_items=self.settings.memory_inventory_max_items,
         )
         builtin_skill_dir = Path(__file__).resolve().parent / "skills" / "builtin"
+        self.integration_manager = IntegrationManager(self.settings.integration_dir)
         self.skill_loader = SkillLoader(
             builtin_dir=builtin_skill_dir,
             user_dir=self.settings.user_skill_dir,
@@ -378,6 +381,7 @@ class EcologyHarnessApp:
             "app": self,
             "memory_manager": self.memory_manager,
             "memory_provider_manager": self.memory_provider_manager,
+            "integration_manager": self.integration_manager,
             "skill_loader": self.skill_loader,
             "plugin_manager": self.plugin_manager,
             "task_store": self.task_store,

@@ -14,10 +14,11 @@ skill/MCP retrieval, long-lived memory and historical session recall, bounded
 context compaction, profile-backed work modes, and a self-evolution loop that
 distills reusable memory and skill candidates after runs. Around that core, it
 adds practical operator features such as `eh setup`, `eh doctor`, heartbeat,
-analytics, checkpoints, automation, and progressive skill inspection, so the
-ecology stack can keep growing without letting the runtime become unmanageable.
-Contributions are very welcome, and we would love help from the community to
-keep improving and expanding it together.
+analytics, checkpoints, automation, progressive skill inspection, and
+lightweight Feishu/Lark webhook integrations for team-facing notifications, so
+the ecology stack can keep growing without letting the runtime become
+unmanageable. Contributions are very welcome, and we would love help from the
+community to keep improving and expanding it together.
 
 Current release: `0.5.0 beta` (`0.5.0b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
@@ -44,6 +45,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-04-17`: added a lightweight integrations layer with first-party Feishu/Lark webhook support, `eh integrations` operator commands, `FeishuNotify`, and doctor visibility for configured integrations.
 - `2026-04-11`: delivery hardening pass for `0.5.0 beta`, tightening workspace-operator context boundaries so `HEARTBEAT.md` is only injected during heartbeat runs, restricting browser tools to `http(s)` URLs, and finishing another full regression/build audit.
 - `2026-04-11`: released `0.5.0 beta`, adding `eh doctor`, `eh setup`, read-only `eh explore`, `eh runtime`, `eh analytics`, and clearer clarify → plan → execute workflow aliases inspired by oh-my-codex while keeping the existing ecology runtime lightweight.
 - `2026-04-10`: released `0.4.1 beta`, adding OpenClaw-inspired workspace bootstrap context files, lightweight heartbeat support, richer plugin lifecycle hooks, and safer handling of external browser content.
@@ -71,6 +73,7 @@ EcologyHarness/
 │   ├── ecology/              # Ecology catalogs and domain extension surface
 │   ├── evaluation/           # Trajectory export, compression, and benchmark summaries
 │   ├── evolution/            # Post-run review and self-improvement candidate generation
+│   ├── integrations/         # Lightweight external integrations such as Feishu/Lark webhooks
 │   ├── mcp/                  # MCP registry, catalogs, and bridge logic
 │   ├── memory/               # Persistent memory management
 │   ├── permissions/          # Access policy and safety checks
@@ -111,6 +114,7 @@ EcologyHarness/
 - `eh analytics` recent usage summaries for sessions, query history, skill usage, trajectories, automations, and MCP health
 - lightweight heartbeat inspection and execution driven by workspace `HEARTBEAT.md`
 - `eh explore` as a read-only exploration surface for safe repository inspection
+- lightweight Feishu/Lark webhook integrations for operator notifications and automation outputs
 - tool registry with typed metadata and validation
 - built-in file, shell, web, memory, skill, task, and subagent tools
 - multimodal prompt attachments for local images, audio, documents, and sampled video frames
@@ -467,6 +471,13 @@ eh tools
 eh plugins
 eh mcp
 
+# configure a Feishu/Lark webhook integration
+eh integrations add feishu-webhook --name default \
+  --webhook-url https://open.feishu.cn/open-apis/bot/v2/hook/...
+
+# send a test notification
+eh integrations test default "Ecology Harness integration test"
+
 # list supported providers
 eh providers
 eh skills
@@ -561,6 +572,7 @@ Inside the REPL you can try:
 /model sonnet
 /session
 /plugins
+/integrations
 /mcp
 /attach docs/wetland_report.pdf
 /image imgs/specimen.jpg

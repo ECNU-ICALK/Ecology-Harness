@@ -5,6 +5,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from typing import Optional
 from unittest.mock import patch
 
 from ecology_harness.app import EcologyHarnessApp
@@ -53,6 +54,22 @@ class _FakeJsonProvider:
     def complete(self, messages, tools, settings):
         del messages, tools, settings
         return ModelResponse(content=self._content, raw={})
+
+
+class _FakeFeishuResponse:
+    def __init__(self, payload: Optional[dict] = None, status: int = 200) -> None:
+        self.status = status
+        self._payload = payload or {"StatusCode": 0, "StatusMessage": "success"}
+
+    def read(self) -> bytes:
+        return json.dumps(self._payload, ensure_ascii=False).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        del exc_type, exc, tb
+        return False
 
 
 class PlatformFeatureTests(unittest.TestCase):
@@ -264,6 +281,57 @@ class PlatformFeatureTests(unittest.TestCase):
             suggestions = report.data["suggestions"]
             self.assertTrue(suggestions)
             self.assertTrue(any(item["command"] == "eh setup" for item in suggestions))
+
+    def test_feishu_integration_can_be_configured_and_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            item = app.integration_manager.configure_feishu_webhook(
+                name="default",
+                webhook_url="https://open.feishu.cn/open-apis/bot/v2/hook/abc12345",
+            )
+            self.assertEqual(item["status"], "ready")
+
+            report = app.registry.execute(
+                "DoctorReport",
+                {"probe_mcp": False},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertEqual(report.data["integrations"]["total"], 1)
+            self.assertEqual(report.data["integrations"]["status_counts"]["ready"], 1)
+
+    def test_feishu_notify_tool_uses_configured_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            app.integration_manager.configure_feishu_webhook(
+                name="default",
+                webhook_url="https://open.feishu.cn/open-apis/bot/v2/hook/abc12345",
+                secret="demo-secret",
+            )
+
+            with patch(
+                "ecology_harness.integrations.manager.urllib_request.urlopen",
+                return_value=_FakeFeishuResponse(),
+            ) as urlopen_mock:
+                result = app.registry.execute(
+                    "FeishuNotify",
+                    {"name": "default", "text": "hello integration", "title": "Smoke"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertEqual(result.data["status_code"], 200)
+            request = urlopen_mock.call_args.args[0]
+            self.assertIn("open.feishu.cn", request.full_url)
+            payload = json.loads(request.data.decode("utf-8"))
+            self.assertEqual(payload["msg_type"], "post")
+            self.assertIn("timestamp", payload)
+            self.assertIn("sign", payload)
 
     def test_runtime_status_reports_context_pressure_and_counts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

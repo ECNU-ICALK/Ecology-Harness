@@ -13,6 +13,7 @@ class HarnessSettings:
     memory_dir: Path
     skill_dir: Path
     plugin_dir: Path
+    integration_dir: Path
     mcp_dir: Path
     agent_dir: Path
     session_dir: Path
@@ -120,6 +121,7 @@ class HarnessSettings:
             memory_dir=state_dir / "memory",
             skill_dir=state_dir / "skills",
             plugin_dir=state_dir / "plugins",
+            integration_dir=state_dir / "integrations",
             mcp_dir=state_dir / "mcp",
             agent_dir=state_dir / "agents",
             session_dir=state_dir / "sessions",
@@ -133,6 +135,7 @@ class HarnessSettings:
         self.memory_dir.mkdir(parents=True, exist_ok=True)
         self.skill_dir.mkdir(parents=True, exist_ok=True)
         self.plugin_dir.mkdir(parents=True, exist_ok=True)
+        self.integration_dir.mkdir(parents=True, exist_ok=True)
         self.mcp_dir.mkdir(parents=True, exist_ok=True)
         self.agent_dir.mkdir(parents=True, exist_ok=True)
         self.session_dir.mkdir(parents=True, exist_ok=True)

@@ -56,6 +56,7 @@ SESSION_COMMAND_SUGGESTIONS = [
     CommandSuggestion("/tools", "list built-in tools", "session"),
     CommandSuggestion("/skills", "list available skills", "session"),
     CommandSuggestion("/plugins", "list installed plugins", "session"),
+    CommandSuggestion("/integrations", "list configured external integrations", "session"),
     CommandSuggestion("/mcp", "list configured MCP servers", "session"),
     CommandSuggestion("/profiles", "list work-style profiles", "session"),
     CommandSuggestion("/automations", "list recurring automation jobs", "session"),

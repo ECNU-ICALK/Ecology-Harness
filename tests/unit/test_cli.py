@@ -9,6 +9,20 @@ from unittest.mock import patch
 from ecology_harness.cli import _should_prompt_for_permission_choice, main
 
 
+class _FakeFeishuResponse:
+    status = 200
+
+    def read(self) -> bytes:
+        return b'{"StatusCode":0,"StatusMessage":"success"}'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        del exc_type, exc, tb
+        return False
+
+
 class CliTests(unittest.TestCase):
     def test_cli_lists_tools(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -203,6 +217,77 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(exit_code, 0)
             self.assertIn("updated:", buffer.getvalue())
+
+    def test_cli_lists_integrations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "integrations",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Integrations", buffer.getvalue())
+
+    def test_cli_can_add_feishu_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "integrations",
+                        "add",
+                        "feishu-webhook",
+                        "--name",
+                        "default",
+                        "--webhook-url",
+                        "https://open.feishu.cn/open-apis/bot/v2/hook/abc12345",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Integration Added", buffer.getvalue())
+
+    def test_cli_can_test_feishu_integration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "integrations",
+                        "add",
+                        "feishu-webhook",
+                        "--name",
+                        "default",
+                        "--webhook-url",
+                        "https://open.feishu.cn/open-apis/bot/v2/hook/abc12345",
+                    ]
+                )
+
+            buffer = io.StringIO()
+            with patch("ecology_harness.integrations.manager.urllib_request.urlopen", return_value=_FakeFeishuResponse()):
+                with redirect_stdout(buffer):
+                    exit_code = main(
+                        [
+                            "--workspace",
+                            tmpdir,
+                            "integrations",
+                            "test",
+                            "default",
+                            "hello",
+                            "team",
+                        ]
+                    )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Integration Test", buffer.getvalue())
 
     def test_cli_explore_runs_in_read_only_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
