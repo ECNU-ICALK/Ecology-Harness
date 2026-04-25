@@ -93,6 +93,7 @@ class ConsoleRenderer:
             ]
         )
         self.print(self._indent_line(helper))
+        self.print(self._indent_line(self._style("live trace shows plans, tools, results, and compaction summaries", "muted")))
         self.print()
 
     def section(self, title: str, lines: Iterable[str]) -> None:
@@ -313,15 +314,27 @@ class ConsoleRenderer:
 
     def build_trace_printer(self):
         def _handle_event(event) -> None:
-            line = self.format_trace_event(event.kind, event.payload)
-            if line:
-                self.print(line)
+            rendered = self.format_trace_event(event.kind, event.payload)
+            if not rendered:
+                return
+            if isinstance(rendered, str):
+                self.print(rendered)
+                return
+            for line in rendered:
+                if line:
+                    self.print(line)
 
         return _handle_event
 
-    def format_trace_event(self, kind: str, payload: dict[str, Any]) -> str:
+    def format_trace_event(self, kind: str, payload: dict[str, Any]) -> str | list[str]:
         if kind == "run_started":
-            return "%s working..." % self._style("ℹ", "info")
+            provider = _clip_text(str(payload.get("provider", "unknown")), limit=18)
+            model = _clip_text(str(payload.get("model", "unknown")), limit=28)
+            return "%s working with %s / %s" % (
+                self._style("ℹ", "info"),
+                self._style(provider, "accent"),
+                self._style(model, "muted"),
+            )
         if kind == "context_pressure":
             return "  %scontext pressure %s%% (%s/%s tokens)" % (
                 self._style("⚠ ", "warn"),
@@ -330,9 +343,35 @@ class ConsoleRenderer:
                 payload.get("max_context_tokens", 0),
             )
         if kind == "step_started":
-            return ""
+            return "  %sstep %s · reviewing %s available tools" % (
+                self._style("• ", "muted"),
+                payload.get("step", 0),
+                payload.get("available_tool_count", 0),
+            )
         if kind == "assistant_message":
-            return ""
+            tool_call_count = int(payload.get("tool_call_count", 0) or 0)
+            content = str(payload.get("content", "") or "").strip()
+            if tool_call_count <= 0:
+                if not content:
+                    return "  %sfinal answer ready" % self._style("• ", "muted")
+                return "  %sdrafting answer · %s" % (
+                    self._style("• ", "muted"),
+                    self._style(_clip_text(content, limit=120), "muted"),
+                )
+            if content:
+                return "  %splan · %s" % (
+                    self._style("• ", "muted"),
+                    self._style(_clip_text(content, limit=120), "muted"),
+                )
+            tool_names = payload.get("tool_calls", []) or []
+            return "  %sselecting %s tool call%s%s" % (
+                self._style("• ", "muted"),
+                tool_call_count,
+                "" if tool_call_count == 1 else "s",
+                " (%s)" % ", ".join(_clip_text(str(item), limit=24) for item in tool_names[:3])
+                if tool_names
+                else "",
+            )
         if kind == "tool_call":
             return "  %s%s" % (
                 self._style("⏵ ", "tool"),
@@ -344,16 +383,38 @@ class ConsoleRenderer:
         if kind == "tool_result":
             status = "ok" if payload.get("allowed", True) else "blocked"
             output = summarize_tool_output(payload.get("output", ""))
+            duration = _format_duration_ms(int(payload.get("duration_ms", 0) or 0))
+            tool_name = _clip_text(str(payload.get("tool", "tool")), limit=28)
+            data_keys = payload.get("data_keys", []) or []
+            header_icon = self._style("✕", "error") if status != "ok" else self._style("↳", "muted")
+            header = "    %s %s" % (header_icon, tool_name)
+            suffix_parts = []
+            if duration:
+                suffix_parts.append(duration)
+            if data_keys:
+                suffix_parts.append("data: %s" % ", ".join(_clip_text(str(item), limit=18) for item in data_keys[:3]))
+            if suffix_parts:
+                header = "%s %s" % (header, self._style("(%s)" % "; ".join(suffix_parts), "muted"))
             if status != "ok":
-                return "    %s %s" % (self._style("✕", "error"), output)
-            return "    %s" % self._style(output, "muted")
+                return [header, "      %s" % output]
+            return [header, "      %s" % self._style(output, "muted")]
         if kind == "messages_compacted":
-            return "%s context compacted, removed %s messages" % (
-                self._style("ℹ", "info"),
-                payload.get("removed_message_count", 0),
-            )
+            before = int(payload.get("token_estimate_before", 0) or 0)
+            after = int(payload.get("token_estimate_after", 0) or 0)
+            saved = max(0, before - after)
+            summary = _clip_text(str(payload.get("compressed_summary", "") or ""), limit=110)
+            lines = [
+                "%s context compacted, removed %s messages and saved %s tokens" % (
+                    self._style("ℹ", "info"),
+                    payload.get("removed_message_count", 0),
+                    saved,
+                )
+            ]
+            if summary:
+                lines.append("  %sretained summary · %s" % (self._style("• ", "muted"), self._style(summary, "muted")))
+            return lines
         if kind == "run_completed":
-            return ""
+            return "  %sresponse ready" % self._style("• ", "muted")
         if kind == "run_stopped":
             return "%s %s" % (
                 self._style("▲", "warn"),
@@ -611,3 +672,11 @@ def _bool_text(value: bool) -> str:
 
 def _loop_limit_text(value: int) -> str:
     return "unlimited" if value <= 0 else str(value)
+
+
+def _format_duration_ms(value: int) -> str:
+    if value <= 0:
+        return ""
+    if value < 1000:
+        return "%sms" % value
+    return "%.1fs" % (float(value) / 1000.0)

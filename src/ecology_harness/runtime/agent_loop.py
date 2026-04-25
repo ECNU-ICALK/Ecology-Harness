@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Any, Callable
 
 from ecology_harness.config import HarnessSettings
@@ -81,12 +82,6 @@ class AgentLoop:
         while active_settings.max_agent_loops <= 0 or step < active_settings.max_agent_loops:
             step += 1
             context_limit = effective_context_limit(active_settings)
-            _emit_event(
-                emitted_events,
-                event_handler,
-                "step_started",
-                step=step,
-            )
             checkpoint_manager = getattr(self.app, "checkpoint_manager", None)
             if checkpoint_manager is not None and active_settings.checkpoints_enabled:
                 checkpoint_manager.create(
@@ -137,6 +132,14 @@ class AgentLoop:
                 conversation=messages,
                 allowed_tools=self.allowed_tools,
                 settings=active_settings,
+            )
+            _emit_event(
+                emitted_events,
+                event_handler,
+                "step_started",
+                step=step,
+                available_tool_count=len(available_tools),
+                preserved_turns=active_settings.preserve_last_n_turns,
             )
             token_estimate = estimate_tokens(messages)
             pressure_ratio = (
@@ -193,6 +196,7 @@ class AgentLoop:
                 content=response.content,
                 tool_calls=[item.name for item in response.tool_calls],
                 tool_call_count=len(response.tool_calls),
+                content_chars=len(response.content or ""),
             )
             if not response.tool_calls:
                 final_text = response.content
@@ -298,7 +302,10 @@ class AgentLoop:
                         tool_call.name,
                         reason,
                     )
+                    tool_result_data: dict[str, Any] = {}
+                    tool_duration_ms = 0
                 else:
+                    started_at = perf_counter()
                     try:
                         result = self.app.registry.execute(
                             tool_call.name,
@@ -312,6 +319,7 @@ class AgentLoop:
                             ),
                         )
                         tool_output = result.content
+                        tool_result_data = dict(getattr(result, "data", {}) or {})
                     except ToolError as exc:
                         self.app.run_plugin_hooks(
                             "OnError",
@@ -327,6 +335,8 @@ class AgentLoop:
                             settings=active_settings,
                         )
                         tool_output = "Tool error from %s: %s" % (tool_call.name, exc)
+                        tool_result_data = {}
+                    tool_duration_ms = max(0, int((perf_counter() - started_at) * 1000))
 
                 tool_invocations.append(
                     {
@@ -335,6 +345,8 @@ class AgentLoop:
                         "allowed": allowed,
                         "reason": reason,
                         "output": tool_output,
+                        "duration_ms": tool_duration_ms,
+                        "data_keys": sorted(tool_result_data.keys()),
                     }
                 )
                 self.app.audit(
@@ -354,6 +366,9 @@ class AgentLoop:
                     allowed=allowed,
                     reason=reason,
                     output=tool_output,
+                    duration_ms=tool_duration_ms,
+                    output_chars=len(tool_output or ""),
+                    data_keys=sorted(tool_result_data.keys()),
                 )
                 if plugin_manager is not None:
                     plugin_manager.run_hooks(

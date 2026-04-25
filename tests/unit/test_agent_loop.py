@@ -53,6 +53,9 @@ class AgentLoopTests(unittest.TestCase):
             self.assertIn("tool_result", seen)
             self.assertIn("run_completed", seen)
             self.assertTrue(result.events)
+            tool_result = next(item for item in result.events if item.kind == "tool_result")
+            self.assertIn("duration_ms", tool_result.payload)
+            self.assertIn("output_chars", tool_result.payload)
 
     def test_agent_tool_runs_subagent(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
