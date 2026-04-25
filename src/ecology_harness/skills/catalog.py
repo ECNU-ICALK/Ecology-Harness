@@ -55,6 +55,27 @@ SKILL_HUB_PACKS: dict[str, dict[str, str]] = {
         "audit_status": "vendored",
         "source_url": "https://github.com/Orchestra-Research/AI-Research-SKILLs/tree/main",
     },
+    "clawhub-research": {
+        "title": "ClawHub Research Skills",
+        "description": "Selected academic and literature-analysis skills vendored from ClawHub and adapted for Ecology Harness.",
+        "trust_level": "community",
+        "audit_status": "vendored",
+        "source_url": "https://clawhub.ai/",
+    },
+    "clawhub-ecology": {
+        "title": "ClawHub Ecology Skills",
+        "description": "Selected ecology, conservation, and carbon-analysis skills vendored from ClawHub. Some rely on external services or APIs and should be reviewed before production use.",
+        "trust_level": "community",
+        "audit_status": "caution",
+        "source_url": "https://clawhub.ai/",
+    },
+    "bioskills-ecology": {
+        "title": "bioSkills Ecology & Genomics",
+        "description": "Ecological genomics, metagenomics, phylogenetics, and population-genetics skills vendored from GPTomics/bioSkills.",
+        "trust_level": "community",
+        "audit_status": "vendored",
+        "source_url": "https://github.com/GPTomics/bioSkills",
+    },
     "project": {
         "title": "Project Skills",
         "description": "Project-local skills defined inside the current workspace.",
@@ -77,8 +98,11 @@ SKILL_HUB_ORDER = {
     "superpowers": 3,
     "writing": 4,
     "ai-research": 5,
-    "project": 6,
-    "user": 7,
+    "clawhub-research": 6,
+    "clawhub-ecology": 7,
+    "bioskills-ecology": 8,
+    "project": 9,
+    "user": 10,
 }
 
 

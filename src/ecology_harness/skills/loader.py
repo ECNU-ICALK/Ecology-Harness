@@ -992,6 +992,8 @@ class SkillLoader:
                     continue
                 if quarantine_root is not None and self._is_relative_to(path, quarantine_root):
                     continue
+                if self._is_bundle_support_markdown(path, root):
+                    continue
                 try:
                     stat = path.stat()
                 except FileNotFoundError:
@@ -1006,6 +1008,20 @@ class SkillLoader:
                     )
                 )
         return "\n".join(signature_parts), file_entries
+
+    def _is_bundle_support_markdown(self, path: Path, source_root: Path) -> bool:
+        if path.name == "SKILL.md":
+            return False
+        current = path.parent
+        while True:
+            skill_entry = current / "SKILL.md"
+            if skill_entry.exists():
+                return True
+            if current == source_root:
+                return False
+            if current.parent == current:
+                return False
+            current = current.parent
 
     def _snapshot_path(self) -> Path:
         return self.state_store.snapshot_path

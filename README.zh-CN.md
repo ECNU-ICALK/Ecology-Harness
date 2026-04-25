@@ -6,7 +6,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection，以及面向团队通知的飞书 / Lark、钉钉、企业微信 webhook 轻量集成，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.5.0 beta`（包版本为 `0.5.0b0`）。
+当前发布版本是 `0.5.1 beta`（包版本为 `0.5.1b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 阅读导航
@@ -32,7 +32,10 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
+- `2026-04-25`：发布 `0.5.1 beta`，新增 `clawhub-research`、`clawhub-ecology`、`bioskills-ecology` 三组技能包，并修复了 SkillHub / loader 会把 bundle 辅助 markdown 误识别成独立 skill 的问题。
+- `2026-04-25`：新增两个生态相关的 community skill pack：`clawhub-ecology` 用于承接来自 ClawHub 的生态/碳分析外部服务型技能，`bioskills-ecology` 用于承接来自 GPTomics/bioSkills 的生态基因组学、宏基因组、系统发育与群体遗传工作流。
 - `2026-04-17`：扩展轻量 integrations 层，在飞书 / Lark 之外新增钉钉与企业微信 webhook 支持，加入通用 `IntegrationNotify` 消息发送和 `eh integrations` 运维命令。
+- `2026-04-25`：扫描 ClawHub 上的学术类 skill，并筛选接入一小批高价值工作流：`academic-search`、`paper-compare`、`research-paper-kb`、`virtual-reading-group`。
 - `2026-04-11`：对 `0.5.0 beta` 做了一轮交付级 hardening，收紧了 workspace operator 上下文边界，让 `HEARTBEAT.md` 只在 heartbeat 运行时注入，同时把浏览器工具限制为只接受 `http(s)` URL，并完成了新一轮回归、构建与打包校验。
 - `2026-04-11`：发布 `0.5.0 beta`，加入 `eh doctor`、`eh setup`、只读 `eh explore`、`eh runtime`、`eh analytics`，以及更清晰的 clarify → plan → execute 工作流别名；这些能力参考了 oh-my-codex，但仍保持现有 Ecology Harness 运行时的轻量结构。
 - `2026-04-10`：发布 `0.4.1 beta`，加入了更像 OpenClaw 的 workspace bootstrap context files、轻量 heartbeat、更多 plugin 生命周期 hooks，以及对外部浏览器内容“默认不可信”的安全处理。
@@ -131,6 +134,9 @@ EcologyHarness/
 - `superpowers`：来自 `obra/superpowers` 的 workflow 与工程实践技能，包括 `systematic-debugging`、`test-driven-development`、`verification-before-completion`、`writing-plans`、`using-git-worktrees` 等。
 - `writing`：写作清理类技能，目前包含来自 `blader/humanizer` 的 `humanizer`。
 - `ai-research`：来自 `Orchestra-Research/AI-Research-SKILLs` 的大型 AI 研究技能树，覆盖 `autoresearch`、模型架构、微调、评测、推理服务、MLOps、多模态、ML 论文写作和研究 ideation。
+- `clawhub-research`：从 [ClawHub](https://clawhub.ai/) 筛选并 vendoring 进来的学术工作流技能，目前包括 `academic-search`、`paper-compare`、`research-paper-kb`、`virtual-reading-group`。
+- `clawhub-ecology`：从 [ClawHub](https://clawhub.ai/) vendoring 进来的生态与碳分析外部服务型 skill，目前包括 `hiq-cortex`、`agent-earth`、`biodiversity-corridor-calculator`。这批属于 community skill，部分依赖外部 API 或在线服务。
+- `bioskills-ecology`：从 [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills) vendoring 进来的生态相关 genomics workflow，包括 ecological genomics、metagenomics、phylogenetics 和 population genetics 四大类。
 
 ## Ecology Pack
 

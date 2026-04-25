@@ -20,7 +20,7 @@ ecology stack can keep growing without letting the runtime become
 unmanageable. Contributions are very welcome, and we would love help from the
 community to keep improving and expanding it together.
 
-Current release: `0.5.0 beta` (`0.5.0b0` package version).
+Current release: `0.5.1 beta` (`0.5.1b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## Contents
@@ -45,7 +45,10 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-04-25`: released `0.5.1 beta`, adding `clawhub-research`, `clawhub-ecology`, and `bioskills-ecology`, while fixing SkillHub/loader handling so bundle support markdown is no longer mistaken for standalone skills.
+- `2026-04-25`: added two more ecology-adjacent community packs: `clawhub-ecology` for external ecology/carbon service skills from ClawHub, and `bioskills-ecology` for ecological genomics, metagenomics, phylogenetics, and population-genetics workflows vendored from GPTomics/bioSkills.
 - `2026-04-17`: expanded the lightweight integrations layer from Feishu/Lark to also support DingTalk and WeCom webhooks, plus generic `IntegrationNotify` messaging and `eh integrations` operator commands.
+- `2026-04-25`: scanned ClawHub academic skills and vendored a small high-value subset into Ecology Harness: `academic-search`, `paper-compare`, `research-paper-kb`, and `virtual-reading-group`.
 - `2026-04-11`: delivery hardening pass for `0.5.0 beta`, tightening workspace-operator context boundaries so `HEARTBEAT.md` is only injected during heartbeat runs, restricting browser tools to `http(s)` URLs, and finishing another full regression/build audit.
 - `2026-04-11`: released `0.5.0 beta`, adding `eh doctor`, `eh setup`, read-only `eh explore`, `eh runtime`, `eh analytics`, and clearer clarify → plan → execute workflow aliases inspired by oh-my-codex while keeping the existing ecology runtime lightweight.
 - `2026-04-10`: released `0.4.1 beta`, adding OpenClaw-inspired workspace bootstrap context files, lightweight heartbeat support, richer plugin lifecycle hooks, and safer handling of external browser content.
@@ -147,6 +150,9 @@ EcologyHarness/
 - `superpowers`: workflow and engineering guidance from `obra/superpowers`, including `systematic-debugging`, `test-driven-development`, `verification-before-completion`, `writing-plans`, and `using-git-worktrees`.
 - `writing`: writing cleanup helpers, currently including `humanizer` from `blader/humanizer`.
 - `ai-research`: a large AI research skill tree from `Orchestra-Research/AI-Research-SKILLs`, covering `autoresearch`, model architecture, fine-tuning, evaluation, inference serving, MLOps, multimodal systems, ML paper writing, and research ideation.
+- `clawhub-research`: selected academic workflows vendored from [ClawHub](https://clawhub.ai/), currently including `academic-search`, `paper-compare`, `research-paper-kb`, and `virtual-reading-group`.
+- `clawhub-ecology`: selected ecology and carbon-analysis service skills vendored from [ClawHub](https://clawhub.ai/), currently including `hiq-cortex`, `agent-earth`, and `biodiversity-corridor-calculator`. These are community skills and some depend on external APIs or hosted services.
+- `bioskills-ecology`: ecology-relevant genomics workflows vendored from [GPTomics/bioSkills](https://github.com/GPTomics/bioSkills), including ecological genomics, metagenomics, phylogenetics, and population genetics categories.
 
 ## Ecology Pack
 

@@ -63,6 +63,21 @@ class SkillTests(unittest.TestCase):
             self.assertTrue(any(item.slug == "food-web-and-trophic-simulation" for item in skills))
             self.assertTrue(any(item.slug == "literature-review" for item in skills))
             self.assertTrue(any(item.slug == "paper-lookup" for item in skills))
+            self.assertTrue(any(item.slug == "academic-search" for item in skills))
+            self.assertTrue(any(item.slug == "paper-compare" for item in skills))
+            self.assertTrue(any(item.slug == "research-paper-kb" for item in skills))
+            self.assertTrue(any(item.slug == "virtual-reading-group" for item in skills))
+            self.assertTrue(any(item.slug == "hiq-cortex" for item in skills))
+            self.assertTrue(any(item.slug == "agent-earth" for item in skills))
+            self.assertTrue(any(item.slug == "biodiversity-corridor-calculator" for item in skills))
+            self.assertTrue(any(item.slug == "bio-ecological-genomics-edna-metabarcoding" for item in skills))
+            self.assertTrue(any(item.slug == "bio-phylo-modern-tree-inference" for item in skills))
+            self.assertTrue(any(item.slug == "bio-metagenomics-kraken" for item in skills))
+            self.assertTrue(any(item.slug == "bio-population-genetics-population-structure" for item in skills))
+            self.assertFalse(any(item.slug == "anti-patterns" for item in skills))
+            self.assertFalse(any(item.slug == "best-practices" for item in skills))
+            self.assertFalse(any(item.slug == "domain" for item in skills))
+            self.assertFalse(any(item.slug == "main" for item in skills))
             self.assertTrue(any(item.slug == "geopandas" for item in skills))
             self.assertTrue(any(item.slug == "statistical-analysis" for item in skills))
             self.assertTrue(any(item.slug == "scientific-visualization" for item in skills))
@@ -241,6 +256,52 @@ class SkillTests(unittest.TestCase):
 
             self.assertIn("Skill bundle root:", rendered)
             self.assertIn("research-state.yaml", rendered)
+
+    def test_vendored_clawhub_bundle_skill_is_loadable_as_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            skill = app.skill_loader.get("virtual-reading-group")
+            self.assertIsNotNone(skill)
+            self.assertEqual(skill.hub_pack, "clawhub-research")
+            self.assertEqual(skill.trust_level, "community")
+
+            rendered = app.skill_loader.render(skill, "wetland methane papers")
+
+            self.assertIn("Skill bundle root:", rendered)
+            self.assertIn("references/workflow.md", rendered)
+            self.assertIn("assets/synthesis-template.md", rendered)
+
+    def test_vendored_clawhub_ecology_and_bioskills_bundles_are_loadable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            hiq = app.skill_loader.get("hiq-cortex")
+            self.assertIsNotNone(hiq)
+            self.assertEqual(hiq.hub_pack, "clawhub-ecology")
+            self.assertEqual(hiq.readiness, "setup-needed")
+            self.assertIn("env:HIQ_API_KEY", hiq.missing_requirements)
+
+            hiq_rendered = app.skill_loader.render(hiq, "steel aluminum bom")
+            self.assertIn("Skill bundle root:", hiq_rendered)
+            self.assertIn("search.js", hiq_rendered)
+
+            edna = app.skill_loader.get("bio-ecological-genomics-edna-metabarcoding")
+            self.assertIsNotNone(edna)
+            self.assertEqual(edna.hub_pack, "bioskills-ecology")
+
+            edna_rendered = app.skill_loader.render(edna, "freshwater edna biodiversity")
+            self.assertIn("Skill bundle root:", edna_rendered)
+            self.assertIn("eDNA Metabarcoding", edna_rendered)
+            self.assertIn("OBITools3", edna_rendered)
 
     def test_skill_search_rewrites_chinese_growth_query(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

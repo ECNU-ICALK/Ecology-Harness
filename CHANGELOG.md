@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 beta - 2026-04-25
+
+- added the `clawhub-research` pack with selected academic workflows for paper search, comparison, reusable paper knowledge bases, and virtual reading-group style discussion
+- added the `clawhub-ecology` community pack with caution-scoped external ecology and carbon-analysis skills, plus readiness metadata for service-backed tools such as `hiq-cortex`
+- added the `bioskills-ecology` pack with ecological genomics, metagenomics, phylogenetics, and population-genetics workflows vendored from GPTomics/bioSkills
+- fixed a real skill-loader bug where bundle support markdown files could be misdetected as standalone skills in SkillHub and loader output
+- completed another delivery audit with unit tests, wheel/sdist builds, and package metadata validation
+
 ## 0.5.0 beta - 2026-04-11
 
 - added `doctor`, `setup`, and read-only `explore` surfaces inspired by oh-my-codex so operators can inspect workspace health, scaffold bootstrap files, and safely explore repositories without broadening write access
