@@ -20,7 +20,7 @@ ecology stack can keep growing without letting the runtime become
 unmanageable. Contributions are very welcome, and we would love help from the
 community to keep improving and expanding it together.
 
-Current release: `0.5.1 beta` (`0.5.1b0` package version).
+Current release: `0.5.2 beta` (`0.5.2b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## Contents
@@ -45,6 +45,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-04-25`: released `0.5.2 beta`, adding ecology-facing 3D reconstruction, point-cloud, and habitat-visualization skills plus new tool and MCP catalog entries around OpenDroneMap, PDAL, Blender, QGIS, and related workflows.
 - `2026-04-25`: released `0.5.1 beta`, adding `clawhub-research`, `clawhub-ecology`, and `bioskills-ecology`, while fixing SkillHub/loader handling so bundle support markdown is no longer mistaken for standalone skills.
 - `2026-04-25`: added two more ecology-adjacent community packs: `clawhub-ecology` for external ecology/carbon service skills from ClawHub, and `bioskills-ecology` for ecological genomics, metagenomics, phylogenetics, and population-genetics workflows vendored from GPTomics/bioSkills.
 - `2026-04-17`: expanded the lightweight integrations layer from Feishu/Lark to also support DingTalk and WeCom webhooks, plus generic `IntegrationNotify` messaging and `eh integrations` operator commands.
@@ -173,6 +174,7 @@ cleanly to a single external upstream repository.
 | 淡水微宇宙、浮游群落与生物膜 | 摄食微宇宙、浮游变化、底栖生物膜、水质、荧光、显微分类 | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[influxdb3](https://github.com/influxdata/influxdb3_mcp_server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server)<br>[MorphoCut](https://github.com/morphocut/morphocut)<br>[GLM](https://github.com/AquaticEcoDynamics/GLM)<br>[glm-py](https://github.com/AquaticEcoDynamics/glm-py)<br>[FABM](https://github.com/fabm-model/fabm) |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、光径、pH / CO2 控制、污染排查、生长曲线、物质平衡 | [closed-algae-system-design](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[photobioreactor-environment-control](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[microalgae-strain-and-inoculation](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[algal-monitoring-plan](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[photobioreactor-troubleshooting](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[algal-timeseries-and-mass-balance](https://github.com/K-Dense-AI/claude-scientific-skills) | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[influxdb3](https://github.com/influxdata/influxdb3_mcp_server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server) |
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits`<br>`root-phenotyping-and-rhizosphere-imaging` | [PlantCV](https://github.com/danforthcenter/plantcv)<br>[LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)<br>[RhizoVision Explorer](https://github.com/noble-research-group/RhizoVisionExplorer)<br>[RootPainter](https://github.com/Abe404/root_painter)<br>[OpenSimRoot](https://rootsystemml.github.io/ISMCROOT/opensimroot/) |
+| Ecology 3D reconstruction and point clouds | drone photogrammetry, LiDAR preprocessing, canopy height models, habitat meshes, browser-based point-cloud review | `ecology-photogrammetry-and-3d-reconstruction`<br>`lidar-point-cloud-and-canopy-analysis`<br>`habitat-scene-3d-visualization` | [blender-mcp](https://github.com/ahujasid/blender-mcp)<br>[qgis-mcp](https://github.com/jjsantos01/qgis_mcp)<br>[OpenDroneMap](https://github.com/OpenDroneMap/ODM)<br>[WebODM](https://github.com/OpenDroneMap/WebODM)<br>[Meshroom](https://github.com/alicevision/Meshroom)<br>[PDAL](https://github.com/PDAL/PDAL)<br>[CloudCompare](https://github.com/CloudCompare/CloudCompare)<br>[Open3D](https://github.com/isl-org/Open3D)<br>[PyVista](https://github.com/pyvista/pyvista)<br>[Potree](https://github.com/potree/potree)<br>[lidR](https://github.com/r-lidar/lidR)<br>[ForestTools](https://github.com/andrew-plowright/ForestTools)<br>[Blender](https://github.com/blender/blender) |
 | 生态计数与分割 | 植株计数、树木计数、动物检测、树冠分割 | `ecology-counting-and-segmentation` | [DeepForest](https://github.com/weecology/DeepForest)<br>[detectree2](https://github.com/PatBall1/detectree2)<br>[TreeCountSegHeight](https://github.com/sizhuoli/TreeCountSegHeight)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
 | Behavioral ecology and pose tracking | movement, foraging, courtship, interaction video analysis, multi-animal tracking | `animal-behavior-and-pose-tracking` | [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)<br>[SLEAP](https://github.com/talmolab/sleap)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
 | 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[eosc-data-commons](https://github.com/EOSC-Data-Commons/data-commons-mcp)<br>[dataverse](https://github.com/gdcc/mcp-dataverse)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
@@ -213,6 +215,8 @@ irrigation and water balance, woody vegetation and forests, rhizosphere
 structure, and microbial-community or biofilm simulation.
 
 Traditional ecological process-model and ABM notes are tracked in [docs/ecology-process-modeling-pack.md](docs/ecology-process-modeling-pack.md).
+
+Ecology 3D reconstruction, point-cloud, and habitat-scene notes are tracked in [docs/ecology-3d-modeling-pack.md](docs/ecology-3d-modeling-pack.md).
 
 Example prompts:
 

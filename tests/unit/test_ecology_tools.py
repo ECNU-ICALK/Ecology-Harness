@@ -56,6 +56,7 @@ class EcologyToolTests(unittest.TestCase):
             self.assertIn("Lake, reservoir, and aquatic ecosystem modeling", result.content)
             self.assertIn("Microbial amplicon, taxonomy, and metabolic reconstruction", result.content)
             self.assertIn("Animal behavior and pose tracking", result.content)
+            self.assertIn("Ecological 3D reconstruction, point clouds, and habitat visualization", result.content)
 
     def test_list_ecology_toolkits_filters_by_modality(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -210,6 +211,35 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("deeplabcut", result.content)
             self.assertIn("sleap", result.content)
+
+    def test_list_ecology_toolkits_can_find_point_cloud_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "point cloud"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("pdal", result.content)
+            self.assertIn("cloudcompare", result.content)
+            self.assertIn("potree", result.content)
+
+    def test_describe_ecology_toolkit_reports_photogrammetry_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "DescribeEcologyToolkit",
+                {"name": "opendronemap"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("OpenDroneMap", result.content)
+            self.assertIn("drone imagery", result.content)
 
     def test_describe_ecology_toolkit_reports_process_model_details(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -6,7 +6,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection，以及面向团队通知的飞书 / Lark、钉钉、企业微信 webhook 轻量集成，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.5.1 beta`（包版本为 `0.5.1b0`）。
+当前发布版本是 `0.5.2 beta`（包版本为 `0.5.2b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 阅读导航
@@ -32,6 +32,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
+- `2026-04-25`：发布 `0.5.2 beta`，新增面向生态三维重建、点云和生境场景可视化的一组能力，包括 OpenDroneMap、PDAL、Blender、QGIS 等相关 tools / MCP / skills。
 - `2026-04-25`：发布 `0.5.1 beta`，新增 `clawhub-research`、`clawhub-ecology`、`bioskills-ecology` 三组技能包，并修复了 SkillHub / loader 会把 bundle 辅助 markdown 误识别成独立 skill 的问题。
 - `2026-04-25`：新增两个生态相关的 community skill pack：`clawhub-ecology` 用于承接来自 ClawHub 的生态/碳分析外部服务型技能，`bioskills-ecology` 用于承接来自 GPTomics/bioSkills 的生态基因组学、宏基因组、系统发育与群体遗传工作流。
 - `2026-04-17`：扩展轻量 integrations 层，在飞书 / Lark 之外新增钉钉与企业微信 webhook 支持，加入通用 `IntegrationNotify` 消息发送和 `eh integrations` 运维命令。
@@ -165,6 +166,7 @@ EcologyHarness/
 | 淡水微宇宙、浮游群落与生物膜 | 摄食微宇宙、浮游变化、底栖生物膜、水质、荧光、显微分类 | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[influxdb3](https://github.com/influxdata/influxdb3_mcp_server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server)<br>[MorphoCut](https://github.com/morphocut/morphocut)<br>[GLM](https://github.com/AquaticEcoDynamics/GLM)<br>[glm-py](https://github.com/AquaticEcoDynamics/glm-py)<br>[FABM](https://github.com/fabm-model/fabm) |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、光径、pH / CO2 控制、污染排查、生长曲线、物质平衡 | [closed-algae-system-design](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[photobioreactor-environment-control](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[microalgae-strain-and-inoculation](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[algal-monitoring-plan](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[photobioreactor-troubleshooting](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[algal-timeseries-and-mass-balance](https://github.com/K-Dense-AI/claude-scientific-skills) | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[influxdb3](https://github.com/influxdata/influxdb3_mcp_server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server) |
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits`<br>`root-phenotyping-and-rhizosphere-imaging` | [PlantCV](https://github.com/danforthcenter/plantcv)<br>[LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)<br>[RhizoVision Explorer](https://github.com/noble-research-group/RhizoVisionExplorer)<br>[RootPainter](https://github.com/Abe404/root_painter)<br>[OpenSimRoot](https://rootsystemml.github.io/ISMCROOT/opensimroot/) |
+| 生态三维重建与点云 | 无人机摄影测量、LiDAR 预处理、冠层高度模型、生境网格、浏览器点云查看 | `ecology-photogrammetry-and-3d-reconstruction`<br>`lidar-point-cloud-and-canopy-analysis`<br>`habitat-scene-3d-visualization` | [blender-mcp](https://github.com/ahujasid/blender-mcp)<br>[qgis-mcp](https://github.com/jjsantos01/qgis_mcp)<br>[OpenDroneMap](https://github.com/OpenDroneMap/ODM)<br>[WebODM](https://github.com/OpenDroneMap/WebODM)<br>[Meshroom](https://github.com/alicevision/Meshroom)<br>[PDAL](https://github.com/PDAL/PDAL)<br>[CloudCompare](https://github.com/CloudCompare/CloudCompare)<br>[Open3D](https://github.com/isl-org/Open3D)<br>[PyVista](https://github.com/pyvista/pyvista)<br>[Potree](https://github.com/potree/potree)<br>[lidR](https://github.com/r-lidar/lidR)<br>[ForestTools](https://github.com/andrew-plowright/ForestTools)<br>[Blender](https://github.com/blender/blender) |
 | 生态计数与分割 | 植株计数、树木计数、动物检测、树冠分割 | `ecology-counting-and-segmentation` | [DeepForest](https://github.com/weecology/DeepForest)<br>[detectree2](https://github.com/PatBall1/detectree2)<br>[TreeCountSegHeight](https://github.com/sizhuoli/TreeCountSegHeight)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
 | 行为生态与姿态跟踪 | 运动、觅食、求偶、互动视频分析、多动物跟踪 | `animal-behavior-and-pose-tracking` | [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)<br>[SLEAP](https://github.com/talmolab/sleap)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
 | 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[eosc-data-commons](https://github.com/EOSC-Data-Commons/data-commons-mcp)<br>[dataverse](https://github.com/gdcc/mcp-dataverse)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
@@ -204,6 +206,8 @@ eh mcp
 灌溉/水分平衡、木本和森林、根际结构，以及微生物群落和生物膜模拟。
 
 传统生态过程模型与主体模型相关说明见 [docs/ecology-process-modeling-pack.zh-CN.md](docs/ecology-process-modeling-pack.zh-CN.md)。
+
+生态三维重建、点云和生境场景说明见 [docs/ecology-3d-modeling-pack.zh-CN.md](docs/ecology-3d-modeling-pack.zh-CN.md)。
 
 可以直接这样试：
 

@@ -448,6 +448,22 @@
       ]
     },
     {
+      "category": "Ecological 3D reconstruction, point clouds, and habitat visualization",
+      "capabilities": [
+        "drone and close-range photogrammetry",
+        "LiDAR and LAS/LAZ point-cloud processing",
+        "canopy-height and terrain-surface generation",
+        "interactive 3D QA for meshes and point clouds",
+        "browser and publication-ready habitat visualization",
+        "bridging ecology surveys into georeferenced 3D outputs"
+      ],
+      "examples": [
+        "reconstruct a vegetation plot from drone imagery into an orthomosaic and textured mesh",
+        "process ALS data into canopy height models and individual-tree metrics",
+        "publish a large habitat point cloud for browser-based ecological review"
+      ]
+    },
+    {
       "category": "Animal behavior and pose tracking",
       "capabilities": [
         "markerless pose estimation",
@@ -2123,6 +2139,249 @@
         "community-level scenario comparison"
       ],
       "notes": "A useful complement to MICOM and COMETS when the focus is community metabolic structure rather than only single-species models."
+    },
+    {
+      "slug": "opendronemap",
+      "name": "OpenDroneMap",
+      "status": "cataloged-external",
+      "modality": "photogrammetry",
+      "repo": "https://github.com/OpenDroneMap/ODM",
+      "install": "Use the official Docker workflow or build from source following upstream instructions.",
+      "summary": "Open-source aerial photogrammetry toolkit for turning drone imagery into orthomosaics, DEMs, point clouds, and textured 3D models.",
+      "good_for": [
+        "drone ecology surveys",
+        "orthomosaic generation",
+        "digital elevation models",
+        "textured habitat meshes"
+      ],
+      "capabilities": [
+        "orthomosaics",
+        "point clouds",
+        "digital elevation models",
+        "textured mesh reconstruction"
+      ],
+      "notes": "One of the strongest open options for georeferenced ecology photogrammetry and repeated aerial survey workflows."
+    },
+    {
+      "slug": "webodm",
+      "name": "WebODM",
+      "status": "cataloged-external",
+      "modality": "photogrammetry",
+      "repo": "https://github.com/OpenDroneMap/WebODM",
+      "install": "Follow the upstream Docker-based install guide or use the official packaged distribution.",
+      "summary": "User-friendly drone image processing platform that generates georeferenced maps, point clouds, elevation models, and textured 3D models.",
+      "good_for": [
+        "team photogrammetry workflows",
+        "web UI for drone processing",
+        "repeatable habitat reconstruction",
+        "field-to-lab survey pipelines"
+      ],
+      "capabilities": [
+        "task-managed drone processing",
+        "point clouds",
+        "DSM and orthomosaic export",
+        "textured 3D reconstruction"
+      ],
+      "notes": "Useful when an ecology team needs a friendlier interface than command-line ODM while keeping reproducible 3D outputs."
+    },
+    {
+      "slug": "meshroom",
+      "name": "Meshroom",
+      "status": "cataloged-external",
+      "modality": "photogrammetry",
+      "repo": "https://github.com/alicevision/Meshroom",
+      "install": "Download release binaries or build from source with the AliceVision prerequisites.",
+      "summary": "Node-based visual photogrammetry framework for image-based 3D reconstruction with interactive inspection of images and 3D data.",
+      "good_for": [
+        "close-range photogrammetry",
+        "plot or specimen reconstruction",
+        "interactive 3D pipeline editing",
+        "coral and object-scale ecology scenes"
+      ],
+      "capabilities": [
+        "image matching",
+        "structure from motion",
+        "mesh reconstruction",
+        "node-based 3D workflows"
+      ],
+      "notes": "Best fit when image-based ecology reconstruction needs visual workflow control rather than only scripted batch processing."
+    },
+    {
+      "slug": "pdal",
+      "name": "PDAL",
+      "status": "cataloged-external",
+      "modality": "point-cloud-processing",
+      "repo": "https://github.com/PDAL/PDAL",
+      "install": "Install from conda-forge, system packages, or build from source following upstream guidance.",
+      "summary": "Point-cloud processing library and CLI for reproducible LAS/LAZ filtering, tiling, reprojection, and pipeline-based 3D data processing.",
+      "good_for": [
+        "LiDAR pipelines",
+        "LAS LAZ preprocessing",
+        "terrain and canopy filtering",
+        "batch point cloud workflows"
+      ],
+      "capabilities": [
+        "point cloud pipelines",
+        "reprojection and tiling",
+        "ground and height normalization",
+        "LAS LAZ filtering"
+      ],
+      "notes": "A foundational ecology point-cloud engine when reproducibility and scalable LiDAR preprocessing matter."
+    },
+    {
+      "slug": "cloudcompare",
+      "name": "CloudCompare",
+      "status": "cataloged-external",
+      "modality": "point-cloud-processing",
+      "repo": "https://github.com/CloudCompare/CloudCompare",
+      "install": "Download official binaries or build from source following upstream instructions.",
+      "summary": "Interactive 3D point-cloud and mesh processing application for comparison, QA, registration, and large-scan inspection.",
+      "good_for": [
+        "manual point-cloud QA",
+        "manual point cloud QA",
+        "cloud-to-cloud comparison",
+        "registration checks",
+        "large LiDAR scene inspection"
+      ],
+      "capabilities": [
+        "point cloud visualization",
+        "mesh comparison",
+        "registration review",
+        "interactive filtering"
+      ],
+      "notes": "Excellent review companion when ecology workflows need human inspection of big point clouds or mesh-versus-cloud alignment."
+    },
+    {
+      "slug": "open3d",
+      "name": "Open3D",
+      "status": "cataloged-external",
+      "modality": "point-cloud-processing",
+      "repo": "https://github.com/isl-org/Open3D",
+      "install": "pip install open3d or follow upstream build guidance for source installs.",
+      "summary": "Modern open-source library for 3D data processing with Python and C++ APIs for point clouds, meshes, registration, and voxel workflows.",
+      "good_for": [
+        "Python-native point-cloud analysis",
+        "mesh processing",
+        "registration and segmentation",
+        "custom ecological 3D pipelines"
+      ],
+      "capabilities": [
+        "point-cloud processing",
+        "mesh operations",
+        "registration",
+        "voxel and geometric analysis"
+      ],
+      "notes": "One of the best scripting libraries when ecology teams need programmable 3D analysis instead of only GUI review."
+    },
+    {
+      "slug": "pyvista",
+      "name": "PyVista",
+      "status": "cataloged-external",
+      "modality": "3d-visualization",
+      "repo": "https://github.com/pyvista/pyvista",
+      "install": "pip install pyvista",
+      "summary": "Pythonic VTK interface for mesh analysis and 3D plotting of spatial datasets.",
+      "good_for": [
+        "3D ecological figures",
+        "mesh slicing and overlays",
+        "interactive habitat scenes",
+        "publication-ready visualization"
+      ],
+      "capabilities": [
+        "3D plotting",
+        "mesh analysis",
+        "scalar overlays",
+        "VTK-backed visualization"
+      ],
+      "notes": "A strong lightweight choice for turning ecological surfaces, meshes, and voxel products into reproducible 3D figures."
+    },
+    {
+      "slug": "potree",
+      "name": "Potree",
+      "status": "cataloged-external",
+      "modality": "3d-visualization",
+      "repo": "https://github.com/potree/potree",
+      "install": "Clone the repository, install Node dependencies, and build the browser viewer following upstream instructions.",
+      "summary": "WebGL-based browser renderer for large point clouds with interactive navigation and web delivery.",
+      "good_for": [
+        "browser-based point-cloud review",
+        "sharing large scans",
+        "field-team visualization",
+        "interactive habitat inspection"
+      ],
+      "capabilities": [
+        "large point-cloud rendering",
+        "browser visualization",
+        "interactive navigation",
+        "web sharing"
+      ],
+      "notes": "Especially useful when ecological point clouds are too large for lightweight desktop sharing and need browser access."
+    },
+    {
+      "slug": "lidr",
+      "name": "lidR",
+      "status": "cataloged-external",
+      "modality": "forest-lidar-analysis",
+      "repo": "https://github.com/r-lidar/lidR",
+      "install": "Install from CRAN in R with install.packages(\"lidR\").",
+      "summary": "R package for airborne LiDAR manipulation and visualization with strong forestry and canopy-analysis support.",
+      "good_for": [
+        "airborne LiDAR ecology",
+        "canopy height models",
+        "individual-tree metrics",
+        "forestry-oriented LiDAR analysis"
+      ],
+      "capabilities": [
+        "LAS LAZ handling",
+        "canopy metrics",
+        "tree segmentation",
+        "LiDAR visualization"
+      ],
+      "notes": "A high-value ecology toolkit for forest structure and canopy workflows when R is acceptable in the analysis stack."
+    },
+    {
+      "slug": "foresttools",
+      "name": "ForestTools",
+      "status": "cataloged-external",
+      "modality": "forest-lidar-analysis",
+      "repo": "https://github.com/andrew-plowright/ForestTools",
+      "install": "Install from CRAN in R with install.packages(\"ForestTools\").",
+      "summary": "R toolkit for analyzing remote-sensing forest data with tree detection, canopy analysis, and spatial-statistics helpers.",
+      "good_for": [
+        "canopy height models",
+        "individual-tree detection",
+        "forest remote sensing",
+        "tree-segmentation workflows"
+      ],
+      "capabilities": [
+        "tree detection",
+        "canopy analysis",
+        "spatial forest statistics",
+        "CHM segmentation"
+      ],
+      "notes": "Useful companion to lidR when ecology or forestry teams need practical tree delineation and canopy analytics from CHMs."
+    },
+    {
+      "slug": "blender",
+      "name": "Blender",
+      "status": "cataloged-external",
+      "modality": "3d-modeling",
+      "repo": "https://github.com/blender/blender",
+      "install": "Install Blender from official binaries or package managers; pair with blender-mcp for prompt-assisted workflows.",
+      "summary": "General-purpose 3D modeling, scene assembly, and rendering platform that can clean, annotate, and present ecological meshes or habitat scenes.",
+      "good_for": [
+        "habitat scene building",
+        "mesh cleanup and annotation",
+        "rendered ecological figures",
+        "3D storytelling"
+      ],
+      "capabilities": [
+        "3D modeling",
+        "scene assembly",
+        "rendering",
+        "mesh annotation"
+      ],
+      "notes": "Not ecology-specific by itself, but extremely useful for final scene preparation, review, and communication of reconstructed ecological data."
     },
     {
       "slug": "deeplabcut",

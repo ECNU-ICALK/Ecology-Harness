@@ -1,0 +1,87 @@
+{
+  "servers": [
+    {
+      "name": "blender-mcp",
+      "transport": "stdio",
+      "description": "Blender MCP server for prompt-assisted 3D scene inspection, mesh import, annotation, scripted edits, and ecological habitat rendering.",
+      "default_enabled": false,
+      "auth": "local-blender-addon-running",
+      "command": "uvx",
+      "args": [
+        "blender-mcp"
+      ],
+      "env": {
+        "BLENDER_HOST": "localhost",
+        "BLENDER_PORT": "9876",
+        "DISABLE_TELEMETRY": "true"
+      },
+      "tools": [
+        {
+          "name": "get_scene_info",
+          "description": "Inspect the current Blender scene and object inventory."
+        },
+        {
+          "name": "get_object_info",
+          "description": "Read geometry, transforms, and metadata for a selected object."
+        },
+        {
+          "name": "get_viewport_screenshot",
+          "description": "Capture a viewport screenshot for review or iterative scene editing."
+        },
+        {
+          "name": "execute_blender_code",
+          "description": "Run Python code inside Blender for custom 3D operations."
+        },
+        {
+          "name": "download_sketchfab_model",
+          "description": "Download supported reference assets from Sketchfab into the working scene."
+        },
+        {
+          "name": "import_generated_asset",
+          "description": "Import generated or downloaded 3D assets into Blender."
+        }
+      ]
+    },
+    {
+      "name": "qgis-mcp",
+      "transport": "stdio",
+      "description": "QGIS MCP server for project creation, vector and raster loading, map rendering, processing execution, and geospatial review of ecological 3D products.",
+      "default_enabled": false,
+      "auth": "local-qgis-plugin-running",
+      "command": "uvx",
+      "args": [
+        "qgis-mcp"
+      ],
+      "tools": [
+        {
+          "name": "get_qgis_info",
+          "description": "Inspect the connected QGIS installation and plugin state."
+        },
+        {
+          "name": "create_new_project",
+          "description": "Create and save a new QGIS project."
+        },
+        {
+          "name": "add_vector_layer",
+          "description": "Load a vector layer into the current project."
+        },
+        {
+          "name": "add_raster_layer",
+          "description": "Load a raster layer into the current project."
+        },
+        {
+          "name": "execute_processing",
+          "description": "Run QGIS Processing algorithms for geospatial analysis and preparation."
+        },
+        {
+          "name": "render_map",
+          "description": "Render a project map for review, QA, or presentation."
+        },
+        {
+          "name": "execute_code",
+          "description": "Run Python code inside QGIS for advanced project automation."
+        }
+      ]
+    }
+  ]
+}

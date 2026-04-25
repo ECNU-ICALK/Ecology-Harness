@@ -718,6 +718,23 @@ class PlatformFeatureTests(unittest.TestCase):
 
             self.assertEqual(result.data["status"], "reachable")
 
+    def test_builtin_mcp_catalog_includes_3d_servers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+
+            listed = app.registry.execute(
+                "ListMcpServersTool",
+                {},
+                app.settings,
+                services=app.get_services(),
+            )
+            names = {item["server_name"] for item in listed.data["servers"]}
+
+            self.assertIn("blender-mcp", names)
+            self.assertIn("qgis-mcp", names)
+
     def test_remote_mcp_probe_resolves_uvx_from_override(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

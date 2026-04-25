@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2 beta - 2026-04-25
+
+- added an ecology-facing 3D stack with new skills for photogrammetry, LiDAR and canopy analysis, and habitat-scene visualization
+- added catalog entries for OpenDroneMap, WebODM, Meshroom, PDAL, CloudCompare, Open3D, PyVista, Potree, lidR, ForestTools, and Blender
+- added `blender-mcp` and `qgis-mcp` to the ecology MCP catalog for 3D scene and geospatial project integration
+- expanded ecology docs, README capability maps, and regression coverage for 3D reconstruction and point-cloud workflows
+
 ## 0.5.1 beta - 2026-04-25
 
 - added the `clawhub-research` pack with selected academic workflows for paper search, comparison, reusable paper knowledge bases, and virtual reading-group style discussion
