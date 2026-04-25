@@ -746,9 +746,14 @@ def _parse_openai_like_response(raw: dict[str, Any]) -> ModelResponse:
     choices = raw.get("choices", [])
     if not choices:
         raise ProviderError("Provider returned no choices.")
-    message = choices[0].get("message", {})
+    message = choices[0].get("message") or {}
+    if not isinstance(message, dict):
+        message = {}
+    raw_tool_calls = message.get("tool_calls") or []
+    if not isinstance(raw_tool_calls, list):
+        raw_tool_calls = []
     tool_calls = []
-    for item in message.get("tool_calls", []):
+    for item in raw_tool_calls:
         function_payload = item.get("function", {})
         raw_arguments = function_payload.get("arguments", "{}")
         try:

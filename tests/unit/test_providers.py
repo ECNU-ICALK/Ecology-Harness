@@ -235,6 +235,59 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(result.tool_calls[0].name, "Read")
         self.assertEqual(result.tool_calls[0].arguments["path"], "README.md")
 
+    def test_openai_compatible_provider_tolerates_null_tool_calls(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.user_state_dir = settings.workspace_root / ".user_state_test"
+        settings.api_key = "test-key"
+        settings.provider = "openai"
+        settings.model = "gpt-5.4"
+        provider = OpenAICompatibleProvider()
+        fake_payload = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "done",
+                        "tool_calls": None,
+                    }
+                }
+            ]
+        }
+
+        with patch("ecology_harness.runtime.providers.request.urlopen", return_value=_FakeResponse(fake_payload)):
+            result = provider.complete(
+                [ChatMessage(role="system", content="system"), ChatMessage(role="user", content="hello")],
+                self._dummy_tools(),
+                settings,
+            )
+
+        self.assertEqual(result.content, "done")
+        self.assertEqual(result.tool_calls, [])
+
+    def test_openai_compatible_provider_tolerates_null_message(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.user_state_dir = settings.workspace_root / ".user_state_test"
+        settings.api_key = "test-key"
+        settings.provider = "openai"
+        settings.model = "gpt-5.4"
+        provider = OpenAICompatibleProvider()
+        fake_payload = {
+            "choices": [
+                {
+                    "message": None,
+                }
+            ]
+        }
+
+        with patch("ecology_harness.runtime.providers.request.urlopen", return_value=_FakeResponse(fake_payload)):
+            result = provider.complete(
+                [ChatMessage(role="system", content="system"), ChatMessage(role="user", content="hello")],
+                self._dummy_tools(),
+                settings,
+            )
+
+        self.assertEqual(result.content, "")
+        self.assertEqual(result.tool_calls, [])
+
     def test_provider_uses_provider_timeout_instead_of_command_timeout(self) -> None:
         settings = HarnessSettings.from_workspace(".")
         settings.api_key = "test-key"
