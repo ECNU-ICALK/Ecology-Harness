@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3 beta - 2026-04-25
+
+- expanded the ecology 3D stack with new skills for close-range photogrammetry, LiDAR survey simulation, tree QSM, and geospatial 3D publishing
+- added catalog entries for COLMAP, MicMac, HELIOS++, TreeQSM, SimpleForest, ParaView, and CesiumJS
+- extended ecology 3D docs, README capability maps, and regression coverage for advanced ecological 3D workflows
+
 ## 0.5.2 beta - 2026-04-25
 
 - added an ecology-facing 3D stack with new skills for photogrammetry, LiDAR and canopy analysis, and habitat-scene visualization

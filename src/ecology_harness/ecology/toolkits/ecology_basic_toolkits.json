@@ -451,16 +451,22 @@
       "category": "Ecological 3D reconstruction, point clouds, and habitat visualization",
       "capabilities": [
         "drone and close-range photogrammetry",
+        "measurement-oriented close-range photogrammetry",
         "LiDAR and LAS/LAZ point-cloud processing",
+        "LiDAR survey design and simulation",
         "canopy-height and terrain-surface generation",
+        "single-tree quantitative structure modeling",
         "interactive 3D QA for meshes and point clouds",
         "browser and publication-ready habitat visualization",
+        "geospatial 3D publishing and scientific scene delivery",
         "bridging ecology surveys into georeferenced 3D outputs"
       ],
       "examples": [
         "reconstruct a vegetation plot from drone imagery into an orthomosaic and textured mesh",
         "process ALS data into canopy height models and individual-tree metrics",
-        "publish a large habitat point cloud for browser-based ecological review"
+        "simulate a TLS or UAV-LiDAR survey before field acquisition",
+        "fit a quantitative structure model for a single tree from TLS point clouds",
+        "publish a large habitat point cloud or terrain scene for browser-based ecological review"
       ]
     },
     {
@@ -2382,6 +2388,164 @@
         "mesh annotation"
       ],
       "notes": "Not ecology-specific by itself, but extremely useful for final scene preparation, review, and communication of reconstructed ecological data."
+    },
+    {
+      "slug": "colmap",
+      "name": "COLMAP",
+      "status": "cataloged-external",
+      "modality": "photogrammetry",
+      "repo": "https://github.com/colmap/colmap",
+      "install": "Install from system packages, conda-forge, or build from source following the official instructions.",
+      "summary": "Research-grade structure-from-motion and multi-view stereo toolkit for close-range 3D reconstruction, camera-pose estimation, and dense ecological photogrammetry.",
+      "good_for": [
+        "close-range ecology photogrammetry",
+        "camera pose estimation",
+        "object and quadrat reconstruction",
+        "scripted 3D reconstruction pipelines"
+      ],
+      "capabilities": [
+        "structure from motion",
+        "multi-view stereo",
+        "camera calibration and poses",
+        "dense point-cloud reconstruction"
+      ],
+      "notes": "A strong fit for ecological specimen, branch, coral, and plot reconstructions when reproducibility and measurement-oriented image geometry matter."
+    },
+    {
+      "slug": "micmac",
+      "name": "MicMac",
+      "status": "cataloged-external",
+      "modality": "photogrammetry",
+      "repo": "https://github.com/micmacIGN/micmac",
+      "install": "Build from source or use the upstream packaged install guidance from the project maintainers.",
+      "summary": "Open photogrammetry suite from IGN oriented toward rigorous survey, control points, georeferencing, and measurement-heavy reconstruction workflows.",
+      "good_for": [
+        "measurement-grade photogrammetry",
+        "survey control and georeferencing",
+        "precise terrain or plot reconstruction",
+        "camera geometry QA"
+      ],
+      "capabilities": [
+        "bundle adjustment",
+        "control-point workflows",
+        "dense surface reconstruction",
+        "rigorous georeferencing"
+      ],
+      "notes": "Particularly useful when ecology teams care about survey discipline, scale bars, or ground-control integration rather than only ease of use."
+    },
+    {
+      "slug": "helios-plus-plus",
+      "name": "HELIOS++",
+      "status": "cataloged-external",
+      "modality": "lidar-simulation",
+      "repo": "https://github.com/3dgeo-heidelberg/helios",
+      "install": "Build with the official CMake workflow or use the project container guidance from upstream documentation.",
+      "summary": "Open-source LiDAR simulation framework for designing and benchmarking terrestrial, aerial, and UAV scanning campaigns before field acquisition.",
+      "good_for": [
+        "LiDAR survey design",
+        "virtual scanner benchmarking",
+        "forest scanning experiments",
+        "scan-layout comparison"
+      ],
+      "capabilities": [
+        "TLS and ALS simulation",
+        "UAV-LiDAR scenario testing",
+        "point-density benchmarking",
+        "virtual acquisition planning"
+      ],
+      "notes": "A high-value tool when ecological 3D work needs acquisition planning, simulation, or method benchmarking rather than only processing existing scans."
+    },
+    {
+      "slug": "treeqsm",
+      "name": "TreeQSM",
+      "status": "cataloged-external",
+      "modality": "forest-structure-modeling",
+      "repo": "https://github.com/InverseTampere/TreeQSM",
+      "install": "Clone the MATLAB package from GitHub and follow the included manual; requires MATLAB or a compatible workflow for execution.",
+      "summary": "Quantitative structure model toolkit for reconstructing single-tree woody geometry, topology, and volume from terrestrial laser scanning point clouds.",
+      "good_for": [
+        "single-tree QSM fitting",
+        "woody volume estimation",
+        "branch topology analysis",
+        "TLS tree reconstruction"
+      ],
+      "capabilities": [
+        "cylinder-based tree modeling",
+        "branch topology reconstruction",
+        "tree volume estimation",
+        "single-tree structural metrics"
+      ],
+      "notes": "Best used with cleaned single-tree point clouds where ecological questions center on woody structure, branching, and biomass proxies."
+    },
+    {
+      "slug": "simpleforest",
+      "name": "SimpleForest",
+      "status": "cataloged-external",
+      "modality": "forest-structure-modeling",
+      "repo": "https://gitlab.com/SimpleForest",
+      "install": "Install through the official Computree-based distribution or build the plugin from the upstream GitLab project.",
+      "summary": "Open-source tree reconstruction and forest-plot structure toolkit for extracting quantitative tree models from terrestrial point clouds.",
+      "good_for": [
+        "forest plot TLS workflows",
+        "tree reconstruction in Computree pipelines",
+        "single-tree structural analysis",
+        "plot-scale woody geometry review",
+        "single-tree QSM follow-up"
+      ],
+      "capabilities": [
+        "tree reconstruction",
+        "forest plot point-cloud workflows",
+        "quantitative structure metrics",
+        "TLS structural extraction",
+        "QSM-oriented tree workflows"
+      ],
+      "notes": "A practical complement to TreeQSM when ecological teams already work in Computree-style TLS environments and need plot-oriented workflows."
+    },
+    {
+      "slug": "paraview",
+      "name": "ParaView",
+      "status": "cataloged-external",
+      "modality": "3d-visualization",
+      "repo": "https://github.com/Kitware/ParaView",
+      "install": "Use official binaries, conda-forge packages, or build from source following Kitware guidance.",
+      "summary": "Large-scale scientific 3D visualization platform for point clouds, meshes, gridded fields, and time-varying ecological simulation outputs.",
+      "good_for": [
+        "large scientific 3D datasets",
+        "mesh and scalar-field visualization",
+        "time-varying ecological model output",
+        "high-end 3D QA",
+        "scientific 3D publishing"
+      ],
+      "capabilities": [
+        "scientific 3D rendering",
+        "large dataset handling",
+        "scalar and vector field visualization",
+        "pipeline-based 3D inspection",
+        "presentation and publication workflows"
+      ],
+      "notes": "Worth using when PyVista is too lightweight and ecological 3D workflows need heavy scientific visualization or large dataset handling."
+    },
+    {
+      "slug": "cesiumjs",
+      "name": "CesiumJS",
+      "status": "cataloged-external",
+      "modality": "3d-visualization",
+      "repo": "https://github.com/CesiumGS/cesium",
+      "install": "Install via npm or clone and build the web app following the upstream documentation.",
+      "summary": "Web platform for geospatial 3D scenes, terrain, imagery overlays, and interactive publication of ecology data in browser-based globe or map context.",
+      "good_for": [
+        "geospatial 3D publishing",
+        "terrain-aware habitat scenes",
+        "browser delivery of ecological 3D assets",
+        "3D tiles and map-context storytelling"
+      ],
+      "capabilities": [
+        "geospatial 3D rendering",
+        "terrain and imagery integration",
+        "browser publishing",
+        "interactive scene delivery"
+      ],
+      "notes": "A strong publishing layer when ecological 3D products must stay in geospatial context instead of only being shared as local meshes or desktop viewers."
     },
     {
       "slug": "deeplabcut",

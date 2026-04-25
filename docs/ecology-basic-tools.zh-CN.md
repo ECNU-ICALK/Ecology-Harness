@@ -16,7 +16,7 @@
 | 检测与分割 | 目标检测、实例分割、树冠分割、影像切片 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `DeepForest`、`detectree2`、`TreeCountSegHeight`、`PyTorch-Wildlife` |
 | 相机陷阱工作流 | 空图过滤、动物检测、检测后分类 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PyTorch-Wildlife` |
 | 动物行为与姿态跟踪 | 运动轨迹、觅食、求偶、多动物互动、无标记跟踪 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `DeepLabCut`、`SLEAP`、`PyTorch-Wildlife` |
-| 生态三维重建与点云 | 无人机摄影测量、LiDAR 预处理、冠层高度模型、生境网格、浏览器点云查看 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit`、`ListMcpServersTool` | `OpenDroneMap`、`WebODM`、`Meshroom`、`PDAL`、`CloudCompare`、`Open3D`、`PyVista`、`Potree`、`lidR`、`ForestTools`、`Blender`、`blender-mcp`、`qgis-mcp` |
+| 生态三维重建与点云 | 无人机摄影测量、近景测量级摄影测量、LiDAR 预处理与模拟、单木 QSM、生境网格、浏览器与地理三维发布 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit`、`ListMcpServersTool` | `OpenDroneMap`、`WebODM`、`Meshroom`、`COLMAP`、`MicMac`、`PDAL`、`HELIOS++`、`CloudCompare`、`Open3D`、`TreeQSM`、`SimpleForest`、`PyVista`、`ParaView`、`Potree`、`CesiumJS`、`lidR`、`ForestTools`、`Blender`、`blender-mcp`、`qgis-mcp` |
 | 生态声学 | 鸟声识别、批量音频筛查 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `BirdNET-Analyzer` |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、pH/CO2 控制、污染排查、生长曲线、物质平衡 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`LabArchives MCP Server`、`unit-converter-mcp`、`PyLabRobot`、`Opentrons` |
 | 实验协议、自动化与 notebook 工作流 | SOP 草拟、实验记录、时序 notebook、液体处理、单位统一 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`LabArchives MCP Server`、`unit-converter-mcp`、`PyLabRobot`、`Opentrons` |

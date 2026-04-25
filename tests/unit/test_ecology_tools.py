@@ -227,6 +227,46 @@ class EcologyToolTests(unittest.TestCase):
             self.assertIn("cloudcompare", result.content)
             self.assertIn("potree", result.content)
 
+    def test_list_ecology_toolkits_can_find_qsm_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "qsm"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("treeqsm", result.content)
+            self.assertIn("simpleforest", result.content)
+
+    def test_list_ecology_toolkits_can_find_scientific_3d_publishing_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "scientific 3D publishing"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("paraview", result.content)
+
+    def test_list_ecology_toolkits_can_find_geospatial_3d_publishing_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "geospatial 3D publishing"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("cesiumjs", result.content)
+
     def test_describe_ecology_toolkit_reports_photogrammetry_details(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             app = self._make_app(Path(tmpdir))
@@ -240,6 +280,20 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("OpenDroneMap", result.content)
             self.assertIn("drone imagery", result.content)
+
+    def test_describe_ecology_toolkit_reports_qsm_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "DescribeEcologyToolkit",
+                {"name": "treeqsm"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("TreeQSM", result.content)
+            self.assertIn("single-tree", result.content)
 
     def test_describe_ecology_toolkit_reports_process_model_details(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
