@@ -20,6 +20,9 @@ cataloged in the repository.
 | Animal behavior and pose tracking | movement trajectories, foraging, courtship, multi-animal interactions, markerless tracking | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `DeepLabCut`, `SLEAP`, `PyTorch-Wildlife` |
 | Ecological 3D reconstruction and point clouds | drone photogrammetry, close-range survey photogrammetry, LiDAR preprocessing and simulation, tree QSM, habitat meshes, browser and geospatial 3D publishing | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit`, `ListMcpServersTool` | `OpenDroneMap`, `WebODM`, `Meshroom`, `COLMAP`, `MicMac`, `PDAL`, `HELIOS++`, `CloudCompare`, `Open3D`, `TreeQSM`, `SimpleForest`, `PyVista`, `ParaView`, `Potree`, `CesiumJS`, `lidR`, `ForestTools`, `Blender`, `blender-mcp`, `qgis-mcp` |
 | Ecoacoustics | bird sound recognition, batch acoustic review | `ListEcologyToolkits`, `DescribeEcologyToolkit` | `BirdNET-Analyzer` |
+| Species distribution and biodiversity modeling | occurrence QA, marine and bird observations, SDM, Maxent-style tuning, spatiotemporal distribution models | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit`, `McpSearchTool` | `pygbif`, `pyobis`, `eBird MCP Server`, `CoordinateCleaner`, `biomod2`, `ENMeval`, `maxnet`, `sdmTMB` |
+| Movement ecology and telemetry | Movebank-style import, track cleaning, home ranges, step-selection, migration corridors | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `move2`, `ctmm`, `amt` |
+| Open environmental data and forcing | USGS streamflow, water quality, soil data, air quality, STAC/GEE covariates, terrain and zonal statistics | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit`, `McpSearchTool` | `dataretrieval-python`, `PyGeoHydro`, `soilDB`, `SoilGrids API`, `OpenAQ Python Client`, `pystac-client`, `stackstac`, `odc-stac`, `geemap`, `leafmap`, `WhiteboxTools`, `exactextract`, `OpenAPI MCP Server` |
 | Closed algal systems and photobioreactors | sealed reactor design, pH and CO2 control, contamination review, growth curves, mass balance | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `LabArchives MCP Server`, `unit-converter-mcp`, `PyLabRobot`, `Opentrons` |
 | Lab protocols, automation, and notebook workflows | SOP drafting, notebook capture, telemetry notebooks, liquid handling, unit harmonization | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `LabArchives MCP Server`, `unit-converter-mcp`, `PyLabRobot`, `Opentrons` |
 | Aquatic microcosms, plankton, and biofilms | grazer-prey microcosms, biofilm monitoring, water-column vs benthic tracking, community shifts | `ListEcologyFunctions`, `ListEcologyToolkits`, `DescribeEcologyToolkit` | `Jupyter MCP Server`, `InfluxDB 3 MCP Server`, `Fiji / ImageJ`, `CellProfiler`, `napari`, `ilastik`, `EcoTaxa Python Client`, `PlanktoScope`, `MorphoCut`, `GLM`, `glm-py`, `FABM` |
@@ -222,6 +225,84 @@ cataloged in the repository.
 - `BirdNET-Analyzer`
   - Source: [birdnet-team/BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer)
   - Why included: strong ecoacoustic option for bird sound recognition.
+- `OpenSoundscape`
+  - Source: [kitzeslab/opensoundscape](https://github.com/kitzeslab/opensoundscape)
+  - Why included: trainable Python ecoacoustic workflows that complement BirdNET.
+- `eBird MCP Server`
+  - Source: [moonbirdai/ebird-mcp-server](https://github.com/moonbirdai/ebird-mcp-server)
+  - Why included: recent observations, hotspots, notable records, and taxonomy context for bird monitoring and acoustic validation.
+- `pygbif`
+  - Source: [gbif/pygbif](https://github.com/gbif/pygbif)
+  - Why included: Python-native GBIF occurrence and taxonomy workflows for SDM preprocessing.
+- `pyobis`
+  - Source: [iobis/pyobis](https://github.com/iobis/pyobis)
+  - Why included: marine biodiversity occurrence access through OBIS.
+- `CoordinateCleaner`
+  - Source: [ropensci/CoordinateCleaner](https://github.com/ropensci/CoordinateCleaner)
+  - Why included: important occurrence-coordinate QA before species distribution modeling.
+- `biomod2`
+  - Source: [biomodhub/biomod2](https://github.com/biomodhub/biomod2)
+  - Why included: mature ensemble species distribution modeling workflow.
+- `ENMeval`
+  - Source: [jamiemkass/ENMeval](https://github.com/jamiemkass/ENMeval)
+  - Why included: Maxent-style ecological niche model tuning and evaluation.
+- `maxnet`
+  - Source: [mrmaxent/maxnet](https://github.com/mrmaxent/maxnet)
+  - Why included: lightweight Maxent-style modeling in R.
+- `sdmTMB`
+  - Source: [pbs-assess/sdmTMB](https://github.com/pbs-assess/sdmTMB)
+  - Why included: spatial and spatiotemporal models for abundance, biomass, and distribution workflows.
+- `dataretrieval-python`
+  - Source: [DOI-USGS/dataretrieval-python](https://github.com/DOI-USGS/dataretrieval-python)
+  - Why included: USGS and Water Quality Portal retrieval for hydrology and freshwater ecology.
+- `PyGeoHydro`
+  - Source: [hyriver/pygeohydro](https://github.com/hyriver/pygeohydro)
+  - Why included: watershed, hydrography, and hydrology web-service access.
+- `soilDB`
+  - Source: [ncss-tech/soilDB](https://github.com/ncss-tech/soilDB)
+  - Why included: soil survey and profile data for site characterization.
+- `SoilGrids API`
+  - Source: [SoilGrids](https://soilgrids.org/)
+  - Why included: global soil covariates for crop, habitat, and ecosystem modeling.
+- `OpenAQ Python Client`
+  - Source: [openaq/openaq-python](https://github.com/openaq/openaq-python)
+  - Why included: air-quality observations for exposure and urban-ecology context.
+- `pystac-client`
+  - Source: [stac-utils/pystac-client](https://github.com/stac-utils/pystac-client)
+  - Why included: Python STAC API discovery for Earth-observation assets.
+- `stackstac`
+  - Source: [gjoseph92/stackstac](https://github.com/gjoseph92/stackstac)
+  - Why included: STAC-to-xarray loading for remote-sensing time series.
+- `odc-stac`
+  - Source: [opendatacube/odc-stac](https://github.com/opendatacube/odc-stac)
+  - Why included: Open Data Cube style STAC loading into xarray datasets.
+- `geemap`
+  - Source: [gee-community/geemap](https://github.com/gee-community/geemap)
+  - Why included: Google Earth Engine analysis and visualization from Python notebooks.
+- `leafmap`
+  - Source: [opengeos/leafmap](https://github.com/opengeos/leafmap)
+  - Why included: interactive map review, STAC browsing, and spatial QA.
+- `WhiteboxTools`
+  - Source: [jblindsay/whitebox-tools](https://github.com/jblindsay/whitebox-tools)
+  - Why included: terrain, hydrology, and raster feature engineering.
+- `exactextract`
+  - Source: [isciences/exactextract](https://github.com/isciences/exactextract)
+  - Why included: fast zonal statistics for model covariates.
+- `ctmm`
+  - Source: [ctmm-initiative/ctmm](https://github.com/ctmm-initiative/ctmm)
+  - Why included: autocorrelation-aware movement modeling and home-range estimation.
+- `amt`
+  - Source: [jmsigner/amt](https://github.com/jmsigner/amt)
+  - Why included: step-selection, track preprocessing, and habitat-selection workflows.
+- `move2`
+  - Source: [BartK/move2](https://gitlab.com/bartk/move2)
+  - Why included: movement data handling and Movebank-oriented workflows.
+- `BioMCP`
+  - Source: [yeyuan98/biomcp-ts](https://github.com/yeyuan98/biomcp-ts)
+  - Why included: federated gene, article, disease, and pathway search for omics follow-up.
+- `OpenAPI MCP Server`
+  - Source: [ivo-toby/mcp-openapi-server](https://github.com/ivo-toby/mcp-openapi-server)
+  - Why included: generic way to expose environmental OpenAPI services as MCP tools.
 - `Jupyter MCP Server`
   - Source: [datalayer/jupyter-mcp-server](https://github.com/datalayer/jupyter-mcp-server)
   - Why included: the strongest notebook-native MCP option for interactive analysis, cell execution, and reproducible telemetry workflows.

@@ -4,6 +4,7 @@ import json
 import mimetypes
 import os
 from pathlib import Path
+import re
 from typing import Any
 from urllib import error, parse, request
 import uuid
@@ -136,6 +137,86 @@ def _load_catalog() -> dict[str, Any]:
     return json.loads(_catalog_path().read_text(encoding="utf-8"))
 
 
+_QUERY_EXPANSIONS = {
+    "物种分布": "species distribution ecological niche modeling sdm maxent habitat suitability occurrence",
+    "分布模型": "species distribution ecological niche modeling sdm maxent habitat suitability occurrence",
+    "生态位": "ecological niche modeling maxent habitat suitability",
+    "栖息地": "habitat suitability landscape connectivity occurrence",
+    "生物多样性": "biodiversity occurrence taxonomy gbif obis ebird",
+    "鸟": "bird avian ebird acoustic ecoacoustic bioacoustic",
+    "鸟类": "bird avian ebird acoustic ecoacoustic bioacoustic",
+    "声学": "acoustic ecoacoustic bioacoustic audio birdnet opensoundscape",
+    "运动": "movement tracking telemetry animal movement trajectory ctmm movebank",
+    "迁徙": "migration movement telemetry animal movement trajectory movebank",
+    "水文": "hydrology streamflow watershed usgs pygeohydro dataretrieval",
+    "流量": "streamflow discharge water data usgs hydrology",
+    "土壤": "soil soilgrids soildb soil profile nutrient",
+    "空气质量": "air quality openaq pollution exposure",
+    "海洋": "marine ocean obis biodiversity occurrence",
+    "遥感": "remote sensing stac earth observation satellite raster",
+    "地球观测": "earth observation stac satellite raster",
+    "灌溉": "irrigation crop water drought evapotranspiration",
+    "干旱": "drought crop water irrigation climate stress",
+    "玉米": "maize crop growth simulation irrigation drought",
+    "作物": "crop growth simulation irrigation drought agroecosystem",
+    "成长": "growth simulation plant crop microbial",
+    "生长": "growth simulation plant crop microbial",
+    "微生物": "microbial microbiome community metabolism biofilm amplicon",
+    "生物膜": "biofilm microbial reactor periphyton",
+    "3d": "3d point cloud photogrammetry lidar mesh terrain visualization",
+}
+
+
+_STOP_WORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "for",
+    "in",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+    "的",
+    "和",
+    "与",
+    "及",
+}
+
+
+def _expand_query_text(query: str) -> str:
+    text = (query or "").strip().lower()
+    if not text:
+        return ""
+    additions = [value for key, value in _QUERY_EXPANSIONS.items() if key in text]
+    return " ".join([text, *additions]).strip()
+
+
+def _query_terms(query: str) -> list[str]:
+    expanded = _expand_query_text(query)
+    terms = re.findall(r"[a-z0-9][a-z0-9+_.-]*|[\u4e00-\u9fff]+", expanded)
+    return [term for term in terms if term not in _STOP_WORDS and len(term) > 1]
+
+
+def _score_query_match(query: str, haystack: str) -> int:
+    raw_query = (query or "").strip().lower()
+    if not raw_query:
+        return 1
+    score = 0
+    if raw_query in haystack:
+        score += 8
+    expanded_query = _expand_query_text(query)
+    if expanded_query and expanded_query != raw_query and expanded_query in haystack:
+        score += 4
+    for term in _query_terms(query):
+        if term in haystack:
+            score += 1
+    return score
+
+
 def _list_ecology_functions(params: dict[str, Any], context: ToolContext) -> ToolResult:
     del context
     catalog = _load_catalog()
@@ -150,7 +231,7 @@ def _list_ecology_functions(params: dict[str, Any], context: ToolContext) -> Too
         ).lower()
         if category_filter and category_filter not in item.get("category", "").lower():
             continue
-        if query and query not in haystack:
+        if query and _score_query_match(query, haystack) <= 0:
             continue
         categories.append(item)
 
@@ -177,7 +258,7 @@ def _list_ecology_toolkits(params: dict[str, Any], context: ToolContext) -> Tool
     query = str(params.get("query", "")).strip().lower()
     capability = str(params.get("capability", "")).strip().lower()
     modality = str(params.get("modality", "")).strip().lower()
-    toolkits = []
+    scored_toolkits = []
     for item in catalog.get("toolkits", []):
         haystack = " ".join(
             [
@@ -190,13 +271,16 @@ def _list_ecology_toolkits(params: dict[str, Any], context: ToolContext) -> Tool
             + list(item.get("capabilities", []))
             + list(item.get("good_for", []))
         ).lower()
-        if query and query not in haystack:
+        score = _score_query_match(query, haystack)
+        if query and score <= 0:
             continue
         if capability and capability not in " ".join(item.get("capabilities", [])).lower():
             continue
         if modality and modality != item.get("modality", "").lower():
             continue
-        toolkits.append(item)
+        scored_toolkits.append((score, item))
+
+    toolkits = [item for _, item in sorted(scored_toolkits, key=lambda row: (-row[0], row[1].get("slug", "")))]
 
     if not toolkits:
         return ToolResult(content="No ecology toolkits matched.", data={"toolkits": []})

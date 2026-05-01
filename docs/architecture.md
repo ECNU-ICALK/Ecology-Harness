@@ -42,6 +42,7 @@ User / CLI / REPL
   - `MEMORY.md` index regeneration
   - manifest scanning and freshness warnings
   - prompt-aware memory relevance ranking
+  - governance checks for stale, large, overlapping, or unsafe memories
 - `skills/`
   - built-in markdown skills
   - user + project skill loading

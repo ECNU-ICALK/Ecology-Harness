@@ -49,6 +49,14 @@ Return strict JSON with this shape:
 }
 """
 
+_CANDIDATE_RISK_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("prompt-injection", re.compile(r"ignore.{0,80}\binstructions\b", re.I)),
+    ("prompt-injection", re.compile(r"(system|developer)\s+prompt", re.I)),
+    ("credential-risk", re.compile(r"\b(api[_ -]?key|password|secret|token|ssh\s+key)\b", re.I)),
+    ("destructive-command", re.compile(r"\b(rm\s+-rf|git\s+reset\s+--hard|mkfs|dd\s+if=)\b", re.I)),
+    ("unbounded-autonomy", re.compile(r"\b(always|automatically)\b.{0,80}\b(run|execute|apply|approve)\b", re.I)),
+)
+
 
 ReviewLLMCallback = Callable[[dict[str, Any]], Any]
 
@@ -161,6 +169,17 @@ class ReviewManager:
 
         if not candidates:
             return None
+
+        candidates = [
+            _annotate_candidate_quality(
+                candidate,
+                prompt=normalized_prompt,
+                tool_invocations=tool_invocations,
+                final_text=final_text,
+                review_mode=review_mode,
+            )
+            for candidate in candidates
+        ]
 
         report = ReviewReport(
             review_id=uuid.uuid4().hex[:16],
@@ -480,6 +499,54 @@ def _coerce_string_list(value: Any) -> list[str]:
             return [item.strip("- ").strip() for item in value.splitlines() if item.strip()]
         return [item.strip() for item in value.split(",") if item.strip()]
     return []
+
+
+def _annotate_candidate_quality(
+    candidate: ReviewCandidate,
+    prompt: str,
+    tool_invocations: list[dict[str, Any]],
+    final_text: str,
+    review_mode: str,
+) -> ReviewCandidate:
+    metadata = dict(candidate.metadata)
+    source = str(metadata.get("source", ""))
+    confidence = metadata.get("confidence")
+    if not isinstance(confidence, (int, float)):
+        confidence = 0.78 if source == "model-review" else 0.56
+        if candidate.candidate_type == "memory":
+            confidence += 0.06
+        if len(tool_invocations) >= 3:
+            confidence += 0.04
+    confidence = max(0.0, min(float(confidence), 0.95))
+    risk_flags = _candidate_risk_flags(candidate.content)
+    metadata.update(
+        {
+            "confidence": round(confidence, 3),
+            "risk_flags": risk_flags,
+            "requires_review": bool(risk_flags) or confidence < 0.6,
+            "review_mode": review_mode,
+            "evidence": {
+                "prompt_excerpt": prompt[:240],
+                "tool_count": len(tool_invocations),
+                "tool_sequence": [
+                    str(item.get("tool", "")).strip()
+                    for item in tool_invocations[:10]
+                    if item.get("tool")
+                ],
+                "final_excerpt": final_text.strip()[:300],
+            },
+        }
+    )
+    candidate.metadata = metadata
+    return candidate
+
+
+def _candidate_risk_flags(text: str) -> list[str]:
+    flags = []
+    for name, pattern in _CANDIDATE_RISK_PATTERNS:
+        if pattern.search(text or ""):
+            flags.append(name)
+    return list(dict.fromkeys(flags))
 
 
 def _skill_title(prompt: str) -> str:

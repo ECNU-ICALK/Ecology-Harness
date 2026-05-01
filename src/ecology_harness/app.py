@@ -655,6 +655,8 @@ class EcologyHarnessApp:
                 for candidate in report.candidates:
                     if candidate.candidate_type != "memory":
                         continue
+                    if candidate.metadata.get("requires_review"):
+                        continue
                     try:
                         self.review_manager.apply_memory_candidate(
                             candidate.candidate_id,
@@ -666,6 +668,8 @@ class EcologyHarnessApp:
             if self.settings.evolution_auto_skill_apply:
                 for candidate in report.candidates:
                     if candidate.candidate_type != "skill":
+                        continue
+                    if candidate.metadata.get("requires_review"):
                         continue
                     try:
                         self.review_manager.apply_skill_candidate(

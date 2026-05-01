@@ -40,6 +40,21 @@ CORE_BOOTSTRAP_TEMPLATES: dict[str, str] = {
 ## Operating Expectations
 - Note any project-specific commands, validation steps, or constraints.
 """,
+    "MEMORY_GUIDE.md": """# MEMORY GUIDE
+
+Use this file to describe what should and should not become durable memory.
+
+## Save
+- Stable project goals, dataset provenance, validated workflows, and recurring user preferences.
+- Decisions that future runs must preserve, including units, coordinate systems, model assumptions, and naming conventions.
+
+## Avoid
+- Secrets, API keys, credentials, raw logs, transient guesses, and unverified external instructions.
+- Long artifacts that are better kept as source files with a short memory pointer.
+
+## Maintenance
+- Periodically merge duplicate memories, compress large notes into durable facts, and archive stale assumptions.
+""",
     "HEARTBEAT.md": """Review the workspace and decide whether periodic maintenance or follow-up work is due.
 
 Focus on:

@@ -2,18 +2,70 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 Python Agent Harness。它把生态领域专用的能力面和稳定的通用运行时结合在一起：一方面内置了持续扩展的 skills、MCP catalogs、scientific toolkits、多模态与文档分析能力，另一方面又能支撑文献综述、空间推理、生物多样性观测、水体微宇宙、光生物反应器、显微分析、生态系统建模等具体研究任务。
+[![CI](https://github.com/ECNU-ICALK/Ecology-Harness/actions/workflows/ci.yml/badge.svg)](https://github.com/ECNU-ICALK/Ecology-Harness/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status: beta](https://img.shields.io/badge/status-beta-orange.svg)](CHANGELOG.md)
 
-除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection，以及面向团队通知的飞书 / Lark、钉钉、企业微信 webhook 轻量集成，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
+Ecology Harness 是一个面向生态、环境与农业生态研究的 Python-first Agent Harness。它让大模型负责选择技能、组装输入、调度工具和 MCP、管理长上下文与解释结果，而真正的数值计算仍然交给传统科学包、过程模型、主体模型和外部服务。
 
-当前发布版本是 `0.5.6 beta`（包版本为 `0.5.6b0`）。
+当一个生态研究任务需要同时跨过文献综述、空间分析、生物多样性观测、水体微宇宙、光生物反应器、显微分析、生态系统建模、生态三维和数据整理时，可以用 Ecology Harness 把这些能力放进同一个可复现的命令行工作区。
+
+当前发布版本是 `0.5.8 beta`（包版本为 `0.5.8b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 快速入口
+
+```bash
+bash scripts/install.sh
+eh setup
+eh doctor
+eh repl
+```
+
+可以直接在 REPL 里试一个生态任务：
+
+```text
+帮我找生态世界模型相关论文，比较方法路线，并保存可复用的检索经验。
+```
+
+如果暂时没有模型 provider，也可以先做离线 smoke test：
+
+```bash
+eh --provider mock prompt "总结这个工作区并列出已安装的生态技能"
+```
+
+## 能力一览
+
+| 需求 | Ecology Harness 提供什么 |
+|---|---|
+| 选择合适研究流程 | query-aware skill / MCP 检索、`SkillHub`、`SkillView`、生态和科研技能包 |
+| 保持长项目连贯 | 长期记忆、历史 session 召回、profile 上下文、有界压缩和记忆健康检查 |
+| 安全运行生态分析 | 内置工具、sandbox 策略、MCP readiness probe、`eh doctor`、`eh explore` 和可审计运行轨迹 |
+| 调度生态模拟 | 过程模型、作物模型、水体模型、ABM、微生物增长和生态 3D 的 skills / tools / MCP catalog |
+| 持续自我完善 | post-run review 会生成带证据、置信度和风险标记的 memory / skill candidates |
+
+## 文档地图
+
+- [快速开始](#快速开始)：安装与第一组命令。
+- [Ecology Pack](#ecology-pack)：领域技能、MCP、工具和上游来源链接。
+- [Ecology 基础工具层](#ecology-基础工具层)：可安装的 Python/R/CLI 工具箱。
+- [模型来源](#模型来源)：OpenAI-compatible、本地和 custom provider 配置。
+- [记忆、会话与压缩](#记忆会话与压缩)：长期记忆、session、压缩和治理。
+- [Agent 框架模式说明](docs/agent-framework-patterns.md)：本项目从 Hermes / OpenClaw 借鉴并落地的模式。
+- [架构说明](docs/architecture.md)：模块边界和主要数据流。
+
+非常欢迎继续补充。最有价值的贡献包括：触发条件清晰的生态 skills、带上游链接和安装说明的 tool/MCP 条目，以及能守住能力边界的回归测试。
 
 ## 阅读导航
 
+- [快速入口](#快速入口)
+- [能力一览](#能力一览)
+- [文档地图](#文档地图)
 - [News](#news)
 - [启动界面](#启动界面)
 - [目录结构](#目录结构)
+- [Agent 框架模式说明](docs/agent-framework-patterns.md)
 - [项目包含的能力](#项目包含的能力)
 - [已安装 Skill Packs](#已安装-skill-packs)
 - [Ecology Pack](#ecology-pack)
@@ -32,22 +84,13 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
+- `2026-05-01`：发布 `0.5.8 beta`，加入参考 Hermes / OpenClaw 后落地的记忆治理能力，包括评分式记忆检索、`MemoryHealth`、`MEMORY_GUIDE.md`，以及自进化候选的证据、置信度和风险元数据，让自动更新路径更可审计。
+- `2026-05-01`：发布 `0.5.7 beta`，扩展生态发现层，新增 eBird、BioMCP、通用 OpenAPI MCP adapter、物种分布建模、运动生态、土壤水文 API、云原生栅格工具，并增强 toolkit query 匹配。
 - `2026-05-01`：发布 `0.5.6 beta`，新增通用 stdio MCP JSON-RPC 适配器，补强核心写文件路径的原子写入，并优化 custom provider 直接运行时的 key 配置容错。
 - `2026-05-01`：发布 `0.5.5 beta`，进一步明确 MCP runtime 边界，给 `ExecuteCode` 增加超时护栏，并把 provider tool schema 规范化逻辑拆成更小的运行时模块，方便后续维护。
 - `2026-05-01`：发布 `0.5.4 beta`，增强 OpenAI-compatible provider 响应解析、旧 session / message 恢复，以及 BrowserAction 清理逻辑，让长任务和自定义模型网关在遇到异常上游响应时更不容易崩溃。
-- `2026-04-25`：发布 `0.5.3 beta`，继续扩展生态三维能力，新增近景测量级摄影测量、LiDAR 采样设计与模拟、单木 QSM、浏览器与地理三维发布工作流，并补入 COLMAP、MicMac、HELIOS++、TreeQSM、SimpleForest、ParaView、CesiumJS。
-- `2026-04-25`：发布 `0.5.2 beta`，新增面向生态三维重建、点云和生境场景可视化的一组能力，包括 OpenDroneMap、PDAL、Blender、QGIS 等相关 tools / MCP / skills。
-- `2026-04-25`：发布 `0.5.1 beta`，新增 `clawhub-research`、`clawhub-ecology`、`bioskills-ecology` 三组技能包，并修复了 SkillHub / loader 会把 bundle 辅助 markdown 误识别成独立 skill 的问题。
-- `2026-04-25`：新增两个生态相关的 community skill pack：`clawhub-ecology` 用于承接来自 ClawHub 的生态/碳分析外部服务型技能，`bioskills-ecology` 用于承接来自 GPTomics/bioSkills 的生态基因组学、宏基因组、系统发育与群体遗传工作流。
-- `2026-04-17`：扩展轻量 integrations 层，在飞书 / Lark 之外新增钉钉与企业微信 webhook 支持，加入通用 `IntegrationNotify` 消息发送和 `eh integrations` 运维命令。
-- `2026-04-25`：扫描 ClawHub 上的学术类 skill，并筛选接入一小批高价值工作流：`academic-search`、`paper-compare`、`research-paper-kb`、`virtual-reading-group`。
-- `2026-04-11`：对 `0.5.0 beta` 做了一轮交付级 hardening，收紧了 workspace operator 上下文边界，让 `HEARTBEAT.md` 只在 heartbeat 运行时注入，同时把浏览器工具限制为只接受 `http(s)` URL，并完成了新一轮回归、构建与打包校验。
-- `2026-04-11`：发布 `0.5.0 beta`，加入 `eh doctor`、`eh setup`、只读 `eh explore`、`eh runtime`、`eh analytics`，以及更清晰的 clarify → plan → execute 工作流别名；这些能力参考了 oh-my-codex，但仍保持现有 Ecology Harness 运行时的轻量结构。
-- `2026-04-10`：发布 `0.4.1 beta`，加入了更像 OpenClaw 的 workspace bootstrap context files、轻量 heartbeat、更多 plugin 生命周期 hooks，以及对外部浏览器内容“默认不可信”的安全处理。
-- `2026-04-10`：发布 `0.4.0 beta`，新增 provider 路由与 fallback、session 标题和 SQLite 索引、checkpoint、profile、automation、最小 API server、browser/code execution 工具，以及更完整的 skill 治理能力。
-- `2026-04-10`：发布 `0.3.1 beta`，新增 `SkillHub` 与 `SkillView(file_path)` 渐进式 bundle 查看能力，修补旧 skill snapshot 的兼容问题，并完成一轮交付级审计，包括单元测试、wheel/sdist 打包校验和安装后 smoke test。
-- `2026-04-10`：发布 `0.3.0 beta`，把 query-aware 检索、自进化闭环、profile 化记忆、trajectory 导出和 skill 治理控制整合成了一个更完整的研究型版本。
-- `2026-04-06`：发布 `0.2.0 beta`，这是 Ecology Harness 第一个可正式分发的 beta 版本。
+
+更早版本见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 启动界面
 
@@ -101,8 +144,8 @@ EcologyHarness/
 - 会话持久化、恢复与上下文压缩
 - 基于 query rewrite 和 BM25 的历史 session 检索与召回
 - 可配置 Sandbox、权限策略与审计
-- 支持自动读取 `STANDING_ORDERS.md`、`AGENTS.md`、`BOOTSTRAP.md` 等 workspace bootstrap 上下文文件，`HEARTBEAT.md` 仅在 heartbeat 运行时注入
-- `eh setup` 可为工作区脚手架生成 `AGENTS.md`、`STANDING_ORDERS.md`、`BOOTSTRAP.md`、`HEARTBEAT.md`
+- 支持自动读取 `STANDING_ORDERS.md`、`AGENTS.md`、`BOOTSTRAP.md`、`MEMORY_GUIDE.md` 等 workspace bootstrap 上下文文件，`HEARTBEAT.md` 仅在 heartbeat 运行时注入
+- `eh setup` 可为工作区脚手架生成 `AGENTS.md`、`STANDING_ORDERS.md`、`BOOTSTRAP.md`、`MEMORY_GUIDE.md`、`HEARTBEAT.md`
 - `eh doctor` 可做工作区、依赖、skills 与 MCP readiness 的健康检查
 - `eh runtime` 可查看实时运行快照，包括上下文压力、active profile、任务计数和子智能体状态
 - `eh analytics` 可汇总近期 session、query history、trajectory 切片、skill 使用情况、automation 与 MCP 状态
@@ -112,10 +155,10 @@ EcologyHarness/
 - 工具注册系统与内置通用工具
 - 支持本地图片、音频、文档与视频抽帧附件的多模态输入
 - 内置文档分析工具，可处理 `pdf`、`docx`、`md`、`csv`、`json`、`html`、`ipynb`
-- 双 scope 记忆系统与自动 `MEMORY.md`
+- 双 scope 记忆系统，带评分式检索、治理健康检查和自动 `MEMORY.md`
 - provider 化的记忆分层，可组合 builtin memory、project profile 和 research profile
 - 多智能体与子智能体协同机制
-- 任务结束后的 post-run review，可提炼 memory candidate 和 skill candidate
+- 任务结束后的 post-run review，可提炼 memory candidate 和 skill candidate，并为候选记录证据、置信度和风险标记
 - 带 readiness/setup 元数据和 snapshot cache 的 Markdown skill 系统
 - 带 usage 统计、生命周期状态（`active` / `deprecated` / `archived`）、重叠检测与候选合并控制的 skill 治理层
 - 带 trust/audit 元数据的 skill hub 浏览能力，以及 `SkillView(file_path)` 风格的 bundle 渐进查看
@@ -157,11 +200,11 @@ EcologyHarness/
 |---|---|---|---|
 | 文献检索与证据综合 | 综述、引文扩展、证据简报、综述识别、研究版图扫描 | `ecology-evidence-synthesis`<br>`literature-multi-source-search`<br>`open-access-paper-harvest`<br>[expand-references](https://github.com/zongmin-yu/semantic-scholar-skills)<br>[trace-citations](https://github.com/zongmin-yu/semantic-scholar-skills)<br>[paper-triage](https://github.com/zongmin-yu/semantic-scholar-skills) | [semantic-scholar](https://github.com/zongmin-yu/semantic-scholar-skills)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[crossref](https://github.com/BotanicaStudios/crossref-mcp)<br>[unpaywall](https://github.com/ElliotPadfield/unpaywall-mcp) |
 | 个体、种群与群落生态 | 胁迫响应、种群扩张、入侵扩散、共存机制、扰动响应 | `organismal-stress-screen`<br>`population-invasion-screen`<br>`community-assembly-review` | [openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[gbif](https://github.com/tyson-swetnam/gbif-mcp)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP) |
-| 生物多样性与物种分布 | 物种信息、occurrence、采样偏差、栖息地预筛查 | `biodiversity-data-triage`<br>`species-occurrence-workbench` | [gbif](https://github.com/tyson-swetnam/gbif-mcp)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp)<br>[stac](https://github.com/BnJam/stac-mcp) |
+| 生物多样性与物种分布 | 物种信息、occurrence、采样偏差、栖息地预筛查、SDM / 生态位建模、海洋与鸟类观测 | `biodiversity-data-triage`<br>`species-occurrence-workbench`<br>`species-distribution-and-biodiversity-modeling` | [gbif](https://github.com/tyson-swetnam/gbif-mcp)<br>[eBird MCP Server](https://github.com/moonbirdai/ebird-mcp-server)<br>[pygbif](https://github.com/gbif/pygbif)<br>[pyobis](https://github.com/iobis/pyobis)<br>[CoordinateCleaner](https://github.com/ropensci/CoordinateCleaner)<br>[biomod2](https://github.com/biomodhub/biomod2)<br>[ENMeval](https://github.com/jamiemkass/ENMeval)<br>[maxnet](https://github.com/mrmaxent/maxnet)<br>[sdmTMB](https://github.com/pbs-assess/sdmTMB)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp)<br>[stac](https://github.com/BnJam/stac-mcp) |
 | 物种识别与野外观测 | 从照片识别植物、规范 taxon、查看观测背景 | `species-photo-identification` | [PlantNetIdentify](https://github.com/plantnet/my.plantnet)<br>[INaturalistSearchTaxa](https://github.com/pyinat/pyinaturalist)<br>[INaturalistSearchObservations](https://github.com/pyinat/pyinaturalist)<br>[pyinaturalist](https://github.com/pyinat/pyinaturalist)<br>[Pl@ntNet API](https://github.com/plantnet/my.plantnet)<br>[pybioclip](https://github.com/Imageomics/pybioclip) |
-| 空间生态与遥感 | NDVI、土地覆盖、影像筛查、栅格规划、目录选择、连通性 | `spatial-ecology-raster-lab`<br>`remote-sensing-catalog-hunt`<br>`landscape-connectivity-screen`<br>[mapbox-geospatial-operations](https://github.com/mapbox/mapbox-agent-skills) | [stac](https://github.com/BnJam/stac-mcp)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[mapbox](https://github.com/mapbox/mcp-server) |
+| 空间生态与遥感 | NDVI、土地覆盖、影像筛查、栅格规划、目录选择、连通性、云原生栅格 covariates | `spatial-ecology-raster-lab`<br>`remote-sensing-catalog-hunt`<br>`landscape-connectivity-screen`<br>`open-environmental-data-and-forcing-workflow`<br>[mapbox-geospatial-operations](https://github.com/mapbox/mapbox-agent-skills) | [stac](https://github.com/BnJam/stac-mcp)<br>[pystac-client](https://github.com/stac-utils/pystac-client)<br>[stackstac](https://github.com/gjoseph92/stackstac)<br>[odc-stac](https://github.com/opendatacube/odc-stac)<br>[geemap](https://github.com/gee-community/geemap)<br>[leafmap](https://github.com/opengeos/leafmap)<br>[WhiteboxTools](https://github.com/jblindsay/whitebox-tools)<br>[exactextract](https://github.com/isciences/exactextract)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[mapbox](https://github.com/mapbox/mcp-server) |
 | 气候、天气与空气质量 | 干旱、热浪、降水、空气质量、气候信号、季节预测 | `agri-climate-screen`<br>`global-change-ecology-brief`<br>[open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[open-meteo-advanced](https://github.com/cmer81/open-meteo-mcp) | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp) |
-| 水文与淡水环境 | 水位、流量、洪水背景、流域预筛查 | `hydrology-and-flood-screen`<br>`environmental-site-screen` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[swiss-environment](https://github.com/malkreide/swiss-environment-mcp)<br>[noaa-tides-currents](https://github.com/RyanCardin15/NOAA-Tides-And-Currents-MCP) |
+| 水文与淡水环境 | 水位、流量、洪水背景、流域预筛查、USGS / 土壤 / 空气质量开放数据、模型 forcing | `hydrology-and-flood-screen`<br>`environmental-site-screen`<br>`open-environmental-data-and-forcing-workflow` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[swiss-environment](https://github.com/malkreide/swiss-environment-mcp)<br>[noaa-tides-currents](https://github.com/RyanCardin15/NOAA-Tides-And-Currents-MCP)<br>[dataretrieval-python](https://github.com/DOI-USGS/dataretrieval-python)<br>[PyGeoHydro](https://github.com/hyriver/pygeohydro)<br>[soilDB](https://github.com/ncss-tech/soilDB)<br>[SoilGrids](https://soilgrids.org/)<br>[OpenAQ Python Client](https://github.com/openaq/openaq-python)<br>[OpenAPI MCP Server](https://github.com/ivo-toby/mcp-openapi-server) |
 | 海岸、河口、湿地与蓝碳 | 潮位、海平面、沿海洪水、湿地选址预筛查 | `coastal-ecology-screen` | [noaa-tides-currents](https://github.com/RyanCardin15/NOAA-Tides-And-Currents-MCP)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[weather-open-meteo](https://github.com/cmer81/open-meteo-mcp) |
 | 农业生态与农业环境 | 作物系统筛查、气候胁迫、景观背景 | `agri-climate-screen` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[mapbox](https://github.com/mapbox/mcp-server)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp) |
 | 植物、作物与微生物成长模拟 | 作物生长、灌溉、木本植被、根-茎结构、植物-土壤耦合、微生物增长、生物膜、参数拟合 | `plant-growth-model-selection`<br>`crop-growth-simulation-workflow`<br>`crop-water-and-irrigation-simulation`<br>`functional-structural-plant-modeling`<br>`root-and-rhizosphere-architecture-modeling`<br>`woody-plant-and-forest-simulation`<br>`microbial-growth-and-community-simulation`<br>`microbial-community-metabolism-simulation`<br>`microbial-biofilm-and-reactor-simulation`<br>`microbiome-timeseries-and-benchmark-simulation`<br>`plant-soil-microbe-coupled-simulation`<br>`growth-model-calibration-and-validation` | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[APSIM Next Generation](https://github.com/APSIMInitiative/ApsimX)<br>[PCSE / WOFOST](https://github.com/ajwdewit/pcse)<br>[AquaCrop-OSPy](https://github.com/aquacropos/aquacrop)<br>[BioCro](https://github.com/biocro/biocro)<br>[pyfao56](https://github.com/kthorp/pyfao56)<br>[CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox)<br>[OpenAlea L-Py](https://github.com/openalea/lpy)<br>[OpenSimRoot](https://rootsystemml.github.io/ISMCROOT/opensimroot/)<br>[r3PG](https://github.com/trotsiuk/r3PG)<br>[medfate](https://github.com/emf-creaf/medfate)<br>[pyrealm](https://github.com/ImperialCollegeLondon/pyrealm)<br>[FATES](https://github.com/NGEET/fates)<br>[COBRApy](https://github.com/opencobra/cobrapy)<br>[MICOM](https://github.com/micom-dev/micom)<br>[COMETS](https://github.com/segrelab/comets)<br>[BacArena](https://github.com/euba/BacArena)<br>[Community Simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator)<br>[NUFEB](https://github.com/nufeb/NUFEB)<br>[miaSim](https://github.com/microbiome/miaSim)<br>[CarveMe](https://github.com/cdanielmachado/carveme)<br>[PyCoMo](https://github.com/univieCUBE/PyCoMo) |
@@ -172,11 +215,11 @@ EcologyHarness/
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits`<br>`root-phenotyping-and-rhizosphere-imaging` | [PlantCV](https://github.com/danforthcenter/plantcv)<br>[LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)<br>[RhizoVision Explorer](https://github.com/noble-research-group/RhizoVisionExplorer)<br>[RootPainter](https://github.com/Abe404/root_painter)<br>[OpenSimRoot](https://rootsystemml.github.io/ISMCROOT/opensimroot/) |
 | 生态三维重建与点云 | 无人机摄影测量、近景测量级摄影测量、LiDAR 预处理与模拟、单木 QSM、生境网格、浏览器与地理三维发布 | `ecology-photogrammetry-and-3d-reconstruction`<br>`close-range-ecology-photogrammetry`<br>`lidar-point-cloud-and-canopy-analysis`<br>`lidar-survey-design-and-simulation`<br>`tree-qsm-and-forest-structure-modeling`<br>`habitat-scene-3d-visualization`<br>`web-geospatial-3d-publishing` | [blender-mcp](https://github.com/ahujasid/blender-mcp)<br>[qgis-mcp](https://github.com/jjsantos01/qgis_mcp)<br>[OpenDroneMap](https://github.com/OpenDroneMap/ODM)<br>[WebODM](https://github.com/OpenDroneMap/WebODM)<br>[Meshroom](https://github.com/alicevision/Meshroom)<br>[COLMAP](https://github.com/colmap/colmap)<br>[MicMac](https://github.com/micmacIGN/micmac)<br>[PDAL](https://github.com/PDAL/PDAL)<br>[HELIOS++](https://github.com/3dgeo-heidelberg/helios)<br>[CloudCompare](https://github.com/CloudCompare/CloudCompare)<br>[Open3D](https://github.com/isl-org/Open3D)<br>[TreeQSM](https://github.com/InverseTampere/TreeQSM)<br>[SimpleForest GitLab](https://gitlab.com/SimpleForest)<br>[PyVista](https://github.com/pyvista/pyvista)<br>[ParaView](https://github.com/Kitware/ParaView)<br>[Potree](https://github.com/potree/potree)<br>[CesiumJS](https://github.com/CesiumGS/cesium)<br>[lidR](https://github.com/r-lidar/lidR)<br>[ForestTools](https://github.com/andrew-plowright/ForestTools)<br>[Blender](https://github.com/blender/blender) |
 | 生态计数与分割 | 植株计数、树木计数、动物检测、树冠分割 | `ecology-counting-and-segmentation` | [DeepForest](https://github.com/weecology/DeepForest)<br>[detectree2](https://github.com/PatBall1/detectree2)<br>[TreeCountSegHeight](https://github.com/sizhuoli/TreeCountSegHeight)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
-| 行为生态与姿态跟踪 | 运动、觅食、求偶、互动视频分析、多动物跟踪 | `animal-behavior-and-pose-tracking` | [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)<br>[SLEAP](https://github.com/talmolab/sleap)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
+| 行为生态与运动分析 | 运动、觅食、求偶、互动视频分析、多动物跟踪、遥测轨迹、home range | `animal-behavior-and-pose-tracking`<br>`movement-ecology-and-telemetry-analysis` | [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)<br>[SLEAP](https://github.com/talmolab/sleap)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps)<br>[ctmm](https://github.com/ctmm-initiative/ctmm)<br>[amt](https://github.com/jmsigner/amt)<br>[move2](https://gitlab.com/bartk/move2) |
 | 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[eosc-data-commons](https://github.com/EOSC-Data-Commons/data-commons-mcp)<br>[dataverse](https://github.com/gdcc/mcp-dataverse)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
 | 环境化学与暴露 | 污染物、PFAS、微塑料、农药归趋、毒理交叉文献 | `environmental-chemistry-risk-scan`<br>`literature-multi-source-search` | [pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[swiss-environment](https://github.com/malkreide/swiss-environment-mcp) |
-| 微生物生态与保育遗传 | 分类、marker、组装、直系同源、BLAST 工作流 | `microbial-ecology-sequence-workflow`<br>`amplicon-and-metabolic-reconstruction-workflow` | [ncbi-datasets](https://github.com/Augmented-Nature/NCBI-Datasets-MCP-Server)<br>[bio-blast](https://github.com/bio-mcp/bio-mcp-blast)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[mothur](https://github.com/mothur/mothur)<br>[VSEARCH](https://github.com/torognes/vsearch)<br>[CarveMe](https://github.com/cdanielmachado/carveme)<br>[PyCoMo](https://github.com/univieCUBE/PyCoMo) |
-| 生态声学 | 鸟声识别、被动声学筛查、批量音频回顾 | `ecoacoustics-screen` | [BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer) |
+| 微生物生态与保育遗传 | 分类、marker、组装、直系同源、BLAST 工作流、基因/文献交叉检索 | `microbial-ecology-sequence-workflow`<br>`amplicon-and-metabolic-reconstruction-workflow` | [ncbi-datasets](https://github.com/Augmented-Nature/NCBI-Datasets-MCP-Server)<br>[bio-blast](https://github.com/bio-mcp/bio-mcp-blast)<br>[BioMCP](https://github.com/yeyuan98/biomcp-ts)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[mothur](https://github.com/mothur/mothur)<br>[VSEARCH](https://github.com/torognes/vsearch)<br>[CarveMe](https://github.com/cdanielmachado/carveme)<br>[PyCoMo](https://github.com/univieCUBE/PyCoMo) |
+| 生态声学 | 鸟声识别、被动声学筛查、批量音频回顾、eBird 背景验证 | `ecoacoustics-screen`<br>`ecoacoustic-monitoring-and-bird-observation` | [BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer)<br>[OpenSoundscape](https://github.com/kitzeslab/opensoundscape)<br>[eBird MCP Server](https://github.com/moonbirdai/ebird-mcp-server) |
 | 保护与恢复 | 恢复预筛查、生态压力、场地背景 | `environmental-site-screen`<br>`ecology-evidence-synthesis` | [mapbox](https://github.com/mapbox/mcp-server)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server) |
 | 开放数据与科研仓储 | 数据集发现、DOI 级数据记录、复现材料 | `research-data-repository-hunt`<br>`ecology-dataset-hunt` | [dataverse](https://github.com/gdcc/mcp-dataverse)<br>[eosc-data-commons](https://github.com/EOSC-Data-Commons/data-commons-mcp)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
 | 区域公共环境数据 | 区域环境监测和公开研究数据 | `swiss-environment-brief` | [swiss-environment](https://github.com/malkreide/swiss-environment-mcp)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
@@ -248,7 +291,7 @@ eh prompt '/watershed-and-ecohydrology-modeling 施肥变化下的流域氮输�
 
 - 轻量原生工具：taxon / observation 查询
 - 原生植物识别：通过 Pl@ntNet API
-- 外部重型工具目录：表型、计数、分割、相机陷阱、生态声学
+- 外部重型工具目录：表型、计数、分割、相机陷阱、生态声学、SDM、运动生态、开放环境数据和云原生栅格分析
 
 完整功能树见 [docs/ecology-basic-tools.zh-CN.md](docs/ecology-basic-tools.zh-CN.md)。
 
@@ -269,6 +312,12 @@ eh prompt '/watershed-and-ecohydrology-modeling 施肥变化下的流域氮输�
 现在也纳入了显微图像、浮游生物和分子分析相关工具，例如
 `Fiji / ImageJ`、`PyImageJ`、`CellProfiler`、`napari`、`ilastik`、
 `EcoTaxa Python Client`、`PlanktoScope`、`QIIME 2 / Rachis Framework` 和 `DADA2`。
+
+最新这一轮还纳入了生物多样性和环境数据工具，例如 `pygbif`、`pyobis`、
+`eBird MCP Server`、`CoordinateCleaner`、`biomod2`、`ENMeval`、`maxnet`、
+`sdmTMB`、`dataretrieval-python`、`PyGeoHydro`、`SoilGrids API`、`OpenAQ Python Client`、
+`pystac-client`、`stackstac`、`odc-stac`、`geemap`、`leafmap`、`WhiteboxTools`、
+`exactextract`、`ctmm`、`amt`、`move2`、`BioMCP` 和 `OpenAPI MCP Server`。
 
 可以直接查看：
 
@@ -591,7 +640,7 @@ REPL 是有状态的，新的输入会继续沿用当前会话，直到你执行
 
 当前运行时已经具备比较完整的长任务支撑能力：
 
-- 项目记忆和用户记忆会按当前 prompt 做相关性排序后再注入
+- 项目记忆和用户记忆会按当前 prompt 做评分检索后再注入，并可通过 `MemoryHealth` 检查重复、过大和风险内容
 - 会话会以结构化快照形式持久化，包含 `session_id`、时间戳、消息历史与压缩元信息
 - 上下文过长时会自动生成 continuation summary，而不是简单截断
 - 压缩摘要会尽量保留最近请求、工具使用、待办、关键文件与时间线
@@ -713,6 +762,7 @@ eh --provider ollama --model ollama/qwen2.5-coder prompt "Inspect the workspace.
 - `MemoryRead`
 - `MemoryDelete`
 - `MemorySearch`
+- `MemoryHealth`
 - `Skill`
 - `SkillList`
 - `SkillRead`

@@ -2,32 +2,79 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+[![CI](https://github.com/ECNU-ICALK/Ecology-Harness/actions/workflows/ci.yml/badge.svg)](https://github.com/ECNU-ICALK/Ecology-Harness/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status: beta](https://img.shields.io/badge/status-beta-orange.svg)](CHANGELOG.md)
+
 Ecology Harness is a Python-first agent harness for ecology, environment, and
-agroecology workflows. It combines an ecology-specialized capability surface,
-including domain skills, MCP catalogs, scientific toolkits, multimodal and
-document analysis, with a stable runtime for literature review, geospatial
-reasoning, biodiversity observation, aquatic microcosms, photobioreactors,
-microscopy, ecosystem modeling, and related research tasks.
+agroecology research. It lets a language model choose skills, assemble inputs,
+call tools and MCP servers, manage long-running context, and explain results
+while traditional scientific packages, process models, ABMs, and external
+services still do the numerical work.
 
-Beyond a traditional CLI agent, the project also includes query-aware
-skill/MCP retrieval, long-lived memory and historical session recall, bounded
-context compaction, profile-backed work modes, and a self-evolution loop that
-distills reusable memory and skill candidates after runs. Around that core, it
-adds practical operator features such as `eh setup`, `eh doctor`, heartbeat,
-analytics, checkpoints, automation, progressive skill inspection, and
-lightweight webhook integrations for Feishu/Lark, DingTalk, and WeCom so the
-ecology stack can keep growing without letting the runtime become
-unmanageable. Contributions are very welcome, and we would love help from the
-community to keep improving and expanding it together.
+Use it when you want one reproducible command-line workspace for literature
+review, geospatial analysis, biodiversity observation, aquatic microcosms,
+photobioreactors, microscopy, ecosystem modeling, ecological 3D, and other
+research operations that usually span many tools.
 
-Current release: `0.5.6 beta` (`0.5.6b0` package version).
+Current release: `0.5.8 beta` (`0.5.8b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
+
+## Start Here
+
+```bash
+bash scripts/install.sh
+eh setup
+eh doctor
+eh repl
+```
+
+Try a concrete ecology request:
+
+```text
+Find recent papers on ecological world models, compare the methods, and save reusable search notes.
+```
+
+Or run without a model provider for a smoke test:
+
+```bash
+eh --provider mock prompt "summarize this workspace and list the installed ecology skills"
+```
+
+## At A Glance
+
+| Need | Ecology Harness Provides |
+|---|---|
+| Choose the right research workflow | Query-aware skill and MCP retrieval, `SkillHub`, `SkillView`, and curated ecology/scientific skill packs |
+| Keep long projects coherent | Long-lived memory, historical session recall, profile context, bounded compaction, and memory health checks |
+| Run ecological analysis safely | Built-in tools, sandbox policy, MCP readiness probes, `eh doctor`, `eh explore`, and audit-friendly runtime traces |
+| Orchestrate simulations | Skills and tool catalogs for process models, crop models, aquatic models, ABMs, microbial growth, and 3D ecology workflows |
+| Improve over time | Post-run review that proposes memory and skill candidates with evidence, confidence, and risk metadata |
+
+## Documentation Map
+
+- [Quick Start](#quick-start) for installation and first commands.
+- [Ecology Pack](#ecology-pack) for domain skills, MCPs, and upstream source links.
+- [Ecology Basic Tools](#ecology-basic-tools) for installable Python/R/CLI toolkits.
+- [Provider Usage](#provider-usage) for OpenAI-compatible, local, and custom model backends.
+- [Core Runtime Features](#core-runtime-features) for memory, sessions, compaction, agents, skills, and governance.
+- [Agent Framework Patterns](docs/agent-framework-patterns.md) for the Hermes/OpenClaw-inspired patterns adopted here.
+- [Architecture Notes](docs/architecture.md) for module boundaries and data flow.
+
+Contributions are very welcome. The most useful additions are ecology skills
+with clear trigger conditions, tool/MCP entries with upstream links and setup
+notes, and tests that keep the growing capability surface maintainable.
 
 ## Contents
 
+- [Start Here](#start-here)
+- [At A Glance](#at-a-glance)
+- [Documentation Map](#documentation-map)
 - [News](#news)
 - [Startup Preview](#startup-preview)
 - [Project Structure](#project-structure)
+- [Agent Framework Patterns](docs/agent-framework-patterns.md)
 - [What Is Included](#what-is-included)
 - [Installed Skill Packs](#installed-skill-packs)
 - [Ecology Pack](#ecology-pack)
@@ -45,22 +92,13 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-05-01`: released `0.5.8 beta`, adding Hermes/OpenClaw-inspired memory governance with scored memory search, `MemoryHealth`, `MEMORY_GUIDE.md`, and risk/quality metadata for self-evolution candidates so auto-updates stay reviewable.
+- `2026-05-01`: released `0.5.7 beta`, expanding the ecology discovery layer with eBird, BioMCP, a generic OpenAPI MCP adapter, species-distribution modeling, movement ecology, hydrology/soil APIs, cloud-native raster tooling, and stronger toolkit query matching.
 - `2026-05-01`: released `0.5.6 beta`, adding a generic stdio MCP JSON-RPC adapter, atomic core write paths, and friendlier custom-provider key handling for direct Ecology Harness runs.
 - `2026-05-01`: released `0.5.5 beta`, clarifying MCP runtime boundaries, adding an `ExecuteCode` timeout guard, and splitting provider tool-schema normalization into a smaller runtime module for easier maintenance.
 - `2026-05-01`: released `0.5.4 beta`, hardening OpenAI-compatible provider parsing, legacy session/message recovery, and BrowserAction cleanup so long-running custom-provider workflows fail less often on malformed upstream responses.
-- `2026-04-25`: released `0.5.3 beta`, expanding the ecology 3D layer with close-range photogrammetry, LiDAR survey simulation, tree QSM, and browser/geospatial 3D publishing workflows around COLMAP, MicMac, HELIOS++, TreeQSM, SimpleForest, ParaView, and CesiumJS.
-- `2026-04-25`: released `0.5.2 beta`, adding ecology-facing 3D reconstruction, point-cloud, and habitat-visualization skills plus new tool and MCP catalog entries around OpenDroneMap, PDAL, Blender, QGIS, and related workflows.
-- `2026-04-25`: released `0.5.1 beta`, adding `clawhub-research`, `clawhub-ecology`, and `bioskills-ecology`, while fixing SkillHub/loader handling so bundle support markdown is no longer mistaken for standalone skills.
-- `2026-04-25`: added two more ecology-adjacent community packs: `clawhub-ecology` for external ecology/carbon service skills from ClawHub, and `bioskills-ecology` for ecological genomics, metagenomics, phylogenetics, and population-genetics workflows vendored from GPTomics/bioSkills.
-- `2026-04-17`: expanded the lightweight integrations layer from Feishu/Lark to also support DingTalk and WeCom webhooks, plus generic `IntegrationNotify` messaging and `eh integrations` operator commands.
-- `2026-04-25`: scanned ClawHub academic skills and vendored a small high-value subset into Ecology Harness: `academic-search`, `paper-compare`, `research-paper-kb`, and `virtual-reading-group`.
-- `2026-04-11`: delivery hardening pass for `0.5.0 beta`, tightening workspace-operator context boundaries so `HEARTBEAT.md` is only injected during heartbeat runs, restricting browser tools to `http(s)` URLs, and finishing another full regression/build audit.
-- `2026-04-11`: released `0.5.0 beta`, adding `eh doctor`, `eh setup`, read-only `eh explore`, `eh runtime`, `eh analytics`, and clearer clarify → plan → execute workflow aliases inspired by oh-my-codex while keeping the existing ecology runtime lightweight.
-- `2026-04-10`: released `0.4.1 beta`, adding OpenClaw-inspired workspace bootstrap context files, lightweight heartbeat support, richer plugin lifecycle hooks, and safer handling of external browser content.
-- `2026-04-10`: released `0.4.0 beta`, adding provider routing and fallback, session titles and SQLite-backed indexing, checkpoints, profiles, automation jobs, a minimal API server, browser/code-execution tools, and stronger skill governance.
-- `2026-04-10`: released `0.3.1 beta`, adding `SkillHub` plus `SkillView(file_path)` progressive bundle inspection, patching legacy skill-snapshot compatibility, and finishing a release audit with unit tests, wheel build checks, and installed-wheel smoke tests.
-- `2026-04-10`: released `0.3.0 beta`, consolidating query-aware retrieval, self-evolution loops, profile-backed memory, trajectory export, and skill-governance controls into a more complete research release.
-- `2026-04-06`: released `0.2.0 beta` as the first publishable beta build of Ecology Harness.
+
+Older release notes live in [CHANGELOG.md](CHANGELOG.md).
 
 ## Startup Preview
 
@@ -115,8 +153,8 @@ EcologyHarness/
 - query-aware historical session recall with rewritten queries and BM25 ranking
 - context compaction with continuation summaries for long conversations
 - configurable sandbox policy for file, shell, and network boundaries
-- workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, and related operator files, with `HEARTBEAT.md` reserved for heartbeat runs
-- `eh setup` workspace scaffolding for core operator files such as `AGENTS.md`, `STANDING_ORDERS.md`, `BOOTSTRAP.md`, and `HEARTBEAT.md`
+- workspace bootstrap context loading for `STANDING_ORDERS.md`, `AGENTS.md`, `BOOTSTRAP.md`, `MEMORY_GUIDE.md`, and related operator files, with `HEARTBEAT.md` reserved for heartbeat runs
+- `eh setup` workspace scaffolding for core operator files such as `AGENTS.md`, `STANDING_ORDERS.md`, `BOOTSTRAP.md`, `MEMORY_GUIDE.md`, and `HEARTBEAT.md`
 - `eh doctor` health reporting for bootstrap state, optional dependencies, skills, and MCP readiness
 - `eh runtime` live runtime inspection for context pressure, active profile, task counts, and subagent state
 - `eh analytics` recent usage summaries for sessions, query history, skill usage, trajectories, automations, and MCP health
@@ -127,10 +165,10 @@ EcologyHarness/
 - built-in file, shell, web, memory, skill, task, and subagent tools
 - multimodal prompt attachments for local images, audio, documents, and sampled video frames
 - document-analysis tools for `pdf`, `docx`, `md`, `csv`, `json`, `html`, and `ipynb`
-- dual-scope persistent memory with relevance ranking and auto-generated `MEMORY.md` indexes
+- dual-scope persistent memory with scored retrieval, governance health checks, and auto-generated `MEMORY.md` indexes
 - provider-backed memory layering for builtin memory, project profile, and research profile context
 - specialized agent types, background subagents, dependency-aware coordination, and internal agent task tracking
-- post-run review that distills reusable memory and skill candidates from successful runs
+- post-run review that distills reusable memory and skill candidates from successful runs, with confidence/evidence/risk metadata before any auto-apply path
 - task tracking with status, owner, metadata, and dependency edges
 - trajectory export, training-friendlier trajectory compression, replay scoring, and benchmark summary generation
 - built-in markdown skills with readiness/setup metadata and snapshot caching
@@ -174,17 +212,19 @@ cleanly to a single external upstream repository.
 |---|---|---|---|
 | 植物、作物与微生物成长模拟 | 作物生长、灌溉、木本植被、根-茎结构、植物-土壤耦合、微生物增长、生物膜、参数拟合 | `plant-growth-model-selection`<br>`crop-growth-simulation-workflow`<br>`crop-water-and-irrigation-simulation`<br>`functional-structural-plant-modeling`<br>`root-and-rhizosphere-architecture-modeling`<br>`woody-plant-and-forest-simulation`<br>`microbial-growth-and-community-simulation`<br>`microbial-community-metabolism-simulation`<br>`microbial-biofilm-and-reactor-simulation`<br>`microbiome-timeseries-and-benchmark-simulation`<br>`plant-soil-microbe-coupled-simulation`<br>`growth-model-calibration-and-validation` | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[APSIM Next Generation](https://github.com/APSIMInitiative/ApsimX)<br>[PCSE / WOFOST](https://github.com/ajwdewit/pcse)<br>[AquaCrop-OSPy](https://github.com/aquacropos/aquacrop)<br>[BioCro](https://github.com/biocro/biocro)<br>[pyfao56](https://github.com/kthorp/pyfao56)<br>[CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox)<br>[OpenAlea L-Py](https://github.com/openalea/lpy)<br>[OpenSimRoot](https://rootsystemml.github.io/ISMCROOT/opensimroot/)<br>[r3PG](https://github.com/trotsiuk/r3PG)<br>[medfate](https://github.com/emf-creaf/medfate)<br>[pyrealm](https://github.com/ImperialCollegeLondon/pyrealm)<br>[FATES](https://github.com/NGEET/fates)<br>[COBRApy](https://github.com/opencobra/cobrapy)<br>[MICOM](https://github.com/micom-dev/micom)<br>[COMETS](https://github.com/segrelab/comets)<br>[BacArena](https://github.com/euba/BacArena)<br>[Community Simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator)<br>[NUFEB](https://github.com/nufeb/NUFEB)<br>[miaSim](https://github.com/microbiome/miaSim)<br>[CarveMe](https://github.com/cdanielmachado/carveme)<br>[PyCoMo](https://github.com/univieCUBE/PyCoMo) |
 | 传统生态过程模型与主体模型 | 主体生态、流域模拟、食物网情景、森林干扰、陆地生态过程、多模型比较 | `process-model-selection`<br>`agent-based-ecology-modeling`<br>`watershed-and-ecohydrology-modeling`<br>`food-web-and-trophic-simulation`<br>`forest-landscape-disturbance-modeling`<br>`terrestrial-biosphere-and-vegetation-modeling`<br>`model-calibration-and-sensitivity`<br>`cross-model-scenario-comparison` | [NetLogo](https://github.com/NetLogo/NetLogo)<br>[Mesa](https://github.com/projectmesa/mesa)<br>[GAMA Platform](https://github.com/gama-platform/gama)<br>[DSSAT Cropping System Model](https://github.com/DSSAT/dssat-csm-os)<br>[SWAT+](https://swatplus.gitbook.io/docs/)<br>[Ecopath with Ecosim](https://ecopath.org/)<br>[LPJ-GUESS](https://web.nateko.lu.se/lpj-guess/index.html)<br>[FATES](https://github.com/NGEET/fates)<br>[ED2](https://github.com/EDmodel/ED2)<br>[Biome-BGC](https://carbonmodel.org/biome_bgc/)<br>[CENTURY / DayCent](https://www.nrel.colostate.edu/projects/century/)<br>[RHESSys](https://github.com/RHESSys/RHESSys)<br>[LANDIS-II](https://www.landis-ii.org/home)<br>[Madingley Model](https://madingley.github.io/)<br>[RangeShifter 2.0](https://rangeshifter.github.io/software/rangeshifter2.0/) |
+| Species distribution and biodiversity modeling | occurrence QA, SDM, ecological niche modeling, marine/bird observations, habitat-suitability covariates | `species-occurrence-workbench`<br>`biodiversity-data-triage`<br>`species-distribution-and-biodiversity-modeling` | [gbif](https://github.com/tyson-swetnam/gbif-mcp)<br>[eBird MCP Server](https://github.com/moonbirdai/ebird-mcp-server)<br>[pygbif](https://github.com/gbif/pygbif)<br>[pyobis](https://github.com/iobis/pyobis)<br>[CoordinateCleaner](https://github.com/ropensci/CoordinateCleaner)<br>[biomod2](https://github.com/biomodhub/biomod2)<br>[ENMeval](https://github.com/jamiemkass/ENMeval)<br>[maxnet](https://github.com/mrmaxent/maxnet)<br>[sdmTMB](https://github.com/pbs-assess/sdmTMB)<br>[pystac-client](https://github.com/stac-utils/pystac-client)<br>[stackstac](https://github.com/gjoseph92/stackstac)<br>[odc-stac](https://github.com/opendatacube/odc-stac) |
+| Environmental forcing, hydrology, and soil data | streamflow, soil covariates, air quality, OpenAPI environmental APIs, model forcing data | `open-environmental-data-and-forcing-workflow`<br>`hydrology-and-flood-screen`<br>`soil-health-and-nutrient-screen` | [dataretrieval-python](https://github.com/DOI-USGS/dataretrieval-python)<br>[PyGeoHydro](https://github.com/hyriver/pygeohydro)<br>[soilDB](https://github.com/ncss-tech/soilDB)<br>[SoilGrids](https://soilgrids.org/)<br>[OpenAQ Python Client](https://github.com/openaq/openaq-python)<br>[OpenAPI MCP Server](https://github.com/ivo-toby/mcp-openapi-server)<br>[geemap](https://github.com/gee-community/geemap)<br>[leafmap](https://github.com/opengeos/leafmap)<br>[WhiteboxTools](https://github.com/jblindsay/whitebox-tools)<br>[exactextract](https://github.com/isciences/exactextract) |
 | Lake, reservoir, and aquatic ecosystem modeling | thermal structure, dissolved oxygen, blooms, nutrient scenarios, aquatic biogeochemistry | `aquatic-ecodynamics-and-water-quality-modeling` | [GLM](https://github.com/AquaticEcoDynamics/GLM)<br>[glm-py](https://github.com/AquaticEcoDynamics/glm-py)<br>[FABM](https://github.com/fabm-model/fabm) |
 | 淡水微宇宙、浮游群落与生物膜 | 摄食微宇宙、浮游变化、底栖生物膜、水质、荧光、显微分类 | `aquatic-microcosm-foodweb-design`<br>`zooplankton-grazing-and-plankton-dynamics`<br>`benthic-biofilm-and-periphyton-monitoring`<br>`water-quality-and-nutrient-panel`<br>`plankton-microscopy-and-auto-classification`<br>`fluorescence-spectra-and-molecular-assays` | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[influxdb3](https://github.com/influxdata/influxdb3_mcp_server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server)<br>[MorphoCut](https://github.com/morphocut/morphocut)<br>[GLM](https://github.com/AquaticEcoDynamics/GLM)<br>[glm-py](https://github.com/AquaticEcoDynamics/glm-py)<br>[FABM](https://github.com/fabm-model/fabm) |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、光径、pH / CO2 控制、污染排查、生长曲线、物质平衡 | [closed-algae-system-design](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[photobioreactor-environment-control](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[microalgae-strain-and-inoculation](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[algal-monitoring-plan](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[photobioreactor-troubleshooting](https://github.com/K-Dense-AI/claude-scientific-skills)<br>[algal-timeseries-and-mass-balance](https://github.com/K-Dense-AI/claude-scientific-skills) | [jupyter-mcp](https://github.com/datalayer/jupyter-mcp-server)<br>[influxdb3](https://github.com/influxdata/influxdb3_mcp_server)<br>[labarchives](https://github.com/SamuelBrudner/lab_archives_mcp)<br>[unit-converter](https://github.com/zazencodes/unit-converter-mcp)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[openalex-research](https://github.com/oksure/openalex-research-mcp)<br>[pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server) |
 | 植物表型与性状提取 | 叶片性状、形态测量、腊叶标本测量、器官检测 | `plant-phenotyping-and-traits`<br>`root-phenotyping-and-rhizosphere-imaging` | [PlantCV](https://github.com/danforthcenter/plantcv)<br>[LeafMachine2](https://github.com/Gene-Weaver/LeafMachine2)<br>[RhizoVision Explorer](https://github.com/noble-research-group/RhizoVisionExplorer)<br>[RootPainter](https://github.com/Abe404/root_painter)<br>[OpenSimRoot](https://rootsystemml.github.io/ISMCROOT/opensimroot/) |
 | Ecology 3D reconstruction and point clouds | drone photogrammetry, close-range survey photogrammetry, LiDAR preprocessing and simulation, single-tree QSM, habitat meshes, browser and geospatial 3D publishing | `ecology-photogrammetry-and-3d-reconstruction`<br>`close-range-ecology-photogrammetry`<br>`lidar-point-cloud-and-canopy-analysis`<br>`lidar-survey-design-and-simulation`<br>`tree-qsm-and-forest-structure-modeling`<br>`habitat-scene-3d-visualization`<br>`web-geospatial-3d-publishing` | [blender-mcp](https://github.com/ahujasid/blender-mcp)<br>[qgis-mcp](https://github.com/jjsantos01/qgis_mcp)<br>[OpenDroneMap](https://github.com/OpenDroneMap/ODM)<br>[WebODM](https://github.com/OpenDroneMap/WebODM)<br>[Meshroom](https://github.com/alicevision/Meshroom)<br>[COLMAP](https://github.com/colmap/colmap)<br>[MicMac](https://github.com/micmacIGN/micmac)<br>[PDAL](https://github.com/PDAL/PDAL)<br>[HELIOS++](https://github.com/3dgeo-heidelberg/helios)<br>[CloudCompare](https://github.com/CloudCompare/CloudCompare)<br>[Open3D](https://github.com/isl-org/Open3D)<br>[TreeQSM](https://github.com/InverseTampere/TreeQSM)<br>[SimpleForest GitLab](https://gitlab.com/SimpleForest)<br>[PyVista](https://github.com/pyvista/pyvista)<br>[ParaView](https://github.com/Kitware/ParaView)<br>[Potree](https://github.com/potree/potree)<br>[CesiumJS](https://github.com/CesiumGS/cesium)<br>[lidR](https://github.com/r-lidar/lidR)<br>[ForestTools](https://github.com/andrew-plowright/ForestTools)<br>[Blender](https://github.com/blender/blender) |
 | 生态计数与分割 | 植株计数、树木计数、动物检测、树冠分割 | `ecology-counting-and-segmentation` | [DeepForest](https://github.com/weecology/DeepForest)<br>[detectree2](https://github.com/PatBall1/detectree2)<br>[TreeCountSegHeight](https://github.com/sizhuoli/TreeCountSegHeight)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
-| Behavioral ecology and pose tracking | movement, foraging, courtship, interaction video analysis, multi-animal tracking | `animal-behavior-and-pose-tracking` | [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)<br>[SLEAP](https://github.com/talmolab/sleap)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps) |
+| Behavioral ecology and movement analysis | movement, foraging, courtship, interaction video analysis, multi-animal tracking, telemetry and home ranges | `animal-behavior-and-pose-tracking`<br>`movement-ecology-and-telemetry-analysis` | [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)<br>[SLEAP](https://github.com/talmolab/sleap)<br>[PyTorch-Wildlife](https://github.com/microsoft/CameraTraps)<br>[ctmm](https://github.com/ctmm-initiative/ctmm)<br>[amt](https://github.com/jmsigner/amt)<br>[move2](https://gitlab.com/bartk/move2) |
 | 生态系统生物地球化学与土壤系统 | 碳、甲烷、养分循环、土壤健康、修复背景 | `ecosystem-biogeochemistry-workup`<br>`soil-health-and-nutrient-screen` | [weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server)<br>[eosc-data-commons](https://github.com/EOSC-Data-Commons/data-commons-mcp)<br>[dataverse](https://github.com/gdcc/mcp-dataverse)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
 | 环境化学与暴露 | 污染物、PFAS、微塑料、农药归趋、毒理交叉文献 | `environmental-chemistry-risk-scan`<br>`literature-multi-source-search` | [pubchem](https://github.com/Augmented-Nature/PubChem-MCP-Server)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[scientific-papers](https://github.com/benedict2310/Scientific-Papers-MCP)<br>[weather-open-meteo](https://github.com/cmer81/open-meteo-mcp)<br>[swiss-environment](https://github.com/malkreide/swiss-environment-mcp) |
-| 微生物生态与保育遗传 | 分类、marker、组装、直系同源、BLAST 工作流 | `microbial-ecology-sequence-workflow`<br>`amplicon-and-metabolic-reconstruction-workflow` | [ncbi-datasets](https://github.com/Augmented-Nature/NCBI-Datasets-MCP-Server)<br>[bio-blast](https://github.com/bio-mcp/bio-mcp-blast)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[mothur](https://github.com/mothur/mothur)<br>[VSEARCH](https://github.com/torognes/vsearch)<br>[CarveMe](https://github.com/cdanielmachado/carveme)<br>[PyCoMo](https://github.com/univieCUBE/PyCoMo) |
-| 生态声学 | 鸟声识别、被动声学筛查、批量音频回顾 | `ecoacoustics-screen` | [BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer) |
+| 微生物生态与保育遗传 | 分类、marker、组装、直系同源、BLAST、基因/文献交叉检索 | `microbial-ecology-sequence-workflow`<br>`amplicon-and-metabolic-reconstruction-workflow` | [ncbi-datasets](https://github.com/Augmented-Nature/NCBI-Datasets-MCP-Server)<br>[bio-blast](https://github.com/bio-mcp/bio-mcp-blast)<br>[BioMCP](https://github.com/yeyuan98/biomcp-ts)<br>[simple-pubmed](https://github.com/andybrandt/mcp-simple-pubmed)<br>[mothur](https://github.com/mothur/mothur)<br>[VSEARCH](https://github.com/torognes/vsearch)<br>[CarveMe](https://github.com/cdanielmachado/carveme)<br>[PyCoMo](https://github.com/univieCUBE/PyCoMo) |
+| 生态声学 | 鸟声识别、被动声学筛查、批量音频回顾、eBird 背景验证 | `ecoacoustics-screen`<br>`ecoacoustic-monitoring-and-bird-observation` | [BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer)<br>[OpenSoundscape](https://github.com/kitzeslab/opensoundscape)<br>[eBird MCP Server](https://github.com/moonbirdai/ebird-mcp-server) |
 | 保护与恢复 | 恢复预筛查、生态压力、场地背景 | `environmental-site-screen`<br>`ecology-evidence-synthesis` | [mapbox](https://github.com/mapbox/mcp-server)<br>[gis-mcp](https://github.com/mahdin75/gis-mcp)<br>[nasa](https://github.com/ProgramComputer/NASA-MCP-server) |
 | 开放数据与科研仓储 | 数据集发现、DOI 级数据记录、复现材料 | `research-data-repository-hunt`<br>`ecology-dataset-hunt` | [dataverse](https://github.com/gdcc/mcp-dataverse)<br>[eosc-data-commons](https://github.com/EOSC-Data-Commons/data-commons-mcp)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
 | 区域公共环境数据 | 区域环境监测和公开研究数据 | `swiss-environment-brief` | [swiss-environment](https://github.com/malkreide/swiss-environment-mcp)<br>[wsl-envidat](https://github.com/malkreide/wsl-envidat-mcp) |
@@ -257,7 +297,7 @@ This repository now also includes a basic ecology observation-tool layer:
 
 - native lightweight tools for taxa and observation lookup
 - native plant identification via Pl@ntNet
-- a catalog of heavier local toolkits for phenotyping, counting, segmentation, camera traps, and ecoacoustics
+- a catalog of heavier local toolkits for phenotyping, counting, segmentation, camera traps, ecoacoustics, SDM, movement ecology, open environmental data, and cloud-native raster analysis
 
 See [docs/ecology-basic-tools.md](docs/ecology-basic-tools.md) for the full function map.
 
@@ -278,6 +318,13 @@ It now also includes traditional ecological simulators and ABM systems such as
 It now also includes microscopy, plankton, and molecular-analysis toolkits such as
 `Fiji / ImageJ`, `PyImageJ`, `CellProfiler`, `napari`, `ilastik`,
 `EcoTaxa Python Client`, `PlanktoScope`, `QIIME 2 / Rachis Framework`, and `DADA2`.
+
+The latest expansion adds biodiversity and environmental-data tooling such as
+`pygbif`, `pyobis`, `eBird MCP Server`, `CoordinateCleaner`, `biomod2`,
+`ENMeval`, `maxnet`, `sdmTMB`, `dataretrieval-python`, `PyGeoHydro`,
+`SoilGrids API`, `OpenAQ Python Client`, `pystac-client`, `stackstac`,
+`odc-stac`, `geemap`, `leafmap`, `WhiteboxTools`, `exactextract`, `ctmm`,
+`amt`, `move2`, `BioMCP`, and `OpenAPI MCP Server`.
 
 You can inspect the new layer directly:
 
@@ -921,6 +968,7 @@ eh \
 - `MemoryRead`
 - `MemoryDelete`
 - `MemorySearch`
+- `MemoryHealth`
 - `MemoryReadTool`
 - `MemoryWriteTool`
 - `Skill`
@@ -961,7 +1009,7 @@ python3 -m ecology_harness sandbox
 ## Core Runtime Features
 
 - Memory:
-  user-level and project-level memory scopes, per-memory markdown files, automatic `MEMORY.md` regeneration, manifest scanning, freshness warnings, and prompt-aware relevance ranking.
+  user-level and project-level memory scopes, per-memory markdown files, automatic `MEMORY.md` regeneration, manifest scanning, freshness warnings, scored relevance ranking, and `MemoryHealth` governance reports.
 - Sessions and compaction:
   managed session snapshots with resume support, session titles, recaps, SQLite-backed indexing, compaction metadata, continuation summaries, and compressed long-context bridges.
 - Provider routing:

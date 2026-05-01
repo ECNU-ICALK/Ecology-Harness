@@ -1,7 +1,9 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
@@ -209,6 +211,31 @@ class McpRetrievalTests(unittest.TestCase):
             self.assertIn("Rewritten query:", result.content)
             self.assertIn("alpha-maps", result.content)
             self.assertTrue(result.data["hits"])
+
+    def test_builtin_ecology_mcp_search_finds_new_ecology_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            report = app.mcp_registry.search("bird observations hotspots ebird", limit=5)
+            hit_names = [item.server.name for item in report.hits]
+
+            self.assertIn("ebird", hit_names)
+
+            omics_report = app.mcp_registry.search("microbial omics gene article pathway evidence", limit=8)
+            omics_hit_names = [item.server.name for item in omics_report.hits]
+
+            self.assertIn("biomcp", omics_hit_names)
+
+    def test_stdio_args_expand_environment_placeholders(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+            server = app.mcp_registry.get_server("ebird")
+            self.assertIsNotNone(server)
+
+            with patch.dict(os.environ, {"EBIRD_API_KEY": "demo-ebird-key"}, clear=False):
+                _, args = app.mcp_registry._resolved_stdio_command_and_args(server)
+
+            self.assertIn("demo-ebird-key", args)
 
 
 if __name__ == "__main__":

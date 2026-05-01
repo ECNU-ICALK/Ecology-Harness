@@ -200,16 +200,26 @@ def _review_list(params: dict, context: ToolContext) -> ToolResult:
     payload = []
     lines = []
     for report in reports:
+        needs_review = sum(
+            1 for candidate in report.candidates if candidate.metadata.get("requires_review")
+        )
+        risk_count = sum(
+            len(candidate.metadata.get("risk_flags", []) or [])
+            for candidate in report.candidates
+        )
         row = {
             "review_id": report.review_id,
             "session_id": report.session_id,
             "created_at": report.created_at,
             "candidate_count": len(report.candidates),
+            "needs_review_count": needs_review,
+            "risk_flag_count": risk_count,
             "summary": report.summary,
         }
         payload.append(row)
         lines.append(
-            "%(review_id)s\t%(session_id)s\t%(candidate_count)s candidates\t%(summary)s" % row
+            "%(review_id)s\t%(session_id)s\t%(candidate_count)s candidates\t%(needs_review_count)s review\t%(risk_flag_count)s risks\t%(summary)s"
+            % row
         )
     return ToolResult(content="\n".join(lines), data={"reports": payload})
 

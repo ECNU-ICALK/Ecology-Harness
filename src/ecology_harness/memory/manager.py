@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import math
 from pathlib import Path
 import re
 
@@ -16,6 +17,26 @@ from ecology_harness.utils import atomic_write_text, dump_frontmatter, parse_fro
 
 
 INDEX_FILENAME = "MEMORY.md"
+_MEMORY_STOPWORDS = {
+    "and",
+    "are",
+    "for",
+    "from",
+    "into",
+    "read",
+    "that",
+    "the",
+    "this",
+    "tool",
+    "with",
+}
+_UNSAFE_MEMORY_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("prompt-injection", re.compile(r"ignore.{0,80}\binstructions\b", re.I)),
+    ("prompt-injection", re.compile(r"(system|developer)\s+prompt", re.I)),
+    ("credential-risk", re.compile(r"\b(api[_ -]?key|password|secret|token|ssh\s+key)\b", re.I)),
+    ("destructive-command", re.compile(r"\b(rm\s+-rf|git\s+reset\s+--hard|mkfs|dd\s+if=)\b", re.I)),
+    ("exfiltration-risk", re.compile(r"\b(curl|wget)\b.{0,80}\|\s*(sh|bash)", re.I)),
+)
 
 
 @dataclass
@@ -140,23 +161,109 @@ class MemoryManager:
         return items
 
     def search(self, query: str, scope: str = "all", max_results: int = 5) -> list[dict]:
-        needle = query.lower()
-        results = []
+        needle = query.strip().lower()
+        query_terms = _memory_terms(query)
+        if not needle and not query_terms:
+            return []
+        items = self.list_items(scope=scope)
+        if not items:
+            return []
+        document_terms = {
+            item.slug: set(
+                _memory_terms("\n".join([item.name, item.description, item.memory_type, item.content]))
+            )
+            for item in items
+        }
+        document_frequency: dict[str, int] = {}
+        for term in query_terms:
+            document_frequency[term] = sum(
+                1 for terms in document_terms.values() if term in terms
+            )
+        scored_results: list[tuple[float, float, dict]] = []
         header_index = {header.file_path: header for header in self.scan_all(scope)}
-        for item in self.list_items(scope=scope):
-            haystack = "\n".join(
-                [item.name, item.description, item.memory_type, item.content]
-            ).lower()
-            if needle not in haystack:
+        for item in items:
+            score, matched_terms = self._search_score(
+                item=item,
+                query=needle,
+                terms=query_terms,
+                document_frequency=document_frequency,
+                document_count=len(items),
+            )
+            if score <= 0:
                 continue
             header = header_index.get(item.file_path)
             result = item.to_index_dict()
             result["content"] = item.content
+            result["score"] = round(score, 4)
+            result["matched_terms"] = matched_terms
             result["freshness_text"] = (
                 memory_freshness_text(header.mtime_s) if header is not None else ""
             )
-            results.append(result)
-        return results[:max_results]
+            scored_results.append((score, self._timestamp_value(item.updated_at), result))
+        scored_results.sort(key=lambda row: (row[0], row[1]), reverse=True)
+        return [item for _, _, item in scored_results[:max_results]]
+
+    def health_report(
+        self,
+        scope: str = "all",
+        stale_days: int = 90,
+        large_chars: int = 4_000,
+        max_overlap_pairs: int = 8,
+    ) -> dict[str, object]:
+        items = self.list_items(scope=scope)
+        scope_counts = {"user": 0, "project": 0}
+        issues: list[dict[str, object]] = []
+        now_ts = datetime.utcnow().timestamp()
+        for item in items:
+            scope_counts[item.scope] = scope_counts.get(item.scope, 0) + 1
+            age_days = self._age_days(item.updated_at, now_ts)
+            if stale_days > 0 and age_days is not None and age_days > stale_days:
+                issues.append(
+                    _health_issue(
+                        issue_type="stale",
+                        severity="low",
+                        slug=item.slug,
+                        scope=item.scope,
+                        description="`%s` has not been updated for %s days." % (item.name, int(age_days)),
+                        suggestion="Review whether this memory is still accurate or archive it.",
+                        metadata={"age_days": int(age_days)},
+                    )
+                )
+            if large_chars > 0 and len(item.content) > large_chars:
+                issues.append(
+                    _health_issue(
+                        issue_type="large",
+                        severity="medium",
+                        slug=item.slug,
+                        scope=item.scope,
+                        description="`%s` is %s characters long." % (item.name, len(item.content)),
+                        suggestion="Compress this item into durable facts and move raw detail to a document.",
+                        metadata={"content_chars": len(item.content)},
+                    )
+                )
+            risk_flags = _memory_risk_flags("\n".join([item.name, item.description, item.content]))
+            if risk_flags:
+                issues.append(
+                    _health_issue(
+                        issue_type="instruction-risk",
+                        severity="high",
+                        slug=item.slug,
+                        scope=item.scope,
+                        description="`%s` contains risky instruction-like or credential-like text." % item.name,
+                        suggestion="Rewrite as neutral facts; do not store secrets or executable instructions in memory.",
+                        metadata={"risk_flags": risk_flags},
+                    )
+                )
+        issues.extend(self._overlap_issues(items, max_overlap_pairs=max_overlap_pairs))
+        recommendations = _memory_recommendations(issues)
+        return {
+            "scope": scope,
+            "item_count": len(items),
+            "scope_counts": scope_counts,
+            "issue_count": len(issues),
+            "issues": issues,
+            "recommendations": recommendations,
+        }
 
     def scan_all(self, scope: str = "all") -> list[MemoryHeader]:
         headers = []
@@ -308,11 +415,7 @@ class MemoryManager:
         query_text = self._build_query_text(query, conversation)
         if not query_text:
             return items[:max_items]
-        query_terms = [
-            term
-            for term in re.findall(r"[A-Za-z0-9_./-]{3,}", query_text.lower())
-            if term not in {"tool", "read", "write", "with", "from", "that", "this"}
-        ]
+        query_terms = _memory_terms(query_text)
         if not query_terms:
             return items[:max_items]
         scored = []
@@ -393,6 +496,92 @@ class MemoryManager:
             score += min(2.0, age_value / 10_000_000_000.0)
         return score
 
+    def _search_score(
+        self,
+        item: MemoryItem,
+        query: str,
+        terms: list[str],
+        document_frequency: dict[str, int],
+        document_count: int,
+    ) -> tuple[float, list[str]]:
+        haystacks = {
+            "name": item.name.lower(),
+            "description": item.description.lower(),
+            "content": item.content.lower(),
+            "type": item.memory_type.lower(),
+        }
+        score = 0.0
+        matched: list[str] = []
+        if query:
+            if query in haystacks["name"]:
+                score += 8.0
+            elif query in haystacks["description"]:
+                score += 5.0
+            elif query in haystacks["content"]:
+                score += 2.0
+        for term in terms:
+            term_score = 0.0
+            idf = 1.0 + math.log((document_count + 1) / (1 + document_frequency.get(term, 0)))
+            if term in haystacks["name"]:
+                term_score += 5.0 * idf
+            if term in haystacks["description"]:
+                term_score += 3.0 * idf
+            if term in haystacks["content"]:
+                term_score += 1.5 * idf
+            if term in haystacks["type"]:
+                term_score += 1.0 * idf
+            if term_score > 0:
+                matched.append(term)
+                score += term_score
+        if score > 0 and item.scope == "project":
+            score += 0.4
+        return score, list(dict.fromkeys(matched))
+
+    def _age_days(self, value: str, now_ts: float) -> float | None:
+        timestamp = self._timestamp_value(value)
+        if not timestamp:
+            return None
+        return max(0.0, (now_ts - timestamp) / 86_400)
+
+    def _overlap_issues(self, items: list[MemoryItem], max_overlap_pairs: int) -> list[dict[str, object]]:
+        if max_overlap_pairs <= 0 or len(items) < 2:
+            return []
+        term_index = {
+            item.slug: set(_memory_terms("\n".join([item.name, item.description, item.content])))
+            for item in items
+        }
+        scored: list[tuple[float, MemoryItem, MemoryItem]] = []
+        for left_index, left in enumerate(items):
+            left_terms = term_index.get(left.slug, set())
+            if len(left_terms) < 4:
+                continue
+            for right in items[left_index + 1 :]:
+                right_terms = term_index.get(right.slug, set())
+                if len(right_terms) < 4:
+                    continue
+                overlap = len(left_terms & right_terms) / max(1, min(len(left_terms), len(right_terms)))
+                if overlap >= 0.82:
+                    scored.append((overlap, left, right))
+        scored.sort(key=lambda row: row[0], reverse=True)
+        issues = []
+        for overlap, left, right in scored[:max_overlap_pairs]:
+            issues.append(
+                _health_issue(
+                    issue_type="overlap",
+                    severity="medium",
+                    slug=left.slug,
+                    scope=left.scope,
+                    description="`%s` and `%s` appear to cover nearly the same memory." % (left.name, right.name),
+                    suggestion="Merge these memories or archive the less useful one.",
+                    metadata={
+                        "other_slug": right.slug,
+                        "other_scope": right.scope,
+                        "similarity": round(overlap, 4),
+                    },
+                )
+            )
+        return issues
+
     def _timestamp_value(self, value: str) -> float:
         normalized = (value or "").strip()
         if not normalized:
@@ -408,6 +597,64 @@ def _excerpt(text: str, limit: int) -> str:
     if len(cleaned) <= limit:
         return cleaned
     return cleaned[: limit - 3] + "..."
+
+
+def _memory_terms(text: str) -> list[str]:
+    lowered = (text or "").lower()
+    raw_terms = re.findall(r"[a-z0-9_./-]{2,}|[\u4e00-\u9fff]{2,}", lowered)
+    terms = []
+    for term in raw_terms:
+        normalized = term.strip("-_./")
+        if len(normalized) < 2 or normalized in _MEMORY_STOPWORDS:
+            continue
+        terms.append(normalized)
+        if re.fullmatch(r"[\u4e00-\u9fff]+", normalized) and len(normalized) > 2:
+            terms.extend(normalized[index : index + 2] for index in range(len(normalized) - 1))
+    return list(dict.fromkeys(terms))
+
+
+def _memory_risk_flags(text: str) -> list[str]:
+    flags = []
+    for name, pattern in _UNSAFE_MEMORY_PATTERNS:
+        if pattern.search(text or ""):
+            flags.append(name)
+    return list(dict.fromkeys(flags))
+
+
+def _health_issue(
+    issue_type: str,
+    severity: str,
+    slug: str,
+    scope: str,
+    description: str,
+    suggestion: str,
+    metadata: dict[str, object] | None = None,
+) -> dict[str, object]:
+    return {
+        "type": issue_type,
+        "severity": severity,
+        "slug": slug,
+        "scope": scope,
+        "description": description,
+        "suggestion": suggestion,
+        "metadata": metadata or {},
+    }
+
+
+def _memory_recommendations(issues: list[dict[str, object]]) -> list[str]:
+    if not issues:
+        return ["Memory inventory is clean; keep using focused, durable memories."]
+    issue_types = {str(item.get("type", "")) for item in issues}
+    recommendations = []
+    if "instruction-risk" in issue_types:
+        recommendations.append("Review high-risk memories before injecting them into prompts.")
+    if "overlap" in issue_types:
+        recommendations.append("Consolidate overlapping memories so retrieval stays precise as the project grows.")
+    if "large" in issue_types:
+        recommendations.append("Compress large memories into short durable facts and link to raw artifacts.")
+    if "stale" in issue_types:
+        recommendations.append("Refresh or archive stale memories during the next project maintenance pass.")
+    return recommendations
 
 
 def _fit_blocks_to_budget(blocks: list[str], max_chars: int) -> str:

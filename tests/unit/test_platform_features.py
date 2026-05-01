@@ -271,6 +271,7 @@ class PlatformFeatureTests(unittest.TestCase):
             )
             self.assertIn("AGENTS.md", created.data["created"])
             self.assertTrue((root / "AGENTS.md").exists())
+            self.assertTrue((root / "MEMORY_GUIDE.md").exists())
             self.assertTrue((root / "HEARTBEAT.md").exists())
 
             report = app.registry.execute(
@@ -279,7 +280,7 @@ class PlatformFeatureTests(unittest.TestCase):
                 app.settings,
                 services=app.get_services(),
             )
-            self.assertEqual(report.data["bootstrap"]["present_count"], 4)
+            self.assertEqual(report.data["bootstrap"]["present_count"], 5)
             self.assertIn("workspace", report.content)
             self.assertIn("suggestions", report.data)
 

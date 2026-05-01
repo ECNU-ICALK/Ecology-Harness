@@ -86,6 +86,18 @@ agriculture, environment, and ecology pack for Ecology Harness.
     - gives the harness a clean entry point for annual crops, irrigation, woody plants, plant architecture, microbial dynamics, and calibration workflows
     - pairs naturally with the existing Jupyter, LabArchives, and unit-conversion MCP stack
 
+- biodiversity, SDM, ecoacoustics, movement, and forcing-data skills
+  - local skill set:
+    - `species-distribution-and-biodiversity-modeling`
+    - `ecoacoustic-monitoring-and-bird-observation`
+    - `movement-ecology-and-telemetry-analysis`
+    - `open-environmental-data-and-forcing-workflow`
+  - why selected:
+    - fills gaps between raw occurrence records, data-quality review, model-ready covariates, and distribution modeling
+    - connects passive acoustic monitoring with eBird observation context rather than treating classifiers as final evidence
+    - adds a practical movement-ecology path for GPS telemetry, Movebank-style data handling, home ranges, and step-selection workflows
+    - gives the harness a clearer forcing-data assembly path for hydrology, soil, air quality, STAC, and Earth-observation workflows
+
 ## Additional Toolkit Layer For Plant Types And Microbes
 
 - plant-type-specific additions
@@ -225,6 +237,63 @@ agriculture, environment, and ecology pack for Ecology Harness.
   - repo: https://github.com/zazencodes/unit-converter-mcp
   - rationale: compact but highly useful scientific conversion layer for temperature, pressure, density, power, and reactor-unit reconciliation
 
+- `ebird`
+  - repo: https://github.com/moonbirdai/ebird-mcp-server
+  - rationale: bird observations, notable records, hotspots, and eBird taxonomy are directly useful for avian monitoring, migration context, and ecoacoustic validation
+
+- `biomcp`
+  - repo: https://github.com/yeyuan98/biomcp-ts
+  - upstream lineage: https://github.com/genomoncology/biomcp
+  - rationale: useful federated gene, article, disease, and pathway search layer for microbial ecology, eDNA-adjacent genetics, and omics follow-up
+
+- `openapi-environment-adapter`
+  - repo: https://github.com/ivo-toby/mcp-openapi-server
+  - rationale: generic adapter that can expose environmental OpenAPI services such as USGS, OpenAQ, OBIS, SoilGrids, or project-specific monitoring APIs without writing a dedicated MCP server for each one
+
+## Expanded Toolkit Layer For Biodiversity, Movement, And Environmental APIs
+
+- occurrence, biodiversity, and SDM additions
+  - `pygbif`
+  - `pyobis`
+  - `CoordinateCleaner`
+  - `biomod2`
+  - `ENMeval`
+  - `maxnet`
+  - `sdmTMB`
+  - why selected:
+    - improves the path from occurrence retrieval to quality control, niche modeling, ensemble SDM, and spatiotemporal distribution workflows
+    - adds marine biodiversity through OBIS and bird-specific observation context through eBird
+
+- ecoacoustics and bird-observation additions
+  - `OpenSoundscape`
+  - `eBird MCP Server`
+  - why selected:
+    - complements BirdNET with trainable Python acoustic workflows
+    - connects audio detections to regional bird observations and hotspot context
+
+- hydrology, soil, air-quality, and remote-sensing additions
+  - `dataretrieval-python`
+  - `PyGeoHydro`
+  - `soilDB`
+  - `SoilGrids API`
+  - `OpenAQ Python Client`
+  - `pystac-client`
+  - `stackstac`
+  - `odc-stac`
+  - `geemap`
+  - `leafmap`
+  - `WhiteboxTools`
+  - `exactextract`
+  - why selected:
+    - makes model forcing and covariate assembly more complete across streamflow, water quality, soils, air quality, STAC catalogs, GEE, terrain, and zonal statistics
+
+- movement ecology additions
+  - `ctmm`
+  - `amt`
+  - `move2`
+  - why selected:
+    - covers movement data ingestion, autocorrelation-aware home ranges, and step-selection or habitat-selection workflows
+
 ## Candidate Backlog
 
 These looked promising during the expanded search but were not installed as
@@ -253,8 +322,10 @@ default catalog entries yet:
 
 ## Notes
 
-- In the current Ecology Harness build, remote MCP transports are cataloged and
-  discoverable, but only in-process MCP servers execute end-to-end.
+- In the current Ecology Harness build, in-process and reachable stdio MCP
+  servers can execute through the runtime adapter. HTTP/SSE-style remote
+  transports are still cataloged for discovery unless a dedicated adapter is
+  added.
 - The catalog is still worth installing now because it lets the harness expose a
   stable ecology source inventory and keeps later transport support
   configuration-compatible.

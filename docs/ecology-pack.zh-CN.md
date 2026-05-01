@@ -85,6 +85,18 @@
     - 能把一年生作物、灌溉、水分平衡、木本植被、植物结构模型、微生物动力学和参数拟合放进统一入口
     - 与现有 `jupyter-mcp`、`labarchives`、`unit-converter` 组合很自然
 
+- 生物多样性、SDM、生态声学、运动生态与 forcing 数据 skills
+  - 本地 skill 集：
+    - `species-distribution-and-biodiversity-modeling`
+    - `ecoacoustic-monitoring-and-bird-observation`
+    - `movement-ecology-and-telemetry-analysis`
+    - `open-environmental-data-and-forcing-workflow`
+  - 选择原因：
+    - 把 occurrence 获取、数据质控、环境 covariates 和 SDM / 生态位建模串起来
+    - 让被动声学监测不只停在分类器输出，而是能结合 eBird 背景验证
+    - 补上 GPS 遥测、Movebank 风格数据、home range 和 step-selection 的运动生态路径
+    - 给水文、土壤、空气质量、STAC 和 Earth observation 数据组装提供统一入口
+
 ## 植物类型与微生物模拟补充工具层
 
 - 按植物类型补充的工具
@@ -199,6 +211,63 @@
 - `unit-converter`
   - 仓库：https://github.com/zazencodes/unit-converter-mcp
 
+- `ebird`
+  - 仓库：https://github.com/moonbirdai/ebird-mcp-server
+  - 原因：鸟类 recent observations、notable records、hotspots 和 taxonomy 对鸟类监测、迁徙背景和生态声学验证很有价值
+
+- `biomcp`
+  - 仓库：https://github.com/yeyuan98/biomcp-ts
+  - 上游来源：https://github.com/genomoncology/biomcp
+  - 原因：对微生物生态、eDNA 邻近工作流、omics 后续分析中的基因、文献、疾病和 pathway 检索有帮助
+
+- `openapi-environment-adapter`
+  - 仓库：https://github.com/ivo-toby/mcp-openapi-server
+  - 原因：可把 USGS、OpenAQ、OBIS、SoilGrids 或项目自有环境监测 API 这类 OpenAPI 服务统一暴露成 MCP，而不必每个 API 都写一个专用 server
+
+## 生物多样性、运动生态与环境 API 工具层扩展
+
+- occurrence、生物多样性与 SDM 工具
+  - `pygbif`
+  - `pyobis`
+  - `CoordinateCleaner`
+  - `biomod2`
+  - `ENMeval`
+  - `maxnet`
+  - `sdmTMB`
+  - 选择原因：
+    - 把 occurrence 获取、坐标/分类质控、生态位建模、ensemble SDM 和时空分布模型连成完整路径
+    - 通过 OBIS 补上海洋生物多样性，通过 eBird 补上鸟类观测背景
+
+- 生态声学与鸟类观测工具
+  - `OpenSoundscape`
+  - `eBird MCP Server`
+  - 选择原因：
+    - 用可训练的 Python 声学工作流补充 BirdNET
+    - 把音频检测结果和区域鸟类观测、hotspot 背景连起来
+
+- 水文、土壤、空气质量与遥感工具
+  - `dataretrieval-python`
+  - `PyGeoHydro`
+  - `soilDB`
+  - `SoilGrids API`
+  - `OpenAQ Python Client`
+  - `pystac-client`
+  - `stackstac`
+  - `odc-stac`
+  - `geemap`
+  - `leafmap`
+  - `WhiteboxTools`
+  - `exactextract`
+  - 选择原因：
+    - 补齐模型 forcing 和 covariates 组装中的流量、水质、土壤、空气质量、STAC、GEE、地形与分区统计能力
+
+- 运动生态工具
+  - `ctmm`
+  - `amt`
+  - `move2`
+  - 选择原因：
+    - 覆盖移动数据导入、自相关感知 home range、step-selection 和 habitat-selection 工作流
+
 ## 候选扩展
 
 下面这些来源也很值得后续继续接入，但这次没有默认装成目录项：
@@ -226,6 +295,6 @@
 
 ## 说明
 
-- 当前 Ecology Harness 版本已经能把这些远端 MCP server 作为生态目录项发现出来，但真正的远端 transport 执行能力还没有完全接通。
+- 当前 Ecology Harness 已经能执行 in-process 和可达的 stdio MCP server；HTTP/SSE 这类远端 transport 仍以目录发现为主，除非后续补专用 adapter。
 - 先把目录和配置装进仓库是有意义的，因为后续 transport 层补上之后，可以直接沿用这批生态配置，不需要再重做一遍。
 - 这一轮优先接入的是“维护状态较好、科研工作流价值明确”的来源，没有为了数量去默认收录明显偏弱或偏陈旧的实现。

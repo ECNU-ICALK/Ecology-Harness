@@ -144,6 +144,39 @@
           "description": "Inspect file-level metadata for a selected dataset."
         }
       ]
+    },
+    {
+      "name": "openapi-environment-adapter",
+      "transport": "stdio",
+      "description": "Generic OpenAPI MCP adapter for exposing environmental REST APIs, such as USGS, OpenAQ, OBIS, SoilGrids, or project-specific monitoring APIs, as MCP tools.",
+      "default_enabled": false,
+      "auth": "api-dependent",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@ivotoby/openapi-mcp-server",
+        "--tools",
+        "dynamic"
+      ],
+      "env": {
+        "API_BASE_URL": "<target-api-base-url>",
+        "OPENAPI_SPEC_PATH": "<openapi-json-or-yaml-url-or-path>",
+        "API_HEADERS": "<optional-comma-separated-header-pairs>"
+      },
+      "tools": [
+        {
+          "name": "list-api-endpoints",
+          "description": "List endpoints discovered from the target OpenAPI specification when the adapter runs in dynamic mode."
+        },
+        {
+          "name": "get-api-endpoint-schema",
+          "description": "Inspect the input schema for a selected OpenAPI endpoint."
+        },
+        {
+          "name": "invoke-api-endpoint",
+          "description": "Invoke a selected OpenAPI endpoint with validated arguments."
+        }
+      ]
     }
   ]
 }

@@ -17,7 +17,10 @@
 | 相机陷阱工作流 | 空图过滤、动物检测、检测后分类 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `PyTorch-Wildlife` |
 | 动物行为与姿态跟踪 | 运动轨迹、觅食、求偶、多动物互动、无标记跟踪 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `DeepLabCut`、`SLEAP`、`PyTorch-Wildlife` |
 | 生态三维重建与点云 | 无人机摄影测量、近景测量级摄影测量、LiDAR 预处理与模拟、单木 QSM、生境网格、浏览器与地理三维发布 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit`、`ListMcpServersTool` | `OpenDroneMap`、`WebODM`、`Meshroom`、`COLMAP`、`MicMac`、`PDAL`、`HELIOS++`、`CloudCompare`、`Open3D`、`TreeQSM`、`SimpleForest`、`PyVista`、`ParaView`、`Potree`、`CesiumJS`、`lidR`、`ForestTools`、`Blender`、`blender-mcp`、`qgis-mcp` |
-| 生态声学 | 鸟声识别、批量音频筛查 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `BirdNET-Analyzer` |
+| 生态声学 | 鸟声识别、批量音频筛查、eBird 背景验证 | `ListEcologyToolkits`、`DescribeEcologyToolkit` | `BirdNET-Analyzer`、`OpenSoundscape`、`eBird MCP Server` |
+| 物种分布与生物多样性建模 | occurrence 质控、海洋和鸟类观测、SDM、Maxent 调参、时空分布模型 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit`、`McpSearchTool` | `pygbif`、`pyobis`、`eBird MCP Server`、`CoordinateCleaner`、`biomod2`、`ENMeval`、`maxnet`、`sdmTMB` |
+| 运动生态与遥测 | Movebank 风格导入、轨迹清理、home range、step-selection、迁徙廊道 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `move2`、`ctmm`、`amt` |
+| 开放环境数据与 forcing | USGS 流量、水质、土壤、空气质量、STAC/GEE covariates、地形和分区统计 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit`、`McpSearchTool` | `dataretrieval-python`、`PyGeoHydro`、`soilDB`、`SoilGrids API`、`OpenAQ Python Client`、`pystac-client`、`stackstac`、`odc-stac`、`geemap`、`leafmap`、`WhiteboxTools`、`exactextract`、`OpenAPI MCP Server` |
 | 封闭藻类系统与光生物反应器 | 封闭反应器设计、pH/CO2 控制、污染排查、生长曲线、物质平衡 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`LabArchives MCP Server`、`unit-converter-mcp`、`PyLabRobot`、`Opentrons` |
 | 实验协议、自动化与 notebook 工作流 | SOP 草拟、实验记录、时序 notebook、液体处理、单位统一 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`LabArchives MCP Server`、`unit-converter-mcp`、`PyLabRobot`、`Opentrons` |
 | 水体微宇宙、浮游生物与生物膜 | 摄食微宇宙、附着生物膜、上下层分区、群落变化 | `ListEcologyFunctions`、`ListEcologyToolkits`、`DescribeEcologyToolkit` | `Jupyter MCP Server`、`InfluxDB 3 MCP Server`、`Fiji / ImageJ`、`CellProfiler`、`napari`、`ilastik`、`EcoTaxa Python Client`、`PlanktoScope`、`MorphoCut`、`GLM`、`glm-py`、`FABM` |
@@ -220,6 +223,84 @@
 - `BirdNET-Analyzer`
   - 来源：[birdnet-team/BirdNET-Analyzer](https://github.com/birdnet-team/BirdNET-Analyzer)
   - 作用：鸟声识别和批量生态声学处理。
+- `OpenSoundscape`
+  - 来源：[kitzeslab/opensoundscape](https://github.com/kitzeslab/opensoundscape)
+  - 作用：补充 BirdNET，适合可训练的 Python 生态声学工作流。
+- `eBird MCP Server`
+  - 来源：[moonbirdai/ebird-mcp-server](https://github.com/moonbirdai/ebird-mcp-server)
+  - 作用：提供鸟类 recent observations、hotspots、notable records 和 taxonomy 背景。
+- `pygbif`
+  - 来源：[gbif/pygbif](https://github.com/gbif/pygbif)
+  - 作用：Python 原生 GBIF occurrence 和 taxonomy 工作流。
+- `pyobis`
+  - 来源：[iobis/pyobis](https://github.com/iobis/pyobis)
+  - 作用：通过 OBIS 获取海洋生物多样性 occurrence。
+- `CoordinateCleaner`
+  - 来源：[ropensci/CoordinateCleaner](https://github.com/ropensci/CoordinateCleaner)
+  - 作用：做 SDM 前的 occurrence 坐标质控。
+- `biomod2`
+  - 来源：[biomodhub/biomod2](https://github.com/biomodhub/biomod2)
+  - 作用：成熟的 ensemble species distribution modeling 工作流。
+- `ENMeval`
+  - 来源：[jamiemkass/ENMeval](https://github.com/jamiemkass/ENMeval)
+  - 作用：Maxent 风格生态位模型调参和评估。
+- `maxnet`
+  - 来源：[mrmaxent/maxnet](https://github.com/mrmaxent/maxnet)
+  - 作用：轻量 Maxent 风格 R 建模。
+- `sdmTMB`
+  - 来源：[pbs-assess/sdmTMB](https://github.com/pbs-assess/sdmTMB)
+  - 作用：适合丰度、生物量和分布的空间/时空模型。
+- `dataretrieval-python`
+  - 来源：[DOI-USGS/dataretrieval-python](https://github.com/DOI-USGS/dataretrieval-python)
+  - 作用：USGS 和 Water Quality Portal 数据获取。
+- `PyGeoHydro`
+  - 来源：[hyriver/pygeohydro](https://github.com/hyriver/pygeohydro)
+  - 作用：流域、水文和 hydrography web-service 访问。
+- `soilDB`
+  - 来源：[ncss-tech/soilDB](https://github.com/ncss-tech/soilDB)
+  - 作用：土壤调查和剖面数据。
+- `SoilGrids API`
+  - 来源：[SoilGrids](https://soilgrids.org/)
+  - 作用：全球土壤 covariates。
+- `OpenAQ Python Client`
+  - 来源：[openaq/openaq-python](https://github.com/openaq/openaq-python)
+  - 作用：空气质量观测和暴露背景。
+- `pystac-client`
+  - 来源：[stac-utils/pystac-client](https://github.com/stac-utils/pystac-client)
+  - 作用：Python STAC catalog 检索。
+- `stackstac`
+  - 来源：[gjoseph92/stackstac](https://github.com/gjoseph92/stackstac)
+  - 作用：把 STAC item 加载成 xarray。
+- `odc-stac`
+  - 来源：[opendatacube/odc-stac](https://github.com/opendatacube/odc-stac)
+  - 作用：Open Data Cube 风格的 STAC/xarray 工作流。
+- `geemap`
+  - 来源：[gee-community/geemap](https://github.com/gee-community/geemap)
+  - 作用：Google Earth Engine Python 分析与可视化。
+- `leafmap`
+  - 来源：[opengeos/leafmap](https://github.com/opengeos/leafmap)
+  - 作用：交互式地图、STAC 浏览和空间质控。
+- `WhiteboxTools`
+  - 来源：[jblindsay/whitebox-tools](https://github.com/jblindsay/whitebox-tools)
+  - 作用：地形、水文和栅格特征工程。
+- `exactextract`
+  - 来源：[isciences/exactextract](https://github.com/isciences/exactextract)
+  - 作用：快速分区统计，把栅格转成模型 covariates。
+- `ctmm`
+  - 来源：[ctmm-initiative/ctmm](https://github.com/ctmm-initiative/ctmm)
+  - 作用：自相关感知的运动模型和 home range。
+- `amt`
+  - 来源：[jmsigner/amt](https://github.com/jmsigner/amt)
+  - 作用：step-selection、轨迹预处理和 habitat-selection。
+- `move2`
+  - 来源：[BartK/move2](https://gitlab.com/bartk/move2)
+  - 作用：运动数据处理和 Movebank 风格工作流。
+- `BioMCP`
+  - 来源：[yeyuan98/biomcp-ts](https://github.com/yeyuan98/biomcp-ts)
+  - 作用：omics 后续分析中的基因、文献、疾病和 pathway 联合检索。
+- `OpenAPI MCP Server`
+  - 来源：[ivo-toby/mcp-openapi-server](https://github.com/ivo-toby/mcp-openapi-server)
+  - 作用：把环境类 OpenAPI 服务暴露成 MCP 工具。
 - `Jupyter MCP Server`
   - 来源：[datalayer/jupyter-mcp-server](https://github.com/datalayer/jupyter-mcp-server)
   - 作用：当前最强的一类 notebook 原生 MCP，可直接做交互分析、cell 执行和可复现实验记录。

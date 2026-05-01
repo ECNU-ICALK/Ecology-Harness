@@ -224,6 +224,71 @@
           "description": "Retrieve literature references connected to a compound."
         }
       ]
+    },
+    {
+      "name": "biomcp",
+      "transport": "stdio",
+      "description": "BioMCP TypeScript server for federated biomedical search across genes, variants, drugs, diseases, articles, trials, and pathway resources; useful for microbial ecology, eDNA-adjacent genetics, and omics evidence follow-up.",
+      "default_enabled": false,
+      "auth": "optional-api-keys",
+      "command": "npx",
+      "args": [
+        "-y",
+        "biomcp"
+      ],
+      "env": {
+        "NCBI_API_KEY": "<optional-higher-rate-limit>",
+        "S2_API_KEY": "<optional-semantic-scholar-key>",
+        "OPENFDA_API_KEY": "<optional-openfda-key>",
+        "DISGENET_API_KEY": "<optional-disgenet-key>",
+        "UMLS_API_KEY": "<optional-umls-key>"
+      },
+      "tools": [
+        {
+          "name": "gene_search",
+          "description": "Search genes by symbol, name, keyword, type, or chromosome filters."
+        },
+        {
+          "name": "gene_get",
+          "description": "Get detailed gene information with optional pathway, protein, GO, expression, interaction, and disease sections."
+        },
+        {
+          "name": "gene_enrich",
+          "description": "Run pathway enrichment analysis for a gene list."
+        },
+        {
+          "name": "variant_search",
+          "description": "Search variants by rsid, HGVS, gene, clinical significance, frequency, or prediction filters."
+        },
+        {
+          "name": "drug_search",
+          "description": "Search drugs by name, mechanism, or keyword."
+        },
+        {
+          "name": "disease_search",
+          "description": "Search diseases by name, phenotype, or keyword."
+        },
+        {
+          "name": "article_search",
+          "description": "Run federated article search across PubMed, Europe PMC, Semantic Scholar, PubTator, and LitSense."
+        },
+        {
+          "name": "article_get",
+          "description": "Get detailed article information by PMID with optional open-access, annotation, and citation graph sections."
+        },
+        {
+          "name": "trial_search",
+          "description": "Search clinical trials by condition, intervention, status, or phase."
+        },
+        {
+          "name": "discover",
+          "description": "Resolve a free-text biomedical concept across supported entity types."
+        },
+        {
+          "name": "batch_get",
+          "description": "Retrieve multiple BioMCP entities in parallel."
+        }
+      ]
     }
   ]
 }

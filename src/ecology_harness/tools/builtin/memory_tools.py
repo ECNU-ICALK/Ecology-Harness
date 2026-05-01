@@ -75,7 +75,7 @@ def register_memory_tools(registry: ToolRegistry) -> None:
     registry.register(
         ToolDefinition(
             name="MemorySearch",
-            description="Search memory items by substring.",
+            description="Search memory items with lightweight relevance scoring.",
             input_schema={
                 "type": "object",
                 "properties": {
@@ -86,6 +86,24 @@ def register_memory_tools(registry: ToolRegistry) -> None:
                 "required": ["query"],
             },
             handler=_memory_search,
+            read_only=True,
+            concurrent_safe=True,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="MemoryHealth",
+            description="Inspect persistent memory for stale, large, overlapping, or unsafe entries.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "scope": {"type": "string"},
+                    "stale_days": {"type": "integer"},
+                    "large_chars": {"type": "integer"},
+                    "max_overlap_pairs": {"type": "integer"},
+                },
+            },
+            handler=_memory_health,
             read_only=True,
             concurrent_safe=True,
         )
@@ -155,6 +173,8 @@ def _memory_search(params: dict, context: ToolContext) -> ToolResult:
     lines = []
     for item in items:
         freshness = item.get("freshness_text", "")
+        matched_terms = item.get("matched_terms", [])
+        score = item.get("score", 0)
         block = "[%(type)s/%(scope)s] %(name)s\n  %(description)s\n  %(content)s" % {
             "type": item.get("type", "project"),
             "scope": item.get("scope", "project"),
@@ -162,7 +182,45 @@ def _memory_search(params: dict, context: ToolContext) -> ToolResult:
             "description": item.get("description", ""),
             "content": item.get("content", "")[:200] + ("..." if len(item.get("content", "")) > 200 else ""),
         }
+        block += "\n  score=%s matched=%s" % (
+            score,
+            ", ".join(matched_terms) if matched_terms else "exact",
+        )
         if freshness:
             block += "\n  %s" % freshness
         lines.append(block)
     return ToolResult(content="\n".join(lines), data={"items": items})
+
+
+def _memory_health(params: dict, context: ToolContext) -> ToolResult:
+    report = _manager(context).health_report(
+        scope=params.get("scope", "all"),
+        stale_days=int(params.get("stale_days", 90)),
+        large_chars=int(params.get("large_chars", 4_000)),
+        max_overlap_pairs=int(params.get("max_overlap_pairs", 8)),
+    )
+    issues = report.get("issues", [])
+    if not issues:
+        return ToolResult(
+            content="Memory health OK: %s item(s), no issues found." % report.get("item_count", 0),
+            data=report,
+        )
+    lines = [
+        "Memory health: %s issue(s) across %s item(s)."
+        % (report.get("issue_count", len(issues)), report.get("item_count", 0))
+    ]
+    for issue in issues[:12]:
+        lines.append(
+            "- [%s] %s/%s: %s Suggestion: %s"
+            % (
+                issue.get("severity", "info"),
+                issue.get("scope", "project"),
+                issue.get("slug", ""),
+                issue.get("description", ""),
+                issue.get("suggestion", ""),
+            )
+        )
+    recommendations = report.get("recommendations", [])
+    if recommendations:
+        lines.append("Recommendations: %s" % " ".join(str(item) for item in recommendations))
+    return ToolResult(content="\n".join(lines), data=report)

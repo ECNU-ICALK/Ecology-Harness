@@ -57,6 +57,10 @@ class EcologyToolTests(unittest.TestCase):
             self.assertIn("Microbial amplicon, taxonomy, and metabolic reconstruction", result.content)
             self.assertIn("Animal behavior and pose tracking", result.content)
             self.assertIn("Ecological 3D reconstruction, point clouds, and habitat visualization", result.content)
+            self.assertIn("Species distribution, biodiversity, and occurrence-data modeling", result.content)
+            self.assertIn("Movement ecology and telemetry analysis", result.content)
+            self.assertIn("Open environmental data, hydrology, soil, and exposure APIs", result.content)
+            self.assertIn("Earth-observation catalog and raster analytics", result.content)
 
     def test_list_ecology_toolkits_filters_by_modality(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -211,6 +215,50 @@ class EcologyToolTests(unittest.TestCase):
 
             self.assertIn("deeplabcut", result.content)
             self.assertIn("sleap", result.content)
+
+    def test_list_ecology_toolkits_can_find_species_distribution_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "species distribution model"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("biomod2", result.content)
+            self.assertIn("enmeval", result.content)
+            self.assertIn("maxnet", result.content)
+
+    def test_list_ecology_toolkits_expands_chinese_environmental_query(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "玉米干旱灌溉模拟需要土壤和水文数据"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("dataretrieval-python", result.content)
+            self.assertIn("soilgrids-api", result.content)
+
+    def test_list_ecology_toolkits_can_find_movement_stack(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app = self._make_app(Path(tmpdir))
+
+            result = app.registry.execute(
+                "ListEcologyToolkits",
+                {"query": "movement telemetry home range"},
+                app.settings,
+                services=app.get_services(),
+            )
+
+            self.assertIn("ctmm", result.content)
+            self.assertIn("amt", result.content)
+            self.assertIn("move2", result.content)
 
     def test_list_ecology_toolkits_can_find_point_cloud_stack(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

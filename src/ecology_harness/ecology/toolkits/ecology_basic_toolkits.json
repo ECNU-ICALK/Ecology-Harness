@@ -320,6 +320,70 @@
       ]
     },
     {
+      "category": "Species distribution, biodiversity, and occurrence-data modeling",
+      "capabilities": [
+        "species occurrence retrieval from GBIF, OBIS, iNaturalist, and eBird-like sources",
+        "coordinate and taxonomic quality-control workflows",
+        "sampling-bias and thinning checks before modeling",
+        "species distribution and ecological niche model setup",
+        "Maxent-style model evaluation and tuning",
+        "spatiotemporal distribution modeling for abundance or biomass"
+      ],
+      "examples": [
+        "build a species distribution modeling workflow from occurrence records",
+        "screen GBIF or OBIS records for coordinate quality before niche modeling",
+        "compare habitat-suitability scenarios for a target taxon"
+      ]
+    },
+    {
+      "category": "Movement ecology and telemetry analysis",
+      "capabilities": [
+        "animal movement data cleaning and track import",
+        "home-range and utilization-distribution estimation",
+        "step-selection and movement-model workflows",
+        "Movebank-oriented telemetry data handling",
+        "migration and dispersal trajectory analysis",
+        "movement-informed habitat or conservation screening"
+      ],
+      "examples": [
+        "estimate a home range from GPS collar data",
+        "prepare movement tracks for step-selection analysis",
+        "summarize migration corridors from animal telemetry"
+      ]
+    },
+    {
+      "category": "Open environmental data, hydrology, soil, and exposure APIs",
+      "capabilities": [
+        "USGS water-data and streamflow retrieval",
+        "watershed, NHD, and hydrography data access",
+        "soil profile, SoilGrids, and pedon data lookup",
+        "air-quality and pollutant exposure data retrieval",
+        "OpenAPI-to-MCP wrapping for environmental REST APIs",
+        "forcing-data assembly for ecological models"
+      ],
+      "examples": [
+        "retrieve USGS streamflow for a watershed model forcing file",
+        "combine SoilGrids and weather inputs for crop or habitat screening",
+        "wrap an environmental OpenAPI endpoint as an MCP server"
+      ]
+    },
+    {
+      "category": "Earth-observation catalog and raster analytics",
+      "capabilities": [
+        "STAC catalog and asset discovery",
+        "cloud-native raster loading into xarray workflows",
+        "Google Earth Engine and interactive map analysis",
+        "zonal statistics and raster summarization",
+        "terrain, hydrology, and geospatial processing utilities",
+        "remote-sensing feature extraction for ecological modeling"
+      ],
+      "examples": [
+        "find Sentinel or Landsat scenes for a habitat-modeling study",
+        "compute zonal NDVI summaries for occurrence buffers",
+        "prepare remote-sensing covariates for species distribution modeling"
+      ]
+    },
+    {
       "category": "Closed algal systems and photobioreactors",
       "capabilities": [
         "sealed reactor design and light-path planning",
@@ -2590,6 +2654,535 @@
         "video labeling"
       ],
       "notes": "Especially useful when ecology experiments involve multiple interacting animals in the same frame."
+    },
+    {
+      "slug": "pygbif",
+      "name": "pygbif",
+      "status": "cataloged-external",
+      "modality": "biodiversity-observation-api",
+      "repo": "https://github.com/gbif/pygbif",
+      "install": "pip install pygbif",
+      "summary": "Python client for GBIF taxon, occurrence, dataset, and download workflows.",
+      "good_for": [
+        "GBIF occurrence retrieval",
+        "taxon matching",
+        "dataset discovery",
+        "species distribution modeling inputs"
+      ],
+      "capabilities": [
+        "occurrence search",
+        "taxon lookup",
+        "dataset metadata",
+        "download request support"
+      ],
+      "notes": "Complements the GBIF MCP catalog entry with a Python-native workflow for notebooks and batch preprocessing."
+    },
+    {
+      "slug": "pyobis",
+      "name": "pyobis",
+      "status": "cataloged-external",
+      "modality": "marine-biodiversity-api",
+      "repo": "https://github.com/iobis/pyobis",
+      "install": "pip install pyobis",
+      "summary": "Python client for the Ocean Biodiversity Information System API.",
+      "good_for": [
+        "marine species occurrences",
+        "OBIS dataset discovery",
+        "coastal and ocean biodiversity screening",
+        "marine species distribution model inputs"
+      ],
+      "capabilities": [
+        "marine occurrence search",
+        "taxon lookup",
+        "dataset metadata",
+        "spatial filtering"
+      ],
+      "notes": "Adds a marine-biodiversity source that is distinct from GBIF and useful for coastal, ocean, and blue-carbon studies."
+    },
+    {
+      "slug": "ebird-mcp-server",
+      "name": "eBird MCP Server",
+      "status": "cataloged-mcp",
+      "modality": "bird-observation-mcp",
+      "repo": "https://github.com/moonbirdai/ebird-mcp-server",
+      "install": "npm install -g ebird-mcp-server and configure an eBird API key, or run through an MCP client with npx ebird-mcp-server --api-key <key>.",
+      "summary": "MCP server for eBird recent observations, notable observations, nearby observations, hotspots, and taxonomy.",
+      "good_for": [
+        "bird occurrence screening",
+        "hotspot discovery",
+        "regional bird community context",
+        "ecoacoustic detection validation"
+      ],
+      "capabilities": [
+        "recent observations",
+        "species-specific observations",
+        "nearby observations",
+        "hotspots",
+        "taxonomy"
+      ],
+      "notes": "Requires an eBird API key from Cornell Lab/eBird."
+    },
+    {
+      "slug": "coordinatecleaner",
+      "name": "CoordinateCleaner",
+      "status": "cataloged-external",
+      "modality": "occurrence-quality-control",
+      "repo": "https://github.com/ropensci/CoordinateCleaner",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for automated flagging and cleaning of common coordinate problems in biological occurrence data.",
+      "good_for": [
+        "GBIF coordinate QA",
+        "museum and herbarium record cleanup",
+        "species distribution model preprocessing",
+        "spatial outlier review"
+      ],
+      "capabilities": [
+        "coordinate validation",
+        "spatial flagging",
+        "institution-coordinate checks",
+        "occurrence data QA"
+      ],
+      "notes": "Important guardrail before building SDMs from heterogeneous occurrence records."
+    },
+    {
+      "slug": "biomod2",
+      "name": "biomod2",
+      "status": "cataloged-external",
+      "modality": "species-distribution-modeling",
+      "repo": "https://github.com/biomodhub/biomod2",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R framework for species distribution modeling, ensemble modeling, projections, and evaluation.",
+      "good_for": [
+        "ensemble species distribution models",
+        "habitat suitability mapping",
+        "climate scenario projections",
+        "model comparison"
+      ],
+      "capabilities": [
+        "SDM fitting",
+        "ensemble modeling",
+        "projection",
+        "evaluation"
+      ],
+      "notes": "A strong default for multi-algorithm SDM workflows rather than one-off Maxent runs."
+    },
+    {
+      "slug": "enmeval",
+      "name": "ENMeval",
+      "status": "cataloged-external",
+      "modality": "species-distribution-modeling",
+      "repo": "https://github.com/jamiemkass/ENMeval",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for ecological niche model tuning and evaluation, especially Maxent-style workflows.",
+      "good_for": [
+        "Maxent parameter tuning",
+        "ecological niche model evaluation",
+        "spatially structured validation",
+        "model-selection reporting"
+      ],
+      "capabilities": [
+        "niche model evaluation",
+        "regularization tuning",
+        "feature-class tuning",
+        "validation partitioning"
+      ],
+      "notes": "Useful when the task is not just fitting an SDM but defending model settings and validation design."
+    },
+    {
+      "slug": "maxnet",
+      "name": "maxnet",
+      "status": "cataloged-external",
+      "modality": "species-distribution-modeling",
+      "repo": "https://github.com/mrmaxent/maxnet",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R implementation of Maxent-style species distribution modeling using glmnet.",
+      "good_for": [
+        "Maxent-style SDM",
+        "presence-background modeling",
+        "niche modeling prototypes",
+        "lightweight R workflows"
+      ],
+      "capabilities": [
+        "maximum entropy modeling",
+        "feature classes",
+        "regularization",
+        "habitat suitability prediction"
+      ],
+      "notes": "Good lightweight option when a full ensemble workflow is unnecessary."
+    },
+    {
+      "slug": "sdmtmb",
+      "name": "sdmTMB",
+      "status": "cataloged-external",
+      "modality": "spatiotemporal-ecology-modeling",
+      "repo": "https://github.com/pbs-assess/sdmTMB",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for spatial and spatiotemporal GLMMs with applications to species distribution, abundance, and biomass.",
+      "good_for": [
+        "spatiotemporal distribution models",
+        "abundance or biomass mapping",
+        "survey index standardization",
+        "ecological change detection"
+      ],
+      "capabilities": [
+        "spatial GLMM",
+        "spatiotemporal random fields",
+        "prediction surfaces",
+        "uncertainty estimation"
+      ],
+      "notes": "Especially useful for survey-data workflows where occurrence-only SDM tools are not enough."
+    },
+    {
+      "slug": "opensoundscape",
+      "name": "OpenSoundscape",
+      "status": "cataloged-external",
+      "modality": "ecoacoustic-analysis",
+      "repo": "https://github.com/kitzeslab/opensoundscape",
+      "install": "pip install opensoundscape",
+      "summary": "Python toolkit for bioacoustic and ecoacoustic machine-learning workflows.",
+      "good_for": [
+        "custom ecoacoustic classifiers",
+        "passive acoustic monitoring",
+        "audio preprocessing",
+        "bird and wildlife sound workflows"
+      ],
+      "capabilities": [
+        "audio preprocessing",
+        "spectrogram workflows",
+        "model training",
+        "batch prediction"
+      ],
+      "notes": "Complements BirdNET-Analyzer when users need trainable or customized acoustic pipelines."
+    },
+    {
+      "slug": "dataretrieval-python",
+      "name": "dataretrieval-python",
+      "status": "cataloged-external",
+      "modality": "hydrology-api",
+      "repo": "https://github.com/DOI-USGS/dataretrieval-python",
+      "install": "pip install dataretrieval",
+      "summary": "Python package for retrieving USGS and Water Quality Portal hydrologic and water-quality data.",
+      "good_for": [
+        "USGS streamflow retrieval",
+        "water-quality observations",
+        "site metadata lookup",
+        "model forcing assembly"
+      ],
+      "capabilities": [
+        "NWIS access",
+        "Water Quality Portal access",
+        "time-series retrieval",
+        "site metadata"
+      ],
+      "notes": "Useful first-party data layer for hydrology, watershed, and freshwater ecology workflows."
+    },
+    {
+      "slug": "pygeohydro",
+      "name": "PyGeoHydro",
+      "status": "cataloged-external",
+      "modality": "hydrology-api",
+      "repo": "https://github.com/hyriver/pygeohydro",
+      "install": "pip install pygeohydro",
+      "summary": "HyRiver Python package for accessing hydrology, hydrography, and watershed-related web services.",
+      "good_for": [
+        "watershed data retrieval",
+        "NHD and hydrography workflows",
+        "hydrologic forcing context",
+        "catchment screening"
+      ],
+      "capabilities": [
+        "hydrology APIs",
+        "watershed boundaries",
+        "hydrography access",
+        "geospatial water data"
+      ],
+      "notes": "Pairs well with dataretrieval-python when a project needs both streamflow records and watershed geometry."
+    },
+    {
+      "slug": "soildb",
+      "name": "soilDB",
+      "status": "cataloged-external",
+      "modality": "soil-data",
+      "repo": "https://github.com/ncss-tech/soilDB",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for querying soil survey databases and soil profile information.",
+      "good_for": [
+        "soil survey data",
+        "pedon and profile lookup",
+        "soil covariate preparation",
+        "agroecology site characterization"
+      ],
+      "capabilities": [
+        "soil profile retrieval",
+        "SSURGO/NASIS workflows",
+        "site characterization",
+        "soil metadata"
+      ],
+      "notes": "Useful for site-specific crop, restoration, and soil-health workflows."
+    },
+    {
+      "slug": "soilgrids-api",
+      "name": "SoilGrids API",
+      "status": "cataloged-external",
+      "modality": "soil-data",
+      "repo": "https://soilgrids.org/",
+      "install": "Use the ISRIC SoilGrids web services directly or through a project-specific API client.",
+      "summary": "Global gridded soil property service from ISRIC for soil covariates and site characterization.",
+      "good_for": [
+        "global soil covariates",
+        "crop and vegetation model inputs",
+        "habitat model covariates",
+        "soil organic carbon context"
+      ],
+      "capabilities": [
+        "soil property lookup",
+        "gridded soil data",
+        "depth-specific covariates",
+        "global coverage"
+      ],
+      "notes": "Cataloged as an API source rather than a single preferred client because usage patterns vary by project."
+    },
+    {
+      "slug": "openaq-python",
+      "name": "OpenAQ Python Client",
+      "status": "cataloged-external",
+      "modality": "air-quality-api",
+      "repo": "https://github.com/openaq/openaq-python",
+      "install": "pip install openaq",
+      "summary": "Python client for OpenAQ air-quality observations and metadata.",
+      "good_for": [
+        "air pollution exposure context",
+        "regional air-quality screening",
+        "environmental health covariates",
+        "urban ecology studies"
+      ],
+      "capabilities": [
+        "air-quality measurement retrieval",
+        "location metadata",
+        "sensor and parameter queries",
+        "pollutant time series"
+      ],
+      "notes": "Useful environmental-exposure layer for ecology and agroecology studies near urban or industrial gradients."
+    },
+    {
+      "slug": "pystac-client",
+      "name": "pystac-client",
+      "status": "cataloged-external",
+      "modality": "earth-observation-catalog",
+      "repo": "https://github.com/stac-utils/pystac-client",
+      "install": "pip install pystac-client",
+      "summary": "Python client for searching STAC APIs and discovering Earth-observation items and assets.",
+      "good_for": [
+        "STAC search",
+        "satellite asset discovery",
+        "remote-sensing covariates",
+        "cloud-native geospatial workflows"
+      ],
+      "capabilities": [
+        "catalog search",
+        "collection filtering",
+        "item retrieval",
+        "asset inspection"
+      ],
+      "notes": "A lightweight Python counterpart to the STAC MCP catalog entry."
+    },
+    {
+      "slug": "stackstac",
+      "name": "stackstac",
+      "status": "cataloged-external",
+      "modality": "cloud-native-raster",
+      "repo": "https://github.com/gjoseph92/stackstac",
+      "install": "pip install stackstac",
+      "summary": "Build xarray DataArrays from STAC items for scalable raster analysis.",
+      "good_for": [
+        "STAC-to-xarray workflows",
+        "time-series remote sensing",
+        "NDVI and raster covariates",
+        "Dask-backed raster processing"
+      ],
+      "capabilities": [
+        "STAC stacking",
+        "xarray integration",
+        "Dask support",
+        "cloud-optimized GeoTIFF access"
+      ],
+      "notes": "Good bridge from catalog discovery to actual remote-sensing analysis."
+    },
+    {
+      "slug": "odc-stac",
+      "name": "odc-stac",
+      "status": "cataloged-external",
+      "modality": "cloud-native-raster",
+      "repo": "https://github.com/opendatacube/odc-stac",
+      "install": "pip install odc-stac",
+      "summary": "Open Data Cube tooling for loading STAC items into xarray datasets.",
+      "good_for": [
+        "Open Data Cube workflows",
+        "STAC raster loading",
+        "analysis-ready datacubes",
+        "multi-band remote sensing"
+      ],
+      "capabilities": [
+        "STAC loading",
+        "xarray datasets",
+        "geospatial raster alignment",
+        "datacube workflows"
+      ],
+      "notes": "Complements stackstac with Open Data Cube-oriented loading behavior."
+    },
+    {
+      "slug": "geemap",
+      "name": "geemap",
+      "status": "cataloged-external",
+      "modality": "earth-engine-mapping",
+      "repo": "https://github.com/gee-community/geemap",
+      "install": "pip install geemap and configure Google Earth Engine authentication.",
+      "summary": "Python package for interactive Google Earth Engine analysis and geospatial visualization.",
+      "good_for": [
+        "Earth Engine workflows",
+        "interactive remote-sensing maps",
+        "land-cover and vegetation indices",
+        "notebook geospatial analysis"
+      ],
+      "capabilities": [
+        "Earth Engine access",
+        "interactive maps",
+        "raster visualization",
+        "vector/raster export"
+      ],
+      "notes": "Useful when ecological remote-sensing workflows need GEE rather than only local STAC assets."
+    },
+    {
+      "slug": "leafmap",
+      "name": "leafmap",
+      "status": "cataloged-external",
+      "modality": "interactive-geospatial-mapping",
+      "repo": "https://github.com/opengeos/leafmap",
+      "install": "pip install leafmap",
+      "summary": "Python package for interactive geospatial analysis, STAC exploration, and map publication in notebooks.",
+      "good_for": [
+        "interactive map review",
+        "STAC browsing",
+        "vector/raster overlays",
+        "notebook-based spatial QA"
+      ],
+      "capabilities": [
+        "interactive maps",
+        "STAC browsing",
+        "COG visualization",
+        "geospatial widgets"
+      ],
+      "notes": "A practical human-in-the-loop map inspection layer around data retrieval and modeling."
+    },
+    {
+      "slug": "whitebox-tools",
+      "name": "WhiteboxTools",
+      "status": "cataloged-external",
+      "modality": "geospatial-terrain-analysis",
+      "repo": "https://github.com/jblindsay/whitebox-tools",
+      "install": "Install WhiteboxTools from the upstream releases or use the Python wrapper where appropriate.",
+      "summary": "Geospatial analysis toolkit with many terrain, hydrology, and raster-processing operations.",
+      "good_for": [
+        "terrain analysis",
+        "hydrologic preprocessing",
+        "DEM derivatives",
+        "raster feature engineering"
+      ],
+      "capabilities": [
+        "terrain metrics",
+        "hydrology tools",
+        "raster processing",
+        "vector operations"
+      ],
+      "notes": "Valuable for ecological modeling covariates derived from DEMs and landscape structure."
+    },
+    {
+      "slug": "exactextract",
+      "name": "exactextract",
+      "status": "cataloged-external",
+      "modality": "zonal-statistics",
+      "repo": "https://github.com/isciences/exactextract",
+      "install": "Install the Python or R bindings from the upstream project or package repositories.",
+      "summary": "Fast exact zonal statistics for raster summaries over vector polygons.",
+      "good_for": [
+        "buffer covariate extraction",
+        "watershed raster summaries",
+        "habitat-polygon summaries",
+        "model feature engineering"
+      ],
+      "capabilities": [
+        "zonal statistics",
+        "weighted summaries",
+        "raster-vector overlay",
+        "large raster processing"
+      ],
+      "notes": "Small but important utility for converting raster layers into model-ready tabular features."
+    },
+    {
+      "slug": "ctmm",
+      "name": "ctmm",
+      "status": "cataloged-external",
+      "modality": "movement-ecology",
+      "repo": "https://github.com/ctmm-initiative/ctmm",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for continuous-time movement modeling, autocorrelated home-range estimation, and telemetry analysis.",
+      "good_for": [
+        "home-range estimation",
+        "GPS telemetry analysis",
+        "movement model fitting",
+        "autocorrelation-aware inference"
+      ],
+      "capabilities": [
+        "continuous-time movement models",
+        "AKDE home ranges",
+        "telemetry data handling",
+        "model diagnostics"
+      ],
+      "notes": "Important for movement ecology because it handles autocorrelation more explicitly than simpler kernel workflows."
+    },
+    {
+      "slug": "amt",
+      "name": "amt",
+      "status": "cataloged-external",
+      "modality": "movement-ecology",
+      "repo": "https://github.com/jmsigner/amt",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for animal movement tools, including tracks, steps, and habitat-selection workflows.",
+      "good_for": [
+        "step-selection analysis",
+        "movement-track preprocessing",
+        "habitat selection",
+        "trajectory summaries"
+      ],
+      "capabilities": [
+        "track classes",
+        "step generation",
+        "random steps",
+        "movement covariate extraction"
+      ],
+      "notes": "Practical toolkit for turning raw tracking points into movement ecology analyses."
+    },
+    {
+      "slug": "move2",
+      "name": "move2",
+      "status": "cataloged-external",
+      "modality": "movement-ecology",
+      "repo": "https://gitlab.com/bartk/move2",
+      "install": "Install the R package from CRAN or the upstream GitHub repository.",
+      "summary": "R package for movement data handling, Movebank integration, and track-aware spatial data workflows.",
+      "good_for": [
+        "Movebank data access",
+        "movement track storage",
+        "telemetry preprocessing",
+        "sf-compatible movement workflows"
+      ],
+      "capabilities": [
+        "movement data classes",
+        "Movebank integration",
+        "track metadata handling",
+        "spatial workflows"
+      ],
+      "notes": "Good data-ingestion complement before modeling tracks with ctmm or amt."
     }
   ]
 }

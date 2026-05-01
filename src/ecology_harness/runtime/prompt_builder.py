@@ -13,6 +13,7 @@ class PromptBuilder:
         "STANDING_ORDERS.md",
         "STANDING-ORDERS.md",
         "BOOTSTRAP.md",
+        "MEMORY_GUIDE.md",
         "AGENTS.md",
         "SOUL.md",
         "TOOLS.md",

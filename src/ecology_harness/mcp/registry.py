@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 import shutil
@@ -37,6 +38,9 @@ def mcp_tool_prefix(server_name: str) -> str:
 
 def mcp_tool_name(server_name: str, tool_name: str) -> str:
     return "%s%s" % (mcp_tool_prefix(server_name), normalize_name_for_mcp(tool_name))
+
+
+_ENV_ARG_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 @dataclass
@@ -595,7 +599,22 @@ class McpServerRegistry:
             if replacement is not None and args:
                 args = [str(replacement), *args[1:]]
 
+        args = [self._expand_stdio_arg(arg, server) for arg in args]
         return command, args
+
+    @staticmethod
+    def _expand_stdio_arg(value: str, server: McpServerConfig) -> str:
+        def _replace(match: re.Match[str]) -> str:
+            name = match.group(1)
+            env_value = os.environ.get(name)
+            if env_value is not None:
+                return env_value
+            configured = server.env.get(name, "")
+            if configured.startswith("<") and configured.endswith(">"):
+                return ""
+            return configured
+
+        return _ENV_ARG_PATTERN.sub(_replace, value)
 
     def _probe_remote_server(self, server: McpServerConfig, timeout_sec: int = 3) -> dict[str, str]:
         transport = (server.transport or "").strip().lower()

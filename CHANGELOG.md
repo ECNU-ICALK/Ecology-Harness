@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.8 beta - 2026-05-01
+
+- added Hermes/OpenClaw-inspired memory governance with scored memory search, `MemoryHealth`, overlap detection, large/stale memory checks, and instruction/credential risk flags
+- added `MEMORY_GUIDE.md` to workspace bootstrap files so projects can define what should become durable memory before memory sprawl starts
+- annotated self-evolution review candidates with confidence, evidence, risk flags, review mode, and `requires_review`; automatic memory/skill application now skips candidates that require review
+- documented the adopted external agent-framework patterns and the intentionally rejected patterns in `docs/agent-framework-patterns.md`
+- synchronized the package runtime version with project metadata for the new beta build
+
+## 0.5.7 beta - 2026-05-01
+
+- expanded the ecology catalog with eBird observation MCP support, BioMCP for omics/life-science follow-up, and a generic OpenAPI MCP adapter for environmental REST APIs
+- added new ecology skills for species distribution and biodiversity modeling, ecoacoustic bird-observation workflows, movement ecology, and open environmental forcing data assembly
+- added cataloged toolkits for GBIF/OBIS clients, SDM and occurrence QA, movement ecology, USGS/soil/air-quality APIs, STAC/GEE raster workflows, and ecoacoustic model training
+- upgraded ecology toolkit search from plain substring matching to lightweight query expansion and token scoring so Chinese and natural-language queries find relevant toolkits more reliably
+
 ## 0.5.6 beta - 2026-05-01
 
 - added a generic stdio MCP JSON-RPC runtime adapter so configured MCP servers can be called through `MCPTool` and dynamic MCP bridge tools instead of remaining catalog-only when their command is reachable

@@ -107,6 +107,65 @@
           "description": "Estimate dataset size for matching STAC items before download."
         }
       ]
+    },
+    {
+      "name": "ebird",
+      "transport": "stdio",
+      "description": "eBird MCP server for recent bird observations, notable records, nearby observations, hotspots, and eBird taxonomy.",
+      "default_enabled": false,
+      "auth": "api-key",
+      "command": "npx",
+      "args": [
+        "-y",
+        "ebird-mcp-server",
+        "--api-key",
+        "${EBIRD_API_KEY}"
+      ],
+      "env": {
+        "EBIRD_API_KEY": "<set-in-client-environment>"
+      },
+      "tools": [
+        {
+          "name": "ebird_get_recent_observations",
+          "description": "Get recent bird observations in a region or location."
+        },
+        {
+          "name": "ebird_get_recent_observations_for_species",
+          "description": "Get recent observations of a specific bird species in a region."
+        },
+        {
+          "name": "ebird_get_notable_observations",
+          "description": "Get notable bird observations in a region."
+        },
+        {
+          "name": "ebird_get_nearby_observations",
+          "description": "Get recent bird observations near a latitude/longitude point."
+        },
+        {
+          "name": "ebird_get_nearby_notable_observations",
+          "description": "Get notable bird observations near a latitude/longitude point."
+        },
+        {
+          "name": "ebird_get_nearby_observations_for_species",
+          "description": "Get recent nearby observations for a target eBird species code."
+        },
+        {
+          "name": "ebird_get_hotspots",
+          "description": "Get birding hotspots in a region."
+        },
+        {
+          "name": "ebird_get_nearby_hotspots",
+          "description": "Get birding hotspots near a latitude/longitude point."
+        },
+        {
+          "name": "ebird_get_taxonomy",
+          "description": "Get eBird taxonomy information."
+        },
+        {
+          "name": "ebird_get_taxonomy_forms",
+          "description": "Get eBird taxonomy forms for a species code."
+        }
+      ]
     }
   ]
 }
