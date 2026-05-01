@@ -12,6 +12,11 @@ from urllib import error, request
 
 from ecology_harness.claw_compat import CLAW_SKILL_SPECS, list_claw_tools, search_claw_tools
 from ecology_harness.mcp.retrieval import McpBM25Retriever, McpSearchHit, McpSearchReport
+from ecology_harness.mcp.stdio_client import (
+    call_stdio_jsonrpc,
+    format_stdio_content,
+    format_stdio_resource_result,
+)
 from ecology_harness.runtime.messages import ChatMessage
 from ecology_harness.tools import ToolDefinition, ToolError, ToolResult
 
@@ -308,6 +313,8 @@ class McpServerRegistry:
         for resource in server.resources:
             if resource.uri != uri:
                 continue
+            if server.transport == "stdio":
+                return self._read_stdio_resource(server, resource, services or {})
             if server.transport != "inprocess":
                 state = self._state_for_server(server, probe_remote=True)
                 raise ToolError(self._runtime_unavailable_message(server, state, operation="resource"))
@@ -329,6 +336,8 @@ class McpServerRegistry:
                 continue
             if self._supports_local_compat(server):
                 return self._call_local_compat_tool(server, tool, params, services or {})
+            if server.transport == "stdio":
+                return self._call_stdio_tool(server, tool, params, services or {})
             if server.transport != "inprocess":
                 state = self._state_for_server(server, probe_remote=True)
                 raise ToolError(self._runtime_unavailable_message(server, state, operation="tool"))
@@ -397,7 +406,7 @@ class McpServerRegistry:
 
     @staticmethod
     def _is_runtime_invokable(server: McpServerConfig) -> bool:
-        return server.transport == "inprocess" or McpServerRegistry._supports_local_compat(server)
+        return server.transport in {"inprocess", "stdio"} or McpServerRegistry._supports_local_compat(server)
 
     @staticmethod
     def _supports_local_compat(server: McpServerConfig) -> bool:
@@ -414,7 +423,7 @@ class McpServerRegistry:
         hint = self._runtime_unavailable_hint(server, state)
         noun = "resource" if operation == "resource" else "tool"
         return (
-            "MCP server `%s` is cataloged with transport `%s`, but %s execution is not available in this build. "
+            "MCP server `%s` is cataloged with transport `%s`, but %s execution cannot run right now. "
             "status=%s, runtime_invokable=%s%s. %s"
             % (
                 server.name,
@@ -755,6 +764,96 @@ class McpServerRegistry:
                 )
             )
         return servers
+
+    def _call_stdio_tool(
+        self,
+        server: McpServerConfig,
+        tool: McpTool,
+        params: dict[str, Any],
+        services: dict[str, Any],
+    ) -> ToolResult:
+        result = self._call_stdio_jsonrpc(
+            server,
+            method="tools/call",
+            params={"name": tool.name, "arguments": params},
+            services=services,
+            operation="tool",
+        )
+        if result.get("isError"):
+            message = format_stdio_content(result) or "MCP stdio tool returned an error."
+            raise ToolError(message)
+        content = format_stdio_content(result) or json.dumps(result, ensure_ascii=False, indent=2)
+        return ToolResult(
+            content=content,
+            data={
+                "server": server.name,
+                "tool": tool.name,
+                "transport": "stdio",
+                "result": result,
+            },
+        )
+
+    def _read_stdio_resource(
+        self,
+        server: McpServerConfig,
+        resource: McpResource,
+        services: dict[str, Any],
+    ) -> ToolResult:
+        result = self._call_stdio_jsonrpc(
+            server,
+            method="resources/read",
+            params={"uri": resource.uri},
+            services=services,
+            operation="resource",
+        )
+        content = format_stdio_resource_result(result)
+        return ToolResult(
+            content=content,
+            data={
+                "server": server.name,
+                "uri": resource.uri,
+                "transport": "stdio",
+                "result": result,
+            },
+        )
+
+    def _call_stdio_jsonrpc(
+        self,
+        server: McpServerConfig,
+        *,
+        method: str,
+        params: dict[str, Any],
+        services: dict[str, Any],
+        operation: str,
+    ) -> dict[str, Any]:
+        state = self._state_for_server(server, probe_remote=True)
+        if state.status not in {"reachable"}:
+            raise ToolError(self._runtime_unavailable_message(server, state, operation=operation))
+
+        command, args = self._resolved_stdio_command_and_args(server)
+        executable = shutil.which(command) if command and not Path(command).is_absolute() else command
+        if not executable:
+            raise ToolError(self._runtime_unavailable_message(server, state, operation=operation))
+
+        timeout_sec = max(int(getattr(services.get("settings") or self.app.settings, "command_timeout_sec", 20) or 20), 1)
+        return call_stdio_jsonrpc(
+            executable=str(executable),
+            args=args,
+            cwd=server.root,
+            env=self._stdio_env(server),
+            method=method,
+            params=params,
+            timeout_sec=timeout_sec,
+        )
+
+    def _stdio_env(self, server: McpServerConfig) -> dict[str, str]:
+        env = dict(os.environ)
+        for key, value in server.env.items():
+            if value.startswith("<") and value.endswith(">"):
+                env.setdefault(key, "")
+                continue
+            env[key] = value
+        return env
 
     def _call_inprocess_tool(
         self,

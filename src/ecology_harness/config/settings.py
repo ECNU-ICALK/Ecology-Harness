@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 
+from ecology_harness import __version__
+
 
 @dataclass
 class HarnessSettings:
@@ -93,7 +95,7 @@ class HarnessSettings:
     execute_code_max_tool_calls: int = 6
     execute_code_max_output_chars: int = 12_000
     browser_timeout_sec: int = 20
-    browser_user_agent: str = "EcologyHarness/0.4.1"
+    browser_user_agent: str = "EcologyHarness/%s" % __version__
     workspace_bootstrap_max_files: int = 6
     workspace_bootstrap_max_file_chars: int = 2_400
     workspace_bootstrap_max_total_chars: int = 8_000

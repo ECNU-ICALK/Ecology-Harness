@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.6 beta - 2026-05-01
+
+- added a generic stdio MCP JSON-RPC runtime adapter so configured MCP servers can be called through `MCPTool` and dynamic MCP bridge tools instead of remaining catalog-only when their command is reachable
+- switched core text/notebook write paths to atomic or locked writes to reduce partial-file risk during agent edits and long-running sessions
+- hardened custom-provider credential UX by tolerating a literal API key accidentally passed to `--api-key-env`, while clarifying the CLI help text
+- refreshed runtime metadata such as the browser user agent and preserved existing process timers around `ExecuteCode` timeout enforcement
+
 ## 0.5.5 beta - 2026-05-01
 
 - clarified MCP runtime boundaries so cataloged or probeable servers now report whether they are directly invokable and provide actionable probe/setup guidance when `MCPTool` cannot run them

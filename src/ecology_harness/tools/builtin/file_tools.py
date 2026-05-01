@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ecology_harness.tools.base import ToolContext, ToolDefinition, ToolError, ToolResult
 from ecology_harness.tools.registry import ToolRegistry
+from ecology_harness.utils import append_text_line, atomic_write_text
 
 
 def register_file_tools(registry: ToolRegistry) -> None:
@@ -112,9 +113,10 @@ def _write_file(params: dict, context: ToolContext) -> ToolResult:
             "Content exceeds max_write_bytes=%s." % context.settings.max_write_bytes
         )
     append = params.get("append", False)
-    mode = "a" if append else "w"
-    with path.open(mode, encoding="utf-8") as handle:
-        handle.write(content)
+    if append:
+        append_text_line(path, content, encoding="utf-8")
+    else:
+        atomic_write_text(path, content, encoding="utf-8")
     relative_path = path.relative_to(context.settings.workspace_root).as_posix()
     action = "Appended to" if append else "Wrote"
     return ToolResult(
@@ -140,7 +142,7 @@ def _edit_file(params: dict, context: ToolContext) -> ToolResult:
             % occurrences
         )
     updated = text.replace(old_text, new_text) if replace_all else text.replace(old_text, new_text, 1)
-    path.write_text(updated, encoding="utf-8")
+    atomic_write_text(path, updated, encoding="utf-8")
     relative_path = path.relative_to(context.settings.workspace_root).as_posix()
     return ToolResult(
         content="Edited %s" % relative_path,

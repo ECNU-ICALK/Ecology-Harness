@@ -473,10 +473,34 @@ def resolve_api_key(settings: HarnessSettings, spec: ProviderSpec) -> str:
     if settings.api_key:
         return settings.api_key
     if settings.api_key_env:
+        if _looks_like_literal_api_key(settings.api_key_env):
+            return settings.api_key_env.strip()
         return os.environ.get(settings.api_key_env, "")
     if spec.api_key_env:
         return os.environ.get(spec.api_key_env, "")
     return spec.api_key
+
+
+def _looks_like_literal_api_key(value: str) -> bool:
+    text = (value or "").strip()
+    if not text:
+        return False
+    if text.startswith("$") or "=" in text:
+        return False
+    if text.upper() == text and all(ch.isalnum() or ch == "_" for ch in text):
+        return False
+    known_prefixes = (
+        "sk-",
+        "sk_",
+        "sk-or-",
+        "gsk_",
+        "gsk-",
+        "AIza",
+        "dashscope-",
+    )
+    if any(text.startswith(prefix) for prefix in known_prefixes):
+        return True
+    return len(text) >= 32 and not all(ch.isupper() or ch.isdigit() or ch == "_" for ch in text)
 
 
 def resolve_base_url(settings: HarnessSettings, spec: ProviderSpec) -> str:

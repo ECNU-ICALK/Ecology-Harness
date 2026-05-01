@@ -238,7 +238,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--api-key-env",
         default="",
-        help="Override the provider API key environment variable.",
+        help="Override the provider API key environment variable name. Use --api-key for a literal key.",
     )
     parser.add_argument(
         "--resume",

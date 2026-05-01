@@ -278,6 +278,7 @@ def _exec_with_timeout(
         return
 
     previous_handler = signal.getsignal(signal.SIGALRM)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
 
     def _handle_timeout(_signum, _frame):
         raise TimeoutError("execution exceeded command_timeout_sec=%s" % timeout_sec)
@@ -289,6 +290,8 @@ def _exec_with_timeout(
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0.0)
         signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0 or previous_timer[1] > 0:
+            signal.setitimer(signal.ITIMER_REAL, previous_timer[0], previous_timer[1])
 
 
 def _runtime_status(params: dict, context: ToolContext) -> ToolResult:

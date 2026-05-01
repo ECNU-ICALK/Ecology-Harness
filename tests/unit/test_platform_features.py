@@ -2,6 +2,7 @@ import json
 import os
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -591,6 +592,28 @@ class PlatformFeatureTests(unittest.TestCase):
             app = self._make_app(root)
             project_mcp_dir = app.settings.mcp_dir
             project_mcp_dir.mkdir(parents=True, exist_ok=True)
+            script = root / "fake_mcp_server.py"
+            script.write_text(
+                "\n".join(
+                    [
+                        "import json, sys",
+                        "for line in sys.stdin:",
+                        "    message = json.loads(line)",
+                        "    method = message.get('method')",
+                        "    if method == 'initialize':",
+                        "        print(json.dumps({'jsonrpc':'2.0','id':message['id'],'result':{'protocolVersion':'2024-11-05','capabilities':{},'serverInfo':{'name':'fake','version':'1.0'}}}), flush=True)",
+                        "    elif method == 'notifications/initialized':",
+                        "        continue",
+                        "    elif method == 'tools/call':",
+                        "        args = message.get('params', {}).get('arguments', {})",
+                        "        print(json.dumps({'jsonrpc':'2.0','id':message['id'],'result':{'content':[{'type':'text','text':'pong ' + str(args.get('value', ''))}]}}), flush=True)",
+                        "    elif method == 'resources/read':",
+                        "        print(json.dumps({'jsonrpc':'2.0','id':message['id'],'result':{'contents':[{'uri':'demo://status','mimeType':'text/plain','text':'resource ok'}]}}), flush=True)",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
             (project_mcp_dir / "remote-probe.json").write_text(
                 json.dumps(
                     {
@@ -600,8 +623,10 @@ class PlatformFeatureTests(unittest.TestCase):
                                 "transport": "stdio",
                                 "description": "Probe candidate",
                                 "default_enabled": True,
-                                "command": "python3",
+                                "command": sys.executable,
+                                "args": [str(script)],
                                 "tools": [{"name": "ping", "description": "Ping", "input_schema": {"type": "object", "properties": {}}}],
+                                "resources": [{"uri": "demo://status", "name": "Status"}],
                             }
                         ]
                     },
@@ -628,9 +653,9 @@ class PlatformFeatureTests(unittest.TestCase):
             )
             rows = {item["server_name"]: item for item in listed.data["servers"]}
             self.assertEqual(rows["probe-stdio"]["status"], "reachable")
-            self.assertFalse(rows["probe-stdio"]["runtime_invokable"])
-            self.assertFalse(rows["probe-stdio"]["bridge_registered"])
-            self.assertIsNone(app.registry.get("mcp__probe-stdio__ping"))
+            self.assertTrue(rows["probe-stdio"]["runtime_invokable"])
+            self.assertTrue(rows["probe-stdio"]["bridge_registered"])
+            self.assertIsNotNone(app.registry.get("mcp__probe-stdio__ping"))
 
             tools = app.registry.execute(
                 "ListMcpToolsTool",
@@ -638,18 +663,24 @@ class PlatformFeatureTests(unittest.TestCase):
                 app.settings,
                 services=app.get_services(),
             )
-            self.assertIn("runtime=False", tools.content)
+            self.assertIn("runtime=True", tools.content)
 
-            with self.assertRaises(ToolError) as raised:
-                app.registry.execute(
-                    "MCPTool",
-                    {"server": "probe-stdio", "tool": "ping", "arguments": {}},
-                    app.settings,
-                    services=app.get_services(),
-                )
-            message = str(raised.exception)
-            self.assertIn("runtime_invokable=False", message)
-            self.assertIn("ProbeMcpServerTool", message)
+            called = app.registry.execute(
+                "MCPTool",
+                {"server": "probe-stdio", "tool": "ping", "arguments": {"value": "ok"}},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertIn("pong ok", called.content)
+            self.assertEqual(called.data["transport"], "stdio")
+
+            resource = app.registry.execute(
+                "ReadMcpResourceTool",
+                {"server": "probe-stdio", "uri": "demo://status"},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertIn("resource ok", resource.content)
 
     def test_remote_mcp_probe_checks_disabled_servers_too(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

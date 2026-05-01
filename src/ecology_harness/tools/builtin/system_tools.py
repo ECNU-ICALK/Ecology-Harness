@@ -9,6 +9,7 @@ import sys
 
 from ecology_harness.tools.base import ToolContext, ToolDefinition, ToolError, ToolResult
 from ecology_harness.tools.registry import ToolRegistry
+from ecology_harness.utils import atomic_write_text
 
 
 def register_system_tools(registry: ToolRegistry) -> None:
@@ -229,7 +230,7 @@ def _notebook_edit(params: dict, context: ToolContext) -> ToolResult:
     else:
         raise ToolError("Unsupported notebook action: %s" % action)
 
-    path.write_text(json.dumps(notebook, indent=2, ensure_ascii=False), encoding="utf-8")
+    atomic_write_text(path, json.dumps(notebook, indent=2, ensure_ascii=False), encoding="utf-8")
     return ToolResult(
         content="Notebook updated: %s" % path.relative_to(context.settings.workspace_root),
         data={"path": str(path), "action": action, "cell_count": len(cells)},

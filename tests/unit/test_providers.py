@@ -130,6 +130,15 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(resolve_api_key(settings, PROVIDERS["ollama"]), "ollama")
         self.assertEqual(resolve_api_key(settings, PROVIDERS["lmstudio"]), "lm-studio")
 
+    def test_resolve_api_key_tolerates_literal_key_passed_to_env_flag(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.api_key_env = "sk-test-literal-key-that-user-pasted"
+
+        self.assertEqual(
+            resolve_api_key(settings, PROVIDERS["custom"]),
+            "sk-test-literal-key-that-user-pasted",
+        )
+
     def test_resolve_base_url_supports_custom_env_override(self) -> None:
         settings = HarnessSettings.from_workspace(".")
         with patch.dict(os.environ, {"CUSTOM_BASE_URL": "https://example.com/v1"}, clear=False):
