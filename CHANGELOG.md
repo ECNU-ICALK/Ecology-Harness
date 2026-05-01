@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.4 beta - 2026-05-01
+
+- hardened OpenAI-compatible provider response parsing for backends that return `null` messages, `null` tool calls, dict-style tool arguments, or malformed tool-call entries
+- hardened historical message deserialization so legacy or partially written sessions and checkpoints can be read without crashing on `null` tool-call or attachment fields
+- tightened BrowserAction cleanup so Playwright browser instances are closed even when an action fails midway
+- completed another delivery audit with focused provider/message tests plus the full unit-test suite and package build validation
+
 ## 0.5.3 beta - 2026-04-25
 
 - expanded the ecology 3D stack with new skills for close-range photogrammetry, LiDAR survey simulation, tree QSM, and geospatial 3D publishing

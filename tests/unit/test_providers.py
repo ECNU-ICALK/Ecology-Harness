@@ -288,6 +288,44 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(result.content, "")
         self.assertEqual(result.tool_calls, [])
 
+    def test_openai_compatible_provider_accepts_dict_tool_arguments(self) -> None:
+        settings = HarnessSettings.from_workspace(".")
+        settings.user_state_dir = settings.workspace_root / ".user_state_test"
+        settings.api_key = "test-key"
+        settings.provider = "openai"
+        settings.model = "gpt-5.4"
+        provider = OpenAICompatibleProvider()
+        fake_payload = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "id": "call_123",
+                                "function": {
+                                    "name": "Read",
+                                    "arguments": {"path": "README.md"},
+                                },
+                            },
+                            None,
+                            {"function": None},
+                        ],
+                    }
+                }
+            ]
+        }
+
+        with patch("ecology_harness.runtime.providers.request.urlopen", return_value=_FakeResponse(fake_payload)):
+            result = provider.complete(
+                [ChatMessage(role="system", content="system"), ChatMessage(role="user", content="read")],
+                self._dummy_tools(),
+                settings,
+            )
+
+        self.assertEqual(len(result.tool_calls), 1)
+        self.assertEqual(result.tool_calls[0].arguments, {"path": "README.md"})
+
     def test_provider_uses_provider_timeout_instead_of_command_timeout(self) -> None:
         settings = HarnessSettings.from_workspace(".")
         settings.api_key = "test-key"

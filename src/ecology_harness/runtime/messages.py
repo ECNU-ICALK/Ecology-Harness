@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 from typing import Any
 
@@ -13,10 +14,12 @@ class ToolCall:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ToolCall":
+        if not isinstance(payload, dict):
+            payload = {}
         return cls(
             id=str(payload.get("id", "")),
             name=str(payload.get("name", "")),
-            arguments=dict(payload.get("arguments", {}) or {}),
+            arguments=_coerce_arguments(payload.get("arguments")),
         )
 
     def to_openai_dict(self) -> dict[str, Any]:
@@ -129,14 +132,16 @@ class MessagePart:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "MessagePart":
+        if not isinstance(payload, dict):
+            payload = {}
         return cls(
             type=str(payload.get("type", "")),
             text=str(payload.get("text", "")),
             path=str(payload.get("path", "")),
             mime_type=str(payload.get("mime_type", "")),
             name=str(payload.get("name", "")),
-            size_bytes=int(payload.get("size_bytes", 0)),
-            metadata=dict(payload.get("metadata", {}) or {}),
+            size_bytes=_coerce_int(payload.get("size_bytes"), default=0),
+            metadata=_coerce_dict(payload.get("metadata")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -208,10 +213,18 @@ class ChatMessage:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ChatMessage":
-        tool_calls = [ToolCall.from_dict(item) for item in payload.get("tool_calls", [])]
+        if not isinstance(payload, dict):
+            payload = {}
+        raw_tool_calls = payload.get("tool_calls", [])
+        if not isinstance(raw_tool_calls, list):
+            raw_tool_calls = []
+        tool_calls = [ToolCall.from_dict(item) for item in raw_tool_calls]
+        raw_content_parts = payload.get("content_parts", [])
+        if not isinstance(raw_content_parts, list):
+            raw_content_parts = []
         content_parts = [
             MessagePart.from_dict(item)
-            for item in payload.get("content_parts", [])
+            for item in raw_content_parts
             if isinstance(item, dict)
         ]
         return cls(
@@ -293,3 +306,29 @@ def _format_media_metadata(metadata: dict[str, Any]) -> str:
     if isinstance(fps, (int, float)) and fps > 0:
         parts.append("fps=%.2f" % fps)
     return ", ".join(parts)
+
+
+def _coerce_arguments(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return dict(value)
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, dict):
+            return dict(parsed)
+    return {}
+
+
+def _coerce_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return dict(value)
+    return {}
+
+
+def _coerce_int(value: Any, *, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default

@@ -82,6 +82,37 @@ class MultimodalTests(unittest.TestCase):
             self.assertEqual(restored.content_parts[1].type, "image")
             self.assertEqual(restored.attachment_labels(), ["leaf.png", "notes.md"])
 
+    def test_chat_message_from_dict_tolerates_legacy_null_fields(self) -> None:
+        restored = ChatMessage.from_dict(
+            {
+                "role": "assistant",
+                "content": "done",
+                "tool_calls": None,
+                "content_parts": None,
+            }
+        )
+
+        self.assertEqual(restored.role, "assistant")
+        self.assertEqual(restored.tool_calls, [])
+        self.assertEqual(restored.content_parts, [])
+
+    def test_chat_message_from_dict_accepts_string_tool_arguments(self) -> None:
+        restored = ChatMessage.from_dict(
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "name": "Read",
+                        "arguments": '{"path":"README.md"}',
+                    }
+                ],
+            }
+        )
+
+        self.assertEqual(restored.tool_calls[0].arguments, {"path": "README.md"})
+
     def test_messages_to_openai_supports_image_and_file_parts(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -6,7 +6,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 除了传统的 CLI Agent 形态，这个项目还提供了 query-aware 的 skill/MCP 检索、长期记忆与历史 session 召回、有界上下文压缩、profile 驱动的工作模式，以及任务结束后沉淀可复用记忆与技能候选的自进化闭环。在这层核心能力之外，还补上了 `eh setup`、`eh doctor`、heartbeat、analytics、checkpoint、automation、渐进式 skill inspection，以及面向团队通知的飞书 / Lark、钉钉、企业微信 webhook 轻量集成，让生态能力栈可以持续增长，同时不把核心运行时拖得难以维护。也非常欢迎大家一起参与补充和完善，共同把这个生态领域的能力栈做得更完整。
 
-当前发布版本是 `0.5.3 beta`（包版本为 `0.5.3b0`）。
+当前发布版本是 `0.5.4 beta`（包版本为 `0.5.4b0`）。
 变更说明见 [CHANGELOG.md](CHANGELOG.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 阅读导航
@@ -32,6 +32,7 @@ Ecology Harness 是一个面向生态、环境与农业生态研究工作流的 
 
 ## News
 
+- `2026-05-01`：发布 `0.5.4 beta`，增强 OpenAI-compatible provider 响应解析、旧 session / message 恢复，以及 BrowserAction 清理逻辑，让长任务和自定义模型网关在遇到异常上游响应时更不容易崩溃。
 - `2026-04-25`：发布 `0.5.3 beta`，继续扩展生态三维能力，新增近景测量级摄影测量、LiDAR 采样设计与模拟、单木 QSM、浏览器与地理三维发布工作流，并补入 COLMAP、MicMac、HELIOS++、TreeQSM、SimpleForest、ParaView、CesiumJS。
 - `2026-04-25`：发布 `0.5.2 beta`，新增面向生态三维重建、点云和生境场景可视化的一组能力，包括 OpenDroneMap、PDAL、Blender、QGIS 等相关 tools / MCP / skills。
 - `2026-04-25`：发布 `0.5.1 beta`，新增 `clawhub-research`、`clawhub-ecology`、`bioskills-ecology` 三组技能包，并修复了 SkillHub / loader 会把 bundle 辅助 markdown 误识别成独立 skill 的问题。

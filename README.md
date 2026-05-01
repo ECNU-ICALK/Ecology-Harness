@@ -20,7 +20,7 @@ ecology stack can keep growing without letting the runtime become
 unmanageable. Contributions are very welcome, and we would love help from the
 community to keep improving and expanding it together.
 
-Current release: `0.5.3 beta` (`0.5.3b0` package version).
+Current release: `0.5.4 beta` (`0.5.4b0` package version).
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## Contents
@@ -45,6 +45,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIB
 
 ## News
 
+- `2026-05-01`: released `0.5.4 beta`, hardening OpenAI-compatible provider parsing, legacy session/message recovery, and BrowserAction cleanup so long-running custom-provider workflows fail less often on malformed upstream responses.
 - `2026-04-25`: released `0.5.3 beta`, expanding the ecology 3D layer with close-range photogrammetry, LiDAR survey simulation, tree QSM, and browser/geospatial 3D publishing workflows around COLMAP, MicMac, HELIOS++, TreeQSM, SimpleForest, ParaView, and CesiumJS.
 - `2026-04-25`: released `0.5.2 beta`, adding ecology-facing 3D reconstruction, point-cloud, and habitat-visualization skills plus new tool and MCP catalog entries around OpenDroneMap, PDAL, Blender, QGIS, and related workflows.
 - `2026-04-25`: released `0.5.1 beta`, adding `clawhub-research`, `clawhub-ecology`, and `bioskills-ecology`, while fixing SkillHub/loader handling so bundle support markdown is no longer mistaken for standalone skills.

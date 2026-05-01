@@ -744,9 +744,10 @@ def messages_to_ollama(messages: list[ChatMessage]) -> list[dict[str, Any]]:
 
 def _parse_openai_like_response(raw: dict[str, Any]) -> ModelResponse:
     choices = raw.get("choices", [])
-    if not choices:
+    if not isinstance(choices, list) or not choices:
         raise ProviderError("Provider returned no choices.")
-    message = choices[0].get("message") or {}
+    first_choice = choices[0] if isinstance(choices[0], dict) else {}
+    message = first_choice.get("message") or {}
     if not isinstance(message, dict):
         message = {}
     raw_tool_calls = message.get("tool_calls") or []
@@ -754,19 +755,19 @@ def _parse_openai_like_response(raw: dict[str, Any]) -> ModelResponse:
         raw_tool_calls = []
     tool_calls = []
     for item in raw_tool_calls:
-        function_payload = item.get("function", {})
-        raw_arguments = function_payload.get("arguments", "{}")
-        try:
-            arguments = json.loads(raw_arguments) if raw_arguments else {}
-        except json.JSONDecodeError as exc:
-            raise ProviderError(
-                "Provider returned invalid tool arguments for %s: %s"
-                % (function_payload.get("name", "<unknown>"), exc)
-            ) from exc
+        if not isinstance(item, dict):
+            continue
+        function_payload = item.get("function") or {}
+        if not isinstance(function_payload, dict):
+            continue
+        tool_name = str(function_payload.get("name", "") or "")
+        if not tool_name:
+            continue
+        arguments = _parse_openai_tool_arguments(function_payload.get("arguments"), tool_name)
         tool_calls.append(
             ToolCall(
                 id=item.get("id", "call_%s" % uuid.uuid4().hex[:8]),
-                name=function_payload.get("name", ""),
+                name=tool_name,
                 arguments=arguments,
             )
         )
@@ -775,6 +776,29 @@ def _parse_openai_like_response(raw: dict[str, Any]) -> ModelResponse:
         tool_calls=tool_calls,
         raw=raw,
     )
+
+
+def _parse_openai_tool_arguments(raw_arguments: Any, tool_name: str) -> dict[str, Any]:
+    if raw_arguments in (None, ""):
+        return {}
+    if isinstance(raw_arguments, dict):
+        return dict(raw_arguments)
+    if not isinstance(raw_arguments, str):
+        raise ProviderError(
+            "Provider returned invalid tool arguments for %s: expected object or JSON string."
+            % tool_name
+        )
+    try:
+        parsed = json.loads(raw_arguments)
+    except json.JSONDecodeError as exc:
+        raise ProviderError(
+            "Provider returned invalid tool arguments for %s: %s" % (tool_name, exc)
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise ProviderError(
+            "Provider returned invalid tool arguments for %s: expected JSON object." % tool_name
+        )
+    return parsed
 
 
 def _perform_json_request(req: request.Request, timeout: int | None) -> dict[str, Any]:
