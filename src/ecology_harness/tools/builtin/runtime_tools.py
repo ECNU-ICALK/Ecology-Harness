@@ -5,7 +5,9 @@ import io
 import json
 import math
 import re
+import signal
 import statistics
+import threading
 from typing import Any
 
 from ecology_harness.runtime.compaction import estimate_tokens
@@ -249,7 +251,7 @@ def _execute_code(params: dict, context: ToolContext) -> ToolResult:
     locals_dict: dict[str, Any] = {}
     try:
         with redirect_stdout(stdout):
-            exec(code, globals_dict, locals_dict)
+            _exec_with_timeout(code, globals_dict, locals_dict, context.settings.command_timeout_sec)
     except Exception as exc:
         raise ToolError("ExecuteCode failed: %s" % exc) from exc
     result_var = str(params.get("result_var", "result") or "result")
@@ -259,6 +261,34 @@ def _execute_code(params: dict, context: ToolContext) -> ToolResult:
         "result": locals_dict.get(result_var),
     }
     return ToolResult(content=json.dumps(payload, ensure_ascii=False, indent=2), data=payload)
+
+
+def _exec_with_timeout(
+    code: str,
+    globals_dict: dict[str, Any],
+    locals_dict: dict[str, Any],
+    timeout_sec: int,
+) -> None:
+    if (
+        timeout_sec <= 0
+        or not hasattr(signal, "SIGALRM")
+        or threading.current_thread() is not threading.main_thread()
+    ):
+        exec(code, globals_dict, locals_dict)
+        return
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+
+    def _handle_timeout(_signum, _frame):
+        raise TimeoutError("execution exceeded command_timeout_sec=%s" % timeout_sec)
+
+    signal.signal(signal.SIGALRM, _handle_timeout)
+    signal.setitimer(signal.ITIMER_REAL, float(timeout_sec))
+    try:
+        exec(code, globals_dict, locals_dict)
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, previous_handler)
 
 
 def _runtime_status(params: dict, context: ToolContext) -> ToolResult:

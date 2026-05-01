@@ -1,5 +1,6 @@
 import json
 import os
+import signal
 import subprocess
 import tempfile
 import threading
@@ -469,6 +470,24 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertEqual(payload["tool_calls"], 1)
             self.assertIn("hello from execute code", payload["result"])
 
+    @unittest.skipUnless(hasattr(signal, "SIGALRM"), "SIGALRM is unavailable on this platform")
+    def test_execute_code_timeout_blocks_infinite_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app = self._make_app(root)
+            app.initialize()
+            app.settings.command_timeout_sec = 1
+
+            with self.assertRaises(ToolError) as raised:
+                app.registry.execute(
+                    "ExecuteCode",
+                    {"code": "while True:\n    pass"},
+                    app.settings,
+                    services=app.get_services(),
+                )
+
+            self.assertIn("execution exceeded command_timeout_sec=1", str(raised.exception))
+
     def test_automation_jobs_can_run_due(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -612,6 +631,25 @@ class PlatformFeatureTests(unittest.TestCase):
             self.assertFalse(rows["probe-stdio"]["runtime_invokable"])
             self.assertFalse(rows["probe-stdio"]["bridge_registered"])
             self.assertIsNone(app.registry.get("mcp__probe-stdio__ping"))
+
+            tools = app.registry.execute(
+                "ListMcpToolsTool",
+                {"server": "probe-stdio"},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertIn("runtime=False", tools.content)
+
+            with self.assertRaises(ToolError) as raised:
+                app.registry.execute(
+                    "MCPTool",
+                    {"server": "probe-stdio", "tool": "ping", "arguments": {}},
+                    app.settings,
+                    services=app.get_services(),
+                )
+            message = str(raised.exception)
+            self.assertIn("runtime_invokable=False", message)
+            self.assertIn("ProbeMcpServerTool", message)
 
     def test_remote_mcp_probe_checks_disabled_servers_too(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

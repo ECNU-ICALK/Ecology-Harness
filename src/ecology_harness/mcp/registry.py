@@ -310,15 +310,7 @@ class McpServerRegistry:
                 continue
             if server.transport != "inprocess":
                 state = self._state_for_server(server, probe_remote=True)
-                raise ToolError(
-                    "MCP server `%s` is configured with transport `%s`; direct resource execution is not implemented in this build. Current status=%s%s"
-                    % (
-                        server.name,
-                        server.transport,
-                        state.status,
-                        (", detail=%s" % state.error_message) if state.error_message else "",
-                    )
-                )
+                raise ToolError(self._runtime_unavailable_message(server, state, operation="resource"))
             return self._read_inprocess_resource(server, resource, services or {})
         raise ToolError("MCP resource not found: %s" % uri)
 
@@ -339,15 +331,7 @@ class McpServerRegistry:
                 return self._call_local_compat_tool(server, tool, params, services or {})
             if server.transport != "inprocess":
                 state = self._state_for_server(server, probe_remote=True)
-                raise ToolError(
-                    "MCP server `%s` uses transport `%s`; direct remote tool execution is not implemented yet. Current status=%s%s"
-                    % (
-                        server.name,
-                        server.transport,
-                        state.status,
-                        (", detail=%s" % state.error_message) if state.error_message else "",
-                    )
-                )
+                raise ToolError(self._runtime_unavailable_message(server, state, operation="tool"))
             return self._call_inprocess_tool(server, tool, params, services or {})
         raise ToolError("Unknown MCP tool `%s` on server `%s`." % (tool_name, server_name))
 
@@ -418,6 +402,47 @@ class McpServerRegistry:
     @staticmethod
     def _supports_local_compat(server: McpServerConfig) -> bool:
         return normalize_name_for_mcp(server.name) == "semantic-scholar"
+
+    def _runtime_unavailable_message(
+        self,
+        server: McpServerConfig,
+        state: McpServerState,
+        *,
+        operation: str,
+    ) -> str:
+        detail = "; detail=%s" % state.error_message if state.error_message else ""
+        hint = self._runtime_unavailable_hint(server, state)
+        noun = "resource" if operation == "resource" else "tool"
+        return (
+            "MCP server `%s` is cataloged with transport `%s`, but %s execution is not available in this build. "
+            "status=%s, runtime_invokable=%s%s. %s"
+            % (
+                server.name,
+                server.transport,
+                noun,
+                state.status,
+                state.runtime_invokable,
+                detail,
+                hint,
+            )
+        )
+
+    def _runtime_unavailable_hint(self, server: McpServerConfig, state: McpServerState) -> str:
+        if state.status in {"missing-command", "missing-script", "missing-module"}:
+            return (
+                "Run `eh doctor --probe` or `eh tool ProbeMcpServerTool '{\"server\":\"%s\"}'` "
+                "to inspect the missing runtime, then install the required command, script, or Python module."
+                % server.name
+            )
+        if state.status in {"reachable", "configured", "cataloged"}:
+            return (
+                "Use this MCP entry for planning and discovery, or add a runtime adapter before calling it directly. "
+                "For diagnostics run `eh tool ProbeMcpServerTool '{\"server\":\"%s\"}'`."
+                % server.name
+            )
+        if server.auth != "none":
+            return "Check the required auth configuration before enabling direct runtime calls."
+        return "Use `ListMcpServersTool` with `probe=true` to inspect setup details."
 
     def _runtime_root(self) -> Path:
         override = os.environ.get("ECOLOGY_HARNESS_MCP_RUNTIME_ROOT", "").strip()

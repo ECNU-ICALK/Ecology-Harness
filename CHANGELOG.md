@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.5 beta - 2026-05-01
+
+- clarified MCP runtime boundaries so cataloged or probeable servers now report whether they are directly invokable and provide actionable probe/setup guidance when `MCPTool` cannot run them
+- added a timeout guard to `ExecuteCode` on platforms that support `SIGALRM`, preventing runaway snippets from hanging the REPL indefinitely
+- split provider tool-schema normalization into a small runtime module to reduce `providers.py` responsibility while preserving strict Gemini/OpenAI-compatible schema behavior
+- completed focused MCP/runtime regression coverage plus the full unit-test suite and package build validation
+
 ## 0.5.4 beta - 2026-05-01
 
 - hardened OpenAI-compatible provider response parsing for backends that return `null` messages, `null` tool calls, dict-style tool arguments, or malformed tool-call entries

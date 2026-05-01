@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from dataclasses import dataclass
-import copy
 import json
 import os
 import socket
@@ -14,6 +13,7 @@ import uuid
 from ecology_harness.config import HarnessSettings
 from ecology_harness.runtime.attachments import audio_format_for_openai, encode_file_base64
 from ecology_harness.runtime.messages import ChatMessage, MessagePart, ModelResponse, ToolCall
+from ecology_harness.runtime.provider_schema import tool_parameters_schema
 from ecology_harness.runtime.provider_router import RoutedProvider
 from ecology_harness.tools import ToolDefinition, ToolError
 
@@ -38,55 +38,6 @@ class ProviderSpec:
         payload = asdict(self)
         payload["model_examples"] = list(self.model_examples)
         return payload
-
-
-def _normalized_tool_schema(schema: Any) -> dict[str, Any]:
-    """Return a provider-safe JSON schema for tool parameters.
-
-    Some OpenAI-compatible backends, especially Google's Gemini/OpenAI bridge,
-    reject array schemas that omit an ``items`` definition. We normalize the
-    minimal subset of JSON schema we emit so tool declarations stay accepted
-    even when a bundled tool definition is underspecified.
-    """
-
-    if not isinstance(schema, dict):
-        return {"type": "object", "properties": {}}
-
-    normalized: dict[str, Any] = copy.deepcopy(schema)
-    schema_type = str(normalized.get("type", "") or "").strip().lower()
-
-    if schema_type == "object":
-        properties = normalized.get("properties")
-        if not isinstance(properties, dict):
-            properties = {}
-        normalized["properties"] = {
-            str(name): _normalized_tool_schema(value)
-            if isinstance(value, dict)
-            else {"type": "string"}
-            for name, value in properties.items()
-        }
-        additional = normalized.get("additionalProperties")
-        if isinstance(additional, dict):
-            normalized["additionalProperties"] = _normalized_tool_schema(additional)
-    elif schema_type == "array":
-        items = normalized.get("items")
-        if isinstance(items, dict) and items:
-            normalized["items"] = _normalized_tool_schema(items)
-        else:
-            normalized["items"] = {"type": "string"}
-
-    for key in ("allOf", "anyOf", "oneOf"):
-        value = normalized.get(key)
-        if isinstance(value, list):
-            normalized[key] = [
-                _normalized_tool_schema(item) if isinstance(item, dict) else {"type": "string"}
-                for item in value
-            ]
-    return normalized
-
-
-def _tool_parameters_schema(tool: ToolDefinition) -> dict[str, Any]:
-    return _normalized_tool_schema(tool.input_schema)
 
 
 PROVIDERS: dict[str, ProviderSpec] = {
@@ -323,7 +274,7 @@ class AnthropicProvider(BaseProvider):
             {
                 "name": tool.name,
                 "description": tool.description,
-                "input_schema": _tool_parameters_schema(tool),
+                "input_schema": tool_parameters_schema(tool),
             }
             for tool in tools
         ]
@@ -391,7 +342,7 @@ class OpenAICompatibleProvider(BaseProvider):
                 "function": {
                     "name": tool.name,
                     "description": tool.description,
-                    "parameters": _tool_parameters_schema(tool),
+                    "parameters": tool_parameters_schema(tool),
                 },
             }
             for tool in tools
@@ -446,7 +397,7 @@ class OllamaProvider(BaseProvider):
                     "function": {
                         "name": tool.name,
                         "description": tool.description,
-                        "parameters": _tool_parameters_schema(tool),
+                        "parameters": tool_parameters_schema(tool),
                     },
                 }
                 for tool in tools

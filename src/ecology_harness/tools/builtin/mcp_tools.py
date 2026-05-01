@@ -176,7 +176,7 @@ def _list_mcp_tools(params: dict, context: ToolContext) -> ToolResult:
     if not rows:
         return ToolResult(content="No MCP tools available.", data={"tools": []})
     lines = [
-        "%(server)s\t%(tool)s\t%(bridge_name)s\t%(transport)s" % item
+        "%(server)s\t%(tool)s\t%(bridge_name)s\t%(transport)s\truntime=%(runtime_invokable)s" % item
         for item in rows
     ]
     return ToolResult(content="\n".join(lines), data={"tools": rows})
