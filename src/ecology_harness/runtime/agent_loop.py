@@ -336,6 +336,26 @@ class AgentLoop:
                         )
                         tool_output = "Tool error from %s: %s" % (tool_call.name, exc)
                         tool_result_data = {}
+                    except Exception as exc:
+                        self.app.run_plugin_hooks(
+                            "OnError",
+                            {
+                                "stage": "tool_execute_unexpected",
+                                "tool": tool_call.name,
+                                "arguments": tool_call.arguments,
+                                "step": step,
+                                "depth": depth,
+                                "session_id": getattr(self.app, "_active_session_id", ""),
+                                "error": "%s: %s" % (exc.__class__.__name__, exc),
+                            },
+                            settings=active_settings,
+                        )
+                        tool_output = "Unexpected tool error from %s: %s: %s" % (
+                            tool_call.name,
+                            exc.__class__.__name__,
+                            exc,
+                        )
+                        tool_result_data = {}
                     tool_duration_ms = max(0, int((perf_counter() - started_at) * 1000))
 
                 tool_invocations.append(

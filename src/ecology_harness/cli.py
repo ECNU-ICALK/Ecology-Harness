@@ -28,6 +28,7 @@ SESSION_COMMAND_LINES = [
     "/status     show session status",
     "/runtime    show a live runtime snapshot",
     "/analytics  summarize recent usage, sessions, and trajectories",
+    "/capability QUERY preflight relevant skills, MCP servers, and tools",
     "/config     show active runtime configuration",
     "/permissions show or change permission mode",
     "/model      show or change the active model",
@@ -78,6 +79,7 @@ SESSION_COMMANDS = {
     "/status",
     "/runtime",
     "/analytics",
+    "/capability",
     "/config",
     "/permissions",
     "/model",
@@ -139,6 +141,7 @@ POSITIONAL_ACTIONS = {
     "status",
     "runtime",
     "analytics",
+    "capability",
     "config",
     "model",
     "permissions",
@@ -192,6 +195,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  eh status\n"
             "  eh runtime\n"
             "  eh analytics\n"
+            "  eh capability \"玉米干旱加灌溉处理的成长模拟\"\n"
             "  eh prompt \"summarize this repository\"\n"
             "  eh --attach docs/paper.pdf \"summarize this paper\"\n"
             "  eh --attach imgs/specimen.jpg \"identify this species\"\n"
@@ -1275,6 +1279,29 @@ def _analytics_summary(app: EcologyHarnessApp, renderer: ConsoleRenderer, json_o
     return 0
 
 
+def _capability_readiness(
+    app: EcologyHarnessApp,
+    renderer: ConsoleRenderer,
+    json_output: bool,
+    query: str,
+    probe_mcp: bool = False,
+) -> int:
+    query = query.strip()
+    if not query:
+        raise ToolError("`eh capability` requires a query.")
+    result = app.registry.execute(
+        "CapabilityReadinessReport",
+        {"query": query, "probe_mcp": probe_mcp},
+        app.settings,
+        services=app.get_services(),
+    )
+    if json_output:
+        print(json.dumps(result.data, indent=2, ensure_ascii=False))
+        return 0
+    renderer.section("Capability Readiness", result.content.splitlines() or ["<empty>"])
+    return 0
+
+
 def _setup_workspace(
     app: EcologyHarnessApp,
     renderer: ConsoleRenderer,
@@ -1567,6 +1594,12 @@ def _handle_positional_command(
         return _runtime_status(app, renderer, json_output, conversation=conversation)
     if head == "analytics":
         return _analytics_summary(app, renderer, json_output)
+    if head == "capability":
+        effective_probe = "--probe" in tail
+        query = " ".join(item for item in tail if item != "--probe").strip()
+        if not query:
+            parser.error("`eh capability` requires a query.")
+        return _capability_readiness(app, renderer, json_output, query, probe_mcp=effective_probe)
     if head == "config":
         renderer.print_config_panel(app)
         return 0
@@ -1836,6 +1869,18 @@ def _handle_repl_command(
         return {"action": "continue"}
     if normalized == "/analytics":
         _analytics_summary(app, renderer, False)
+        return {"action": "continue"}
+    if normalized.startswith("/capability"):
+        parts = normalized.split(None, 1)
+        if len(parts) < 2:
+            renderer.print_notice("Usage: /capability <query> [--probe]", level="warn")
+            return {"action": "continue"}
+        probe_mcp = "--probe" in parts[1].split()
+        query = " ".join(item for item in parts[1].split() if item != "--probe").strip()
+        if not query:
+            renderer.print_notice("Usage: /capability <query> [--probe]", level="warn")
+            return {"action": "continue"}
+        _capability_readiness(app, renderer, False, query, probe_mcp=probe_mcp)
         return {"action": "continue"}
     if normalized == "/config":
         renderer.print_config_panel(app)

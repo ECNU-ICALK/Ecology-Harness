@@ -48,7 +48,7 @@ eh --provider mock prompt "summarize this workspace and list the installed ecolo
 |---|---|
 | Choose the right research workflow | Query-aware skill and MCP retrieval, `SkillHub`, `SkillView`, and curated ecology/scientific skill packs |
 | Keep long projects coherent | Long-lived memory, historical session recall, profile context, bounded compaction, and memory health checks |
-| Run ecological analysis safely | Built-in tools, sandbox policy, MCP readiness probes, `eh doctor`, `eh explore`, and audit-friendly runtime traces |
+| Run ecological analysis safely | Built-in tools, `CapabilityReadinessReport`, sandbox policy, MCP readiness probes, `eh doctor`, `eh explore`, and audit-friendly runtime traces |
 | Orchestrate simulations | Skills and tool catalogs for process models, crop models, aquatic models, ABMs, microbial growth, and 3D ecology workflows |
 | Improve over time | Post-run review that proposes memory and skill candidates with evidence, confidence, and risk metadata |
 
@@ -919,6 +919,7 @@ eh \
 - `WebSearch`
 - `BrowserFetch`
 - `BrowserAction`
+- `CapabilityReadinessReport`
 - `ExecuteCode`
 - `GetDiagnostics`
 - `NotebookEdit`

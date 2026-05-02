@@ -1,5 +1,6 @@
 import io
 import argparse
+import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -709,6 +710,43 @@ class CliTests(unittest.TestCase):
             output = buffer.getvalue()
             self.assertIn("Skill View", output)
             self.assertIn("scripts/search_databases.py", output)
+
+    def test_cli_capability_preflights_relevant_ecology_tools(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "capability",
+                        "玉米干旱加灌溉处理的成长模拟",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            output = buffer.getvalue()
+            self.assertIn("Capability Readiness", output)
+            self.assertIn("crop-water-and-irrigation-simulation", output)
+
+    def test_cli_capability_supports_json_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            buffer = io.StringIO()
+            with redirect_stdout(buffer):
+                exit_code = main(
+                    [
+                        "--workspace",
+                        tmpdir,
+                        "--json",
+                        "capability",
+                        "microbial community metabolism simulation",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            payload = json.loads(buffer.getvalue())
+            self.assertIn("skills", payload)
+            self.assertIn("summary", payload)
 
     def test_cli_lists_plugins(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

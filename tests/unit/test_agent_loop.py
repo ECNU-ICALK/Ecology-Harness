@@ -6,6 +6,7 @@ from pathlib import Path
 from ecology_harness.app import EcologyHarnessApp
 from ecology_harness.config import HarnessSettings
 from ecology_harness.runtime.messages import ChatMessage
+from ecology_harness.tools import ToolDefinition
 
 
 class AgentLoopTests(unittest.TestCase):
@@ -56,6 +57,34 @@ class AgentLoopTests(unittest.TestCase):
             tool_result = next(item for item in result.events if item.kind == "tool_result")
             self.assertIn("duration_ms", tool_result.payload)
             self.assertIn("output_chars", tool_result.payload)
+
+    def test_agent_loop_converts_unexpected_tool_exception_to_tool_result(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            def _explode(_params, _context):
+                raise RuntimeError("boom")
+
+            app.registry.register(
+                ToolDefinition(
+                    name="Explode",
+                    description="Raise an unexpected exception.",
+                    input_schema={"type": "object", "properties": {}},
+                    handler=_explode,
+                )
+            )
+
+            result = app.run_prompt('/tool Explode {}')
+
+            self.assertIn("Unexpected tool error from Explode: RuntimeError: boom", result.final_text)
+            self.assertEqual(result.tool_invocations[0]["tool"], "Explode")
+            self.assertTrue(result.tool_invocations[0]["allowed"])
+            tool_result = next(item for item in result.events if item.kind == "tool_result")
+            self.assertIn("Unexpected tool error", tool_result.payload["output"])
 
     def test_agent_tool_runs_subagent(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

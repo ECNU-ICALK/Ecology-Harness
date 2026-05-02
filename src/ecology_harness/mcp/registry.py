@@ -40,7 +40,41 @@ def mcp_tool_name(server_name: str, tool_name: str) -> str:
     return "%s%s" % (mcp_tool_prefix(server_name), normalize_name_for_mcp(tool_name))
 
 
+def _coerce_mcp_input_schema(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {"type": "object", "properties": {}}
+    schema = dict(value)
+    if schema.get("type") != "object":
+        schema["type"] = "object"
+    if not isinstance(schema.get("properties", {}), dict):
+        schema["properties"] = {}
+    return schema
+
+
+def _iter_dicts(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        return [value]
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value]
+
+
+def _string_dict(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    return {str(key): str(item) for key, item in value.items()}
+
+
 _ENV_ARG_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+_CONFIG_LOAD_ERRORS = (OSError, json.JSONDecodeError, TypeError, ValueError)
 
 
 @dataclass
@@ -162,17 +196,43 @@ class McpServerRegistry:
 
     def list_servers(self) -> list[McpServerConfig]:
         seen: dict[str, McpServerConfig] = {}
-        for source, root in (
-            ("builtin", self.builtin_dir),
-            ("user", self.user_dir),
-            ("project", self.project_dir),
-        ):
+        for source, root in self._config_roots():
             if not root.exists():
                 continue
             for config_path in sorted(root.rglob("*.json")):
-                for server in self._load_config_file(config_path, source):
+                try:
+                    loaded = self._load_config_file(config_path, source)
+                except _CONFIG_LOAD_ERRORS:
+                    continue
+                for server in loaded:
                     seen[server.name] = server
         return sorted(seen.values(), key=lambda item: item.name.lower())
+
+    def list_config_issues(self) -> list[dict[str, str]]:
+        issues: list[dict[str, str]] = []
+        for source, root in self._config_roots():
+            if not root.exists():
+                continue
+            for config_path in sorted(root.rglob("*.json")):
+                try:
+                    self._load_config_file(config_path, source)
+                except _CONFIG_LOAD_ERRORS as exc:
+                    issues.append(
+                        {
+                            "source": source,
+                            "path": str(config_path),
+                            "error_type": exc.__class__.__name__,
+                            "message": str(exc),
+                        }
+                    )
+        return issues
+
+    def _config_roots(self) -> tuple[tuple[str, Path], ...]:
+        return (
+            ("builtin", self.builtin_dir),
+            ("user", self.user_dir),
+            ("project", self.project_dir),
+        )
 
     def list_server_states(
         self,
@@ -733,6 +793,10 @@ class McpServerRegistry:
             entries = raw
         else:
             entries = [raw]
+        if isinstance(entries, dict):
+            entries = [entries]
+        if not isinstance(entries, list):
+            entries = []
         servers = []
         for entry in entries:
             if not isinstance(entry, dict):
@@ -741,10 +805,10 @@ class McpServerRegistry:
                 McpTool(
                     name=str(item.get("name", "")),
                     description=str(item.get("description", "")),
-                    input_schema=dict(item.get("input_schema", {"type": "object", "properties": {}})),
+                    input_schema=_coerce_mcp_input_schema(item.get("input_schema")),
                     handler=str(item.get("handler", "")),
                 )
-                for item in entry.get("tools", []) or []
+                for item in _iter_dicts(entry.get("tools", []))
                 if item.get("name")
             ]
             resources = [
@@ -756,7 +820,7 @@ class McpServerRegistry:
                     handler=str(item.get("handler", "")),
                     content=str(item.get("content", "")),
                 )
-                for item in entry.get("resources", []) or []
+                for item in _iter_dicts(entry.get("resources", []))
                 if item.get("uri")
             ]
             default_enabled = entry.get("default_enabled")
@@ -773,10 +837,10 @@ class McpServerRegistry:
                     root=config_path.parent,
                     default_enabled=bool(default_enabled),
                     command=str(entry.get("command", "")),
-                    args=[str(item) for item in entry.get("args", []) or []],
-                    env={str(key): str(value) for key, value in dict(entry.get("env", {})).items()},
+                    args=_string_list(entry.get("args", [])),
+                    env=_string_dict(entry.get("env", {})),
                     url=str(entry.get("url", "")),
-                    headers={str(key): str(value) for key, value in dict(entry.get("headers", {})).items()},
+                    headers=_string_dict(entry.get("headers", {})),
                     auth=str(entry.get("auth", "none")),
                     tools=tools,
                     resources=resources,

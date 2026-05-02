@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import hashlib
 import math
 from pathlib import Path
 import re
@@ -95,7 +96,7 @@ class MemoryManager:
         memory_type: str = "project",
         scope: str = "project",
     ) -> MemoryItem:
-        slug = slugify(name)
+        slug = _memory_slug(name)
         now = datetime.utcnow().isoformat(timespec="seconds") + "Z"
         existing = self.get(slug, scope=scope)
         created_at = existing.created_at if existing else now
@@ -168,16 +169,16 @@ class MemoryManager:
         items = self.list_items(scope=scope)
         if not items:
             return []
-        document_terms = {
-            item.slug: set(
+        document_terms = [
+            set(
                 _memory_terms("\n".join([item.name, item.description, item.memory_type, item.content]))
             )
             for item in items
-        }
+        ]
         document_frequency: dict[str, int] = {}
         for term in query_terms:
             document_frequency[term] = sum(
-                1 for terms in document_terms.values() if term in terms
+                1 for terms in document_terms if term in terms
             )
         scored_results: list[tuple[float, float, dict]] = []
         header_index = {header.file_path: header for header in self.scan_all(scope)}
@@ -547,16 +548,16 @@ class MemoryManager:
         if max_overlap_pairs <= 0 or len(items) < 2:
             return []
         term_index = {
-            item.slug: set(_memory_terms("\n".join([item.name, item.description, item.content])))
+            (item.scope, item.slug): set(_memory_terms("\n".join([item.name, item.description, item.content])))
             for item in items
         }
         scored: list[tuple[float, MemoryItem, MemoryItem]] = []
         for left_index, left in enumerate(items):
-            left_terms = term_index.get(left.slug, set())
+            left_terms = term_index.get((left.scope, left.slug), set())
             if len(left_terms) < 4:
                 continue
             for right in items[left_index + 1 :]:
-                right_terms = term_index.get(right.slug, set())
+                right_terms = term_index.get((right.scope, right.slug), set())
                 if len(right_terms) < 4:
                     continue
                 overlap = len(left_terms & right_terms) / max(1, min(len(left_terms), len(right_terms)))
@@ -611,6 +612,14 @@ def _memory_terms(text: str) -> list[str]:
         if re.fullmatch(r"[\u4e00-\u9fff]+", normalized) and len(normalized) > 2:
             terms.extend(normalized[index : index + 2] for index in range(len(normalized) - 1))
     return list(dict.fromkeys(terms))
+
+
+def _memory_slug(name: str) -> str:
+    slug = slugify(name)
+    if slug != "item" or not (name or "").strip():
+        return slug
+    digest = hashlib.sha1(name.strip().encode("utf-8")).hexdigest()[:10]
+    return "memory-%s" % digest
 
 
 def _memory_risk_flags(text: str) -> list[str]:

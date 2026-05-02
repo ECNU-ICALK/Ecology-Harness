@@ -1,5 +1,6 @@
 from ecology_harness.tools.builtin.agent_tools import register_agent_tools
 from ecology_harness.tools.builtin.browser_tools import register_browser_tools
+from ecology_harness.tools.builtin.capability_tools import register_capability_tools
 from ecology_harness.tools.builtin.claw_tools import register_claw_compat_tools
 from ecology_harness.tools.builtin.document_tools import register_document_tools
 from ecology_harness.tools.builtin.ecology_tools import register_ecology_tools
@@ -25,6 +26,7 @@ def register_builtin_tools(registry: ToolRegistry) -> None:
     register_search_tools(registry)
     register_web_tools(registry)
     register_browser_tools(registry)
+    register_capability_tools(registry)
     register_ecology_tools(registry)
     register_evolution_tools(registry)
     register_integration_tools(registry)

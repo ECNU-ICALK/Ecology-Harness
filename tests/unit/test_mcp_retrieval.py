@@ -237,6 +237,55 @@ class McpRetrievalTests(unittest.TestCase):
 
             self.assertIn("demo-ebird-key", args)
 
+    def test_malformed_project_mcp_config_does_not_break_registry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            mcp_dir = root / ".ecology_harness" / "mcp"
+            mcp_dir.mkdir(parents=True, exist_ok=True)
+            (mcp_dir / "bad-json.json").write_text("{not-json", encoding="utf-8")
+            (mcp_dir / "coerced.json").write_text(
+                json.dumps(
+                    {
+                        "name": "coerced-mcp",
+                        "transport": "inprocess",
+                        "default_enabled": True,
+                        "env": "bad-env",
+                        "headers": ["bad-headers"],
+                        "args": "single-arg",
+                        "tools": {
+                            "name": "ping",
+                            "description": "Ping with a malformed schema.",
+                            "handler": "list_claw_tools",
+                            "input_schema": "not-a-schema",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            app = self._make_app(root)
+
+            server = app.mcp_registry.get_server("coerced-mcp")
+            self.assertIsNotNone(server)
+            self.assertEqual(server.args, ["single-arg"])
+            self.assertEqual(server.env, {})
+            self.assertEqual(server.headers, {})
+            self.assertEqual(server.tools[0].input_schema, {"type": "object", "properties": {}})
+            self.assertIsNotNone(app.registry.get("mcp__coerced-mcp__ping"))
+
+            issues = app.mcp_registry.list_config_issues()
+            self.assertTrue(any(item["path"].endswith("bad-json.json") for item in issues))
+            self.assertTrue(any(item["error_type"] == "JSONDecodeError" for item in issues))
+
+            doctor = app.registry.execute(
+                "DoctorReport",
+                {"probe_mcp": False},
+                app.settings,
+                services=app.get_services(),
+            )
+            self.assertTrue(doctor.data["mcp"]["catalog_issues"])
+            self.assertTrue(any("MCP catalog" in item for item in doctor.data["issues"]))
+
 
 if __name__ == "__main__":
     unittest.main()

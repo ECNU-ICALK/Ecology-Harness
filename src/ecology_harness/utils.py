@@ -94,7 +94,13 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 def dump_frontmatter(metadata: dict[str, str], body: str) -> str:
     lines = ["---"]
     for key, value in metadata.items():
-        lines.append("%s: %s" % (key, value))
+        text = str(value)
+        if "\n" in text:
+            lines.append("%s: |" % key)
+            for item in text.splitlines():
+                lines.append("  %s" % item)
+            continue
+        lines.append("%s: %s" % (key, text))
     lines.append("---")
     lines.append(body)
     return "\n".join(lines)

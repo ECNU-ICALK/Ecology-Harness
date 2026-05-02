@@ -144,6 +144,36 @@ class MemoryTests(unittest.TestCase):
             self.assertIn("Ecology World Model", searched.content)
             self.assertIn("生态", searched.data["items"][0]["matched_terms"])
 
+    def test_memory_save_keeps_distinct_non_ascii_titles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            settings = HarnessSettings.from_workspace(root)
+            settings.user_state_dir = root / ".user_state"
+            app = EcologyHarnessApp(settings)
+            app.initialize()
+
+            first = app.memory_manager.save(
+                name="生态世界模型",
+                description="生态 world model notes",
+                content="第一条中文记忆。",
+                memory_type="project",
+                scope="project",
+            )
+            second = app.memory_manager.save(
+                name="湿地甲烷模拟",
+                description="wetland methane notes",
+                content="第二条中文记忆。",
+                memory_type="project",
+                scope="project",
+            )
+
+            self.assertNotEqual(first.slug, second.slug)
+            self.assertTrue(first.slug.startswith("memory-"))
+            self.assertTrue(second.slug.startswith("memory-"))
+            self.assertEqual(len(app.memory_manager.list_items(scope="project")), 2)
+            self.assertIn("第一条中文记忆", app.memory_manager.get("生态世界模型").content)
+            self.assertIn("第二条中文记忆", app.memory_manager.get("湿地甲烷模拟").content)
+
     def test_memory_context_is_bounded_and_uses_inventory_summary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

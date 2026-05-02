@@ -25,6 +25,7 @@ class HarnessDoctor:
             probe_remote=probe_mcp,
             timeout_sec=timeout_sec,
         )
+        mcp_catalog_issues = self.app.mcp_registry.list_config_issues()
         integrations = self.app.integration_manager.status_summary() if self.app.integration_manager is not None else {
             "total": 0,
             "enabled": 0,
@@ -60,6 +61,11 @@ class HarnessDoctor:
                 "%s MCP server(s) were unreachable during probing."
                 % mcp_status_counts.get("unreachable", 0)
             )
+        if mcp_catalog_issues:
+            issues.append(
+                "%s MCP catalog config file(s) could not be loaded."
+                % len(mcp_catalog_issues)
+            )
         if integrations["status_counts"].get("invalid-config", 0):
             issues.append(
                 "%s integration(s) have invalid configuration."
@@ -69,6 +75,7 @@ class HarnessDoctor:
             bootstrap_status=bootstrap_status,
             skill_status_counts=skill_status_counts,
             mcp_states=mcp_states,
+            mcp_catalog_issues=mcp_catalog_issues,
             integrations=integrations,
             optional_dependencies=optional_dependencies,
             probe_mcp=probe_mcp,
@@ -98,6 +105,7 @@ class HarnessDoctor:
                 "total": len(mcp_states),
                 "status_counts": mcp_status_counts,
                 "probed": probe_mcp,
+                "catalog_issues": mcp_catalog_issues,
             },
             "integrations": integrations,
             "dependencies": optional_dependencies,
@@ -125,6 +133,7 @@ class HarnessDoctor:
         bootstrap_status: dict[str, Any],
         skill_status_counts: dict[str, int],
         mcp_states: list[Any],
+        mcp_catalog_issues: list[dict[str, str]],
         integrations: dict[str, Any],
         optional_dependencies: dict[str, dict[str, object]],
         probe_mcp: bool,
@@ -216,6 +225,16 @@ class HarnessDoctor:
                     "command": "eh mcp",
                     "reason": "%s probed MCP server(s) were unreachable; verify URLs, network access, or service health."
                     % len(unreachable_states),
+                }
+            )
+        if mcp_catalog_issues:
+            suggestions.append(
+                {
+                    "severity": "medium",
+                    "title": "Repair malformed MCP catalog files",
+                    "command": "eh doctor --json",
+                    "reason": "%s MCP catalog file(s) were skipped while loading; inspect `mcp.catalog_issues` for paths and parser errors."
+                    % len(mcp_catalog_issues),
                 }
             )
         if integrations.get("status_counts", {}).get("invalid-config", 0):
